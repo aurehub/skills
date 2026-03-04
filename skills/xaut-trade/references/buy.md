@@ -1,0 +1,89 @@
+# Buy Execution (USDT → XAUT)
+
+## 0. Pre-execution Declaration
+
+- Current stage must be `Ready to Execute`
+- Quote and explicit user confirmation must already be complete
+- Full command must be displayed before execution
+
+## 1. allowance Check
+
+```bash
+cast call "$TOKEN_IN" "allowance(address,address)" "$WALLET_ADDRESS" "$ROUTER" --rpc-url "$ETH_RPC_URL"
+```
+
+If allowance < `AMOUNT_IN`, approve first.
+
+## 2. approve (per token)
+
+USDT (non-standard — must reset to zero before approving):
+
+```bash
+TX_HASH=$(cast send "$USDT" "approve(address,uint256)" "$ROUTER" 0 \
+  --account "$FOUNDRY_ACCOUNT" --password-file "$KEYSTORE_PASSWORD_FILE" \
+  --rpc-url "$ETH_RPC_URL" --json | python3 -c "import sys,json; print(json.load(sys.stdin)['transactionHash'])")
+echo "Approve(0) tx: https://etherscan.io/tx/$TX_HASH"
+```
+
+```bash
+TX_HASH=$(cast send "$USDT" "approve(address,uint256)" "$ROUTER" "$AMOUNT_IN" \
+  --account "$FOUNDRY_ACCOUNT" --password-file "$KEYSTORE_PASSWORD_FILE" \
+  --rpc-url "$ETH_RPC_URL" --json | python3 -c "import sys,json; print(json.load(sys.stdin)['transactionHash'])")
+echo "Approve tx: https://etherscan.io/tx/$TX_HASH"
+```
+
+If using private key fallback mode, replace `--account "$FOUNDRY_ACCOUNT"` with:
+
+```bash
+--private-key "$PRIVATE_KEY"
+```
+
+## 3. Swap Execution
+
+Calculate `deadline` and encode `exactInputSingle`:
+
+```bash
+DEADLINE=$(cast --to-uint256 $(($(date +%s) + 300)))
+
+SWAP_DATA=$(cast calldata \
+  "exactInputSingle((address,address,uint24,address,uint256,uint256,uint160))" \
+  "($TOKEN_IN,$XAUT,$FEE,$WALLET_ADDRESS,$AMOUNT_IN,$MIN_AMOUNT_OUT,0)")
+```
+
+Dry-run before execution (hard-stop on failure — no gas consumed):
+
+```bash
+cast call "$ROUTER" \
+  "multicall(uint256,bytes[])" \
+  "$DEADLINE" "[$SWAP_DATA]" \
+  --from "$WALLET_ADDRESS" \
+  --rpc-url "$ETH_RPC_URL"
+# On error → hard-stop, report reason, do not execute cast send
+```
+
+Execute multicall:
+
+```bash
+TX_HASH=$(cast send "$ROUTER" "multicall(uint256,bytes[])" "$DEADLINE" "[$SWAP_DATA]" \
+  --account "$FOUNDRY_ACCOUNT" --password-file "$KEYSTORE_PASSWORD_FILE" \
+  --rpc-url "$ETH_RPC_URL" --json | python3 -c "import sys,json; print(json.load(sys.stdin)['transactionHash'])")
+echo "Swap tx: https://etherscan.io/tx/$TX_HASH"
+# Balance may take a few seconds to update; Etherscan is authoritative
+```
+
+## 4. Result Verification
+
+```bash
+cast call "$XAUT" "balanceOf(address)" "$WALLET_ADDRESS" --rpc-url "$ETH_RPC_URL"
+```
+
+Return:
+- tx hash
+- post-trade XAUT balance
+- on failure, return retry suggestions
+
+## 5. Mandatory Rules
+
+- Before every `cast send`, remind the user: "About to execute an on-chain write"
+- Do not execute without explicit user confirmation
+- Large trades / high slippage trigger a second confirmation
