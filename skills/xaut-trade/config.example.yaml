@@ -1,0 +1,54 @@
+# xaut-trade 示例配置（可提交）
+# 本地实际配置请复制为 config.yaml 并按需修改。
+
+networks:
+  ethereum_mainnet:
+    chain_id: 1
+    default_rpc_env: ETH_RPC_URL
+  anvil_fork:
+    chain_id: 31337
+    default_rpc: http://127.0.0.1:8545
+
+contracts:
+  router: "0x68b3465833fb72A70ecDF485E0e4C7bD8665Fc45"
+  quoter: "0x61fFE014bA17989E743c5F6cB21bF9697530B21e"
+  permit2: "0x000000000022D473030F116dDEE9F6B43aC78BA3"
+
+tokens:
+  XAUT:
+    address: "0x68749665FF8D2d112Fa859AA293F07a622782F38"
+    decimals: 6
+  USDT:
+    address: "0xdAC17F958D2ee523a2206206994597C13D831ec7"
+    decimals: 6
+
+# 白名单：仅以下交易对被支持，其他一律硬停止
+pairs:
+  - key: "USDT_XAUT"
+    enabled: true
+    token_in: "USDT"
+    token_out: "XAUT"
+    fee_tier: 500
+  - key: "XAUT_USDT"
+    enabled: true
+    token_in: "XAUT"
+    token_out: "USDT"
+    fee_tier: 500
+
+token_rules:
+  USDT:
+    requires_reset_approve: true
+
+risk:
+  default_slippage_bps: 50
+  max_slippage_bps_warn: 50
+  large_trade_usd: 1000
+  min_eth_for_gas: "0.005"
+  deadline_seconds: 300
+
+# 限价单配置（UniswapX）
+limit_order:
+  default_expiry_seconds: 86400    # 默认有效期 1 天
+  max_expiry_seconds: 2592000      # 最长 30 天（API 实测上限）
+  min_expiry_seconds: 300          # 最短 5 分钟
+  uniswapx_api: "https://api.uniswap.org/v2"
