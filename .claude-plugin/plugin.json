@@ -1,0 +1,12 @@
+{
+  "name": "aurehub-skills",
+  "description": "Agent Skills for crypto trading and DeFi operations by AureHub",
+  "version": "1.0.0",
+  "author": {
+    "name": "AureHub",
+    "url": "https://github.com/aurehub"
+  },
+  "repository": "https://github.com/aurehub/skills",
+  "license": "MIT",
+  "skills": "./skills/"
+}
