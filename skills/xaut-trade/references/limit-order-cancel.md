@@ -1,12 +1,12 @@
-# 限价单撤销
+# Limit Order Cancellation
 
-## 0. 前置确认
+## 0. Pre-confirmation
 
-撤销限价单是链上操作（需支付 gas）。撤销前需确认：
+Cancelling a limit order is an on-chain operation (gas required). Confirm before cancelling:
 - orderHash
-- 当前订单状态（建议先查单，避免撤销已成交或已过期的订单）
+- Current order status (recommended: query first to avoid cancelling an already-filled or expired order)
 
-## 1. 获取撤单参数
+## 1. Fetch Cancellation Parameters
 
 ```bash
 CANCEL_PARAMS=$(node skills/xaut-trade/scripts/limit-order.js cancel \
@@ -17,9 +17,9 @@ MASK=$(echo "$CANCEL_PARAMS"     | python3 -c "import sys,json; print(json.load(
 PERMIT2=$(echo "$CANCEL_PARAMS"  | python3 -c "import sys,json; print(json.load(sys.stdin)['permit2'])")
 ```
 
-## 2. 执行撤销
+## 2. Execute Cancellation
 
-展示命令后等待用户确认：
+Display the command and wait for user confirmation:
 
 ```bash
 TX_HASH=$(cast send "$PERMIT2" \
@@ -30,22 +30,22 @@ TX_HASH=$(cast send "$PERMIT2" \
 echo "Cancel tx: https://etherscan.io/tx/$TX_HASH"
 ```
 
-降级：
+Fallback:
 
 ```bash
-# 将 --account / --password-file 替换为：
+# Replace --account / --password-file with:
 --private-key "$PRIVATE_KEY"
 ```
 
-## 3. 输出
+## 3. Output
 
 - tx hash
-- 提示：USDT 从未被锁定（Permit2 签名撤销，无资产退回操作）
+- Note: USDT was never locked (Permit2 signature revocation — no asset return operation)
 
-## 4. 特殊情况处理
+## 4. Special Cases
 
-| 情况 | 处理 |
-|------|------|
-| 订单已成交（filled） | 无需撤销，提示用户 |
-| 订单已过期（expired） | nonce 已自动失效，无需链上撤销 |
-| 撤销成功但 Filler 仍在处理 | 极低概率，链上 nonce 失效后 Filler 交易会 revert |
+| Case | Action |
+|------|--------|
+| Order already filled | No cancellation needed; inform the user |
+| Order already expired | Nonce has auto-invalidated; no on-chain cancellation needed |
+| Cancel succeeds but Filler is still processing | Very low probability; the Filler transaction will revert once the nonce is invalidated on-chain |

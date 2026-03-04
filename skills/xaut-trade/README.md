@@ -1,41 +1,41 @@
-# xaut-trade 使用说明
+# xaut-trade
 
-通过 AI Agent 在 Ethereum 主网上买卖 XAUT（Tether Gold），底层使用 Uniswap V3 + Foundry `cast`。
+Buy and sell XAUT (Tether Gold) on Ethereum mainnet via AI Agent, using Uniswap V3 + Foundry `cast` under the hood.
 
-## 支持的交易对
+## Supported Pairs
 
-| 方向 | 交易对 | 说明 |
-|------|--------|------|
-| 买入 | USDT → XAUT | 用 USDT 买入黄金代币 |
-| 卖出 | XAUT → USDT | 将黄金代币卖出换回 USDT |
+| Direction | Pair | Description |
+|-----------|------|-------------|
+| Buy | USDT → XAUT | Swap USDT for gold token |
+| Sell | XAUT → USDT | Swap gold token back to USDT |
 
-## 环境准备
+## Setup
 
-### 1. 安装 Foundry
+### 1. Install Foundry
 
 ```bash
 curl -L https://foundry.paradigm.xyz | bash
 foundryup
 ```
 
-验证：`cast --version`
+Verify: `cast --version`
 
-### 2. 配置钱包
+### 2. Configure Wallet
 
-**推荐：导入已有私钥**
+**Recommended: import an existing private key**
 
 ```bash
 cast wallet import aurehub-wallet --private-key <YOUR_PRIVATE_KEY>
 ```
 
-**或：创建全新钱包**
+**Or: create a brand-new wallet**
 
 ```bash
-cast wallet new   # 保存输出的 private key 到安全位置
+cast wallet new   # save the output private key somewhere safe
 cast wallet import aurehub-wallet --private-key <GENERATED_PRIVATE_KEY>
 ```
 
-创建密码文件：
+Create the password file:
 
 ```bash
 mkdir -p ~/.aurehub
@@ -43,314 +43,300 @@ echo "your_keystore_password" > ~/.aurehub/.wallet.password
 chmod 600 ~/.aurehub/.wallet.password
 ```
 
-> Foundry keystore 存放于 `~/.foundry/keystores/`，密码文件存放于 `~/.aurehub/`。
+> Foundry keystores are stored in `~/.foundry/keystores/`; the password file goes in `~/.aurehub/`.
 
-### 2.6 安装 Node.js（限价单功能需要）
+### 2.6 Install Node.js (limit orders only)
 
-市价单不需要此步骤。如果需要限价单功能：
+Not required for market orders. If you need limit order functionality:
 
 ```bash
-# 验证
-node --version   # 需要 >= 18
+# Verify
+node --version   # requires >= 18
 
-# 安装（如未安装）：https://nodejs.org
-# macOS 推荐：brew install node
+# Install if missing: https://nodejs.org
+# macOS recommended: brew install node
 ```
 
-安装 limit-order 脚本依赖：
+Install limit-order script dependencies:
 
 ```bash
 cd skills/xaut-trade/scripts
 npm install
 ```
 
-### 2.7 获取 UniswapX API Key（限价单必填）
+### 2.7 Get a UniswapX API Key (required for limit orders)
 
-限价单提交和查询需要 UniswapX API Key。
+Submitting and querying limit orders requires a UniswapX API Key.
 
-申请步骤（约 5 分钟，免费）：
-1. 访问 [portal.1inch.dev](https://portal.1inch.dev)
-2. 用 Google / GitHub 登录
-3. 生成 Token（选 Free tier）
+How to obtain (about 5 minutes, free):
+1. Visit [portal.1inch.dev](https://portal.1inch.dev)
+2. Sign in with Google / GitHub
+3. Generate a Token (choose Free tier)
 
-将 Key 写入 `~/.aurehub/.env`：
+Add the key to `~/.aurehub/.env`:
 
 ```bash
 echo 'UNISWAPX_API_KEY=your_key_here' >> ~/.aurehub/.env
 ```
 
-市价单不需要 API Key。
+Market orders do not require an API Key.
 
-### 3. 创建本地配置
+### 3. Create Local Config
 
 ```bash
-# 环境变量（复制到全局配置目录）
+# Environment variables (copy to global config directory)
 mkdir -p ~/.aurehub
 cp skills/xaut-trade/.env.example ~/.aurehub/.env
-# 编辑 ~/.aurehub/.env，填写：
-#   ETH_RPC_URL              - Ethereum 主网 RPC 地址
-#   FOUNDRY_ACCOUNT          - keystore 账户名（已预填 aurehub-wallet）
-#   KEYSTORE_PASSWORD_FILE   - keystore 密码文件路径（见 Step 2）
-#   UNISWAPX_API_KEY         - 限价单必填（见 Step 2.7）
+# Edit ~/.aurehub/.env and fill in:
+#   ETH_RPC_URL              - Ethereum mainnet RPC URL
+#   FOUNDRY_ACCOUNT          - Foundry keystore account name (pre-filled: aurehub-wallet)
+#   KEYSTORE_PASSWORD_FILE   - path to keystore password file (see Step 2)
+#   UNISWAPX_API_KEY         - required for limit orders (see Step 2.7)
 
-# 交易配置（可选，默认值已可用）
+# Trade config (optional — defaults are ready to use)
 cp skills/xaut-trade/config.example.yaml ~/.aurehub/config.yaml
 ```
 
-### 4. 确保钱包有余额
+### 4. Fund the Wallet
 
-- 少量 ETH（≥ 0.005）用于支付 gas
-- USDT（买入时）
-- XAUT（卖出时）
+- A small amount of ETH (≥ 0.005) for gas
+- USDT (for buying)
+- XAUT (for selling)
 
-## 使用方式
+## Usage
 
-直接用自然语言对 Agent 说即可，示例：
+Just talk to the Agent in natural language:
 
-### 买入
+### Buy
 
 ```
-用 100 USDT 买 XAUT
+buy XAUT with 100 USDT
 buy 200 USDT worth of XAUT
 ```
 
-### 卖出
+### Sell
 
 ```
-卖 0.01 XAUT
-用 XAUT 换 USDT，卖 0.05 个
+sell 0.01 XAUT
+swap 0.05 XAUT for USDT
 sell 0.1 XAUT
 ```
 
-### 限价挂单
+### Limit Buy
 
 ```
-等 XAUT 跌到 3000 USDT 时买 0.01 个
+buy 0.01 XAUT when price drops to 3000 USDT
 limit order: buy 0.01 XAUT when price reaches 3000 USDT
-挂单买 XAUT，限价 3000，0.01 个，有效 3 天
+limit buy XAUT at 3000, amount 0.01, valid 3 days
 ```
 
-### 限价卖出
+### Limit Sell
 
 ```
-等 XAUT 涨到 4000 USDT 时帮我卖 0.01 个
-限价卖出 0.01 XAUT，目标价 3800 USDT，有效期 3 天
+sell 0.01 XAUT when price rises to 4000 USDT
+limit sell 0.01 XAUT at target price 3800 USDT, valid 3 days
 sell 0.01 XAUT when price reaches 4000
 ```
 
-### 查限价单
+### Check Limit Order
 
 ```
-帮我查一下我的限价单状态，orderHash 是 0x...
+check my limit order status, orderHash is 0x...
 ```
 
-### 撤销限价单
+### Cancel Limit Order
 
 ```
-帮我撤销限价单，orderHash 是 0x...
+cancel limit order, orderHash is 0x...
 ```
 
-### 查余额
+### Check Balance
 
 ```
-查一下我的 XAUT 余额
+check my XAUT balance
 ```
 
-## 交易流程
+## Trade Flow
 
-无论买入还是卖出，Agent 都会按以下半自动流程执行：
+For both buy and sell, the Agent follows this semi-automated flow:
 
 ```
-前置检查 → 链上报价 → Preview 展示 → [用户确认] → 授权 → [用户确认] → Swap → 结果校验
+Pre-flight checks → On-chain quote → Preview display → [User confirms] → Approve → [User confirms] → Swap → Result verification
 ```
 
-每一步链上写操作（approve / swap）前，Agent 都会：
-1. 展示完整的 `cast` 命令
-2. 等待你明确说 **"确认执行"** 后才会执行
+Before every on-chain write operation (approve / swap), the Agent will:
+1. Display the full `cast` command
+2. Wait for you to explicitly say **"confirm execute"** before proceeding
 
-**你不说"确认"，就不会有任何链上操作发生。**
+**Nothing happens on-chain until you confirm.**
 
-## 风控机制
+## Risk Controls
 
-| 规则 | 默认阈值 | 触发行为 |
-|------|----------|----------|
-| 大额交易 | > $1,000 USD | 二次确认 |
-| 高滑点 | > 50 bps (0.5%) | 告警 + 二次确认 |
-| Gas 不足 | ETH < 0.005 | 硬停止 |
-| 余额不足 | — | 硬停止，提示缺口 |
-| 精度超限 | > 6 位小数 | 硬停止（XAUT 最小单位 0.000001） |
-| UniswapX Filler 不可用 | XAUT 为小众代币 | 订单 deadline 后过期，资金不受损 |
+| Rule | Default Threshold | Behavior |
+|------|-------------------|----------|
+| Large trade | > $1,000 USD | Double confirmation required |
+| High slippage | > 50 bps (0.5%) | Warning + double confirmation |
+| Insufficient gas | ETH < 0.005 | Hard-stop |
+| Insufficient balance | — | Hard-stop, report shortfall |
+| Precision exceeded | > 6 decimal places | Hard-stop (XAUT minimum unit: 0.000001) |
+| UniswapX Filler unavailable | XAUT is a low-liquidity token | Order expires after deadline; funds safe |
 
-阈值可在 `config.yaml` 的 `risk` 部分自定义。
+Thresholds can be customized in the `risk` section of `config.yaml`.
 
-## 配置说明
+## Configuration
 
-### .env（必填）
+### .env (required)
 
-| 变量 | 说明 | 示例 |
-|------|------|------|
-| `ETH_RPC_URL` | Ethereum RPC 地址 | `https://eth.llamarpc.com` |
-| `FOUNDRY_ACCOUNT` | Foundry keystore 账户名（由 onboarding 自动配置） | `aurehub-wallet` |
-| `KEYSTORE_PASSWORD_FILE` | keystore 密码文件路径 | `~/.aurehub/.wallet.password` |
-| `UNISWAPX_API_KEY` | UniswapX API Key（**限价单必填**，市价单不需要） | 申请：portal.1inch.dev |
-| `PRIVATE_KEY` | 私钥（降级方案，不推荐） | `0x...` |
+| Variable | Description | Example |
+|----------|-------------|---------|
+| `ETH_RPC_URL` | Ethereum RPC URL | `https://eth.llamarpc.com` |
+| `FOUNDRY_ACCOUNT` | Foundry keystore account name (set by onboarding) | `aurehub-wallet` |
+| `KEYSTORE_PASSWORD_FILE` | Path to keystore password file | `~/.aurehub/.wallet.password` |
+| `UNISWAPX_API_KEY` | UniswapX API Key (**required for limit orders**, not needed for market orders) | Get at: portal.1inch.dev |
+| `PRIVATE_KEY` | Private key (fallback, not recommended) | `0x...` |
 
-### config.yaml（可选）
+### config.yaml (optional)
 
-主要可调参数：
+Key adjustable parameters:
 
 ```yaml
 risk:
-  default_slippage_bps: 50      # 默认滑点保护 0.5%
-  max_slippage_bps_warn: 50     # 滑点告警阈值
-  large_trade_usd: 1000         # 大额交易阈值（USD）
-  min_eth_for_gas: "0.005"      # 最低 gas ETH
-  deadline_seconds: 300         # 交易超时（秒）
+  default_slippage_bps: 50      # Default slippage protection 0.5%
+  max_slippage_bps_warn: 50     # Slippage warning threshold
+  large_trade_usd: 1000         # Large trade threshold (USD)
+  min_eth_for_gas: "0.005"      # Minimum ETH for gas
+  deadline_seconds: 300         # Transaction timeout (seconds)
 ```
 
-## 本地测试（Anvil Fork）
+## Local Testing (Anvil Fork)
 
-> **注意：限价单无法使用 Anvil fork 测试**，因为 UniswapX API 不认识本地 chainId。
-> 限价单建议在主网用极小金额（如 1 USDT → XAUT）做端到端验证。
-> 签名格式可通过 `config.yaml` 中的 `limit_order.uniswapx_api` 指向本地 mock 服务验证。
+> **Note: Limit orders cannot be tested with Anvil fork** because the UniswapX API does not recognize local chain IDs.
+> For limit orders, use a very small amount (e.g. 1 USDT → XAUT) on mainnet for end-to-end verification.
+> Signature format can be validated against a local mock service via `limit_order.uniswapx_api` in `config.yaml`.
 
-使用 Anvil fork 主网状态到本地，可以零成本测试完整买卖流程，不消耗真实资产。
+Use Anvil to fork mainnet state locally for zero-cost testing of the full buy/sell flow without spending real assets.
 
-### 1. 启动 Anvil Fork
+### 1. Start Anvil Fork
 
 ```bash
-# fork 以太坊主网到本地（需要一个主网 RPC）
+# Fork Ethereum mainnet locally (requires a mainnet RPC)
 anvil --fork-url https://eth.llamarpc.com
 
-# 如果需要指定 block（可选，固定状态便于复现）
+# Optionally pin a block (for reproducible state)
 anvil --fork-url https://eth.llamarpc.com --fork-block-number 19500000
 ```
 
-启动后 Anvil 会输出 10 个预置账户，每个有 10,000 ETH。默认监听 `http://127.0.0.1:8545`。
+Anvil starts with 10 pre-funded accounts, each with 10,000 ETH. Default: `http://127.0.0.1:8545`.
 
-### 2. 配置 .env 指向本地
+### 2. Point .env to Local
 
 ```bash
 # .env
 ETH_RPC_URL=http://127.0.0.1:8545
-PRIVATE_KEY=0xac0974bec39a17e36ba4a6b4d238ff944bacb478cbed5efcae784d7bf4f2ff80  # Anvil 预置账户 #0 对应私钥
+PRIVATE_KEY=0xac0974bec39a17e36ba4a6b4d238ff944bacb478cbed5efcae784d7bf4f2ff80  # Anvil account #0 private key
 ```
 
-> 这是 Anvil 的硬编码测试账户，公开私钥，仅用于本地测试。
+> This is Anvil's hardcoded test account with a public key — for local testing only.
 
-### 3. 给测试账户充值 USDT
+### 3. Fund the Test Account with USDT
 
-Anvil 预置账户只有 ETH，需要用 `cast` impersonate 一个持仓大户来转代币：
+Anvil pre-funded accounts only have ETH. Use `cast` to impersonate a whale and transfer tokens:
 
 ```bash
-# 查找 USDT 大户（如 Binance Hot Wallet）
+# Find a USDT whale (e.g. Binance Hot Wallet)
 USDT=0xdAC17F958D2ee523a2206206994597C13D831ec7
-WHALE=0xF977814e90dA44bFA03b6295A0616a897441aceC  # Binance 热钱包
+WHALE=0xF977814e90dA44bFA03b6295A0616a897441aceC  # Binance hot wallet
 
-# impersonate 大户，转 10,000 USDT 到测试账户
+# Impersonate whale, transfer 10,000 USDT to test account
 cast send $USDT "transfer(address,uint256)" \
   0xf39Fd6e51aad88F6F4ce6aB8827279cffFb92266 10000000000 \
   --from $WHALE \
   --unlocked \
   --rpc-url http://127.0.0.1:8545
 
-# 验证余额
+# Verify balance
 cast call $USDT "balanceOf(address)" \
   0xf39Fd6e51aad88F6F4ce6aB8827279cffFb92266 \
   --rpc-url http://127.0.0.1:8545
 ```
 
-### 4. 执行测试交易
+### 4. Run Test Trades
 
-配置完成后，正常使用 skill 即可：
+Once configured, just use the skill normally:
 
 ```
-用 100 USDT 买 XAUT
+buy XAUT with 100 USDT
 ```
 
-Agent 会走完整流程（报价 → 确认 → approve → swap），所有交易都在本地 fork 上执行，不花真钱。
+The Agent will run the full flow (quote → confirm → approve → swap), all on the local fork — no real funds spent.
 
-### 5. 注意事项
+### 5. Notes
 
-- Anvil fork 的状态是**临时的**，重启后重置（除非用 `anvil --state` 持久化）
-- 本地测试使用 `--unlocked` + `--from` 而非 keystore，但 skill 实际执行时会用 `--private-key` 或 `--account`，两者结果一致
-- 如果 fork 时间过长，链上状态可能过期，报价会与实际主网有差异，重新启动 fork 即可
-- 大户地址可能因时间推移而变化，如转账失败可到 [Etherscan](https://etherscan.io/token/0xdAC17F958D2ee523a2206206994597C13D831ec7#balances) 查最新持仓排名
+- Anvil fork state is **temporary** and resets on restart (unless using `anvil --state` for persistence)
+- Local testing uses `--unlocked` + `--from` instead of keystore, but the skill uses `--private-key` or `--account` in production — results are equivalent
+- If the fork runs for a long time, on-chain state may diverge from current mainnet; restart the fork to refresh
+- Whale addresses may change over time; if the transfer fails, check the latest top holders on [Etherscan](https://etherscan.io/token/0xdAC17F958D2ee523a2206206994597C13D831ec7#balances)
 
-## 常见问题
+## FAQ
 
-**Q: 交易卡住/失败怎么办？**
-Agent 会给出重试建议：降低金额、提高滑点上限、或检查 nonce 和 gas。
+**Q: What if a transaction gets stuck or fails?**
+The Agent will provide retry suggestions: reduce amount, increase slippage tolerance, or check nonce and gas.
 
-**Q: USDT approve 为什么要执行两次？**
-USDT 合约的非标准实现要求先 `approve(0)` 清零，再 `approve(amount)` 设新额度。XAUT 不需要。
+**Q: Why does USDT approval require two steps?**
+USDT's non-standard implementation requires `approve(0)` to reset the allowance before `approve(amount)`. XAUT does not.
 
-**Q: 支持其他链吗？**
-当前仅支持 Ethereum 主网（chain_id: 1）。Anvil fork 仅用于本地测试，不是生产部署目标，详见"本地测试"章节。
+**Q: Is other chains supported?**
+Only Ethereum mainnet (chain_id: 1) is currently supported. Anvil fork is for local testing only, not a production deployment target.
 
-**Q: 执行 cast send 时报 `Device not configured (os error 6)` 怎么办？**
+**Q: `cast send` returns `Device not configured (os error 6)` — what do I do?**
 
-这是 macOS 在非交互式环境下无法访问系统 Keychain 导致的。解决方法：
+This happens on macOS when the system Keychain is inaccessible in a non-interactive environment. Fix:
 
-1. 创建密码文件并设置权限：
+1. Create a password file and set permissions:
    ```bash
    echo "your_keystore_password" > ~/.aurehub/.wallet.password
    chmod 600 ~/.aurehub/.wallet.password
    ```
-2. 在 `.env` 中设置 `KEYSTORE_PASSWORD_FILE` 指向该文件。
-3. 重新执行交易流程。
+2. Set `KEYSTORE_PASSWORD_FILE` to point to this file in `.env`.
+3. Re-run the trade flow.
 
-**Q: 什么是 Skill 包？它是怎么驱动 AI 买黄金的？**
+**Q: What is a Skill package? How does it drive the AI to trade gold?**
 
-Skill 包是一套结构化的 AI 指令文件（`SKILL.md`），定义了 Agent 在特定场景下的行为规则、操作流程和风险边界。`xaut-trade` Skill 告诉 Agent 如何检查前置条件、调用 Uniswap V3 报价合约、构造 `cast send` 命令、处理 USDT 非标准授权等。Agent 本身不存储私钥或执行权，它只是"读懂" Skill 后生成命令；你说"确认执行"后，`cast` 才会用本地 keystore 签名并广播交易。
+A Skill package is a set of structured AI instruction files (`SKILL.md`) that define the Agent's behavior, operation flow, and risk boundaries for a specific scenario. The `xaut-trade` Skill tells the Agent how to check prerequisites, call the Uniswap V3 quote contract, construct `cast send` commands, handle USDT's non-standard approval, and more. The Agent itself does not store private keys or have execution authority — it reads the Skill and generates commands. Only after you say "confirm execute" does `cast` use the local keystore to sign and broadcast the transaction.
 
-**Q: 我需要一台一直开着的电脑来跑这个 Agent 吗？**
+**Q: Do I need a computer running 24/7?**
 
-- **市价单（买/卖）**：不需要。市价交易是一次性交互，你发出指令 → Agent 报价 → 你确认 → 交易完成，全程无需保持在线。
-- **限价单**：不需要。限价单签名后提交给 UniswapX 网络，由第三方 Filler 节点在价格达标时自动撮合，你的电脑可以关机。但注意：若在 `deadline` 到期前无 Filler 接单，订单自然过期，资金不受损。
+- **Market orders (buy/sell)**: No. Market trades are one-shot interactions — you send the instruction → Agent quotes → you confirm → trade completes. No need to stay online.
+- **Limit orders**: No. After signing, the order is submitted to the UniswapX network, where third-party Filler nodes automatically fill it when the price is met. Your computer can be off. Note: if no Filler fills the order before the `deadline`, it expires naturally with no loss of funds.
 
-**Q: 一定要用 OpenClaw 跑吗？支持哪些模型？**
+**Q: Does it only work with Claude Code?**
 
-不需要。Skill 支持两种主要运行方式：
+No. The Skill supports two main runners:
 
-- **Claude Code**（推荐）：本地终端安装后直接使用 Claude 对话，无需部署服务器
-- **OpenClaw**：通过 Slack / Telegram 等平台使用，每位用户需独立配置自己的钱包凭据
+- **Claude Code** (recommended): install locally and use directly via Claude chat — no server needed
+- **OpenClaw**: use via Slack / Telegram etc.; each user must configure their own wallet credentials independently
 
-模型方面，当前以 Claude（Sonnet / Opus 系列）为主要测试目标；理论上支持任何能遵循 Skill 指令并调用 shell 命令的 LLM，但其他模型未经验证。
+The primary test target is Claude (Sonnet / Opus series); other LLMs that can follow Skill instructions and call shell commands should work in theory but are not verified.
 
-**Q: 按照 README 操作报错 `command not found` 怎么办？**
+**Q: Will you read my API Key or private key from `.env`?**
 
-根据报错命令名称分情况排查：
+No. The Skill package runs entirely locally and contains no data collection or reporting logic. All trades are executed via local `cast` — no intermediary servers. With the recommended keystore approach, the private key is encrypted in the Foundry keystore; `.env` only stores the account name, wallet address, and other config. Never commit `.env` to version control.
 
-- **`cast`**：Foundry 未安装或未加入 PATH。运行 `foundryup` 安装后重启终端；若仍不可用，检查 `~/.foundry/bin` 是否在 PATH 中：
-  ```bash
-  echo $PATH | grep foundry
-  # 若无输出，手动加入：
-  export PATH="$HOME/.foundry/bin:$PATH"
-  ```
-- **`node`**：限价单功能依赖 Node.js（≥ 18），市价单不需要。参见"环境准备"章节安装 Node.js。
+**Q: Will the Agent auto-buy based on price movements?**
 
-**Q: 我把 API Key 和私钥填在 .env 里，你们会后台读取吗？**
+No. The Agent does not monitor prices or make autonomous decisions. It is an execution assistant that acts only when you explicitly give an instruction:
 
-不会。Skill 包是一套本地运行的指令文件，不包含任何数据收集或上报逻辑。所有交易操作通过本地 `cast` 执行，不经过任何中间服务器。推荐的 keystore 方式下，私钥加密存储于 Foundry keystore，`.env` 仅保存账户名、钱包地址等配置信息；请勿将 `.env` 提交到版本控制。
+- **Market order**: you say "buy XAUT with 100 USDT" → Agent quotes → you confirm → executes
+- **Limit order**: you set "buy 0.01 when XAUT drops to 3000" → Agent signs and submits the order → UniswapX Fillers fill it when the condition is met
 
-**Q: Agent 是根据什么触发购买的？会自动盯盘买入吗？**
+**Q: Do I need to manually confirm each trade? Can it spend my money without confirmation?**
 
-Agent 不会主动触发任何购买，它是"执行助手"，只在你明确下达指令时才会行动：
+Before every on-chain write (approve / swap), the Agent displays the full `cast` command and waits for you to explicitly say **"confirm execute"**. Without your confirmation, no on-chain operation occurs. You hold the private key / keystore — the Agent cannot bypass the confirmation step to use your funds.
 
-- **市价单**：你说"用 100 USDT 买 XAUT" → Agent 报价 → 你确认 → 执行
-- **限价单**：你设定"XAUT 跌到 3000 时买 0.01 个" → Agent 签名提交订单 → UniswapX Filler 在条件达成时撮合
+**Q: Can I use multiple wallets simultaneously?**
 
-Agent 没有自动监控金价、定时买入等自主决策能力。
+The current Skill is designed for a single wallet per instance. For multi-wallet use, prepare a separate `.env` for each wallet (with distinct `FOUNDRY_ACCOUNT` and `KEYSTORE_PASSWORD_FILE`), and switch config files before each operation. There is no built-in multi-wallet concurrent management.
 
-**Q: Agent 购买时需要我手动确认吗？不确认它能动我的钱吗？**
+**Q: Do I need to reinstall after a Skill update?**
 
-每一次链上写操作（approve / swap）前，Agent 都会展示完整的 `cast` 命令并等待你明确说"**确认执行**"。你不说确认，就不会有任何链上操作发生。私钥 / keystore 只有你持有，Agent 无法绕过确认步骤动用资金。
-
-**Q: 我能同时用多个钱包分别操作吗？**
-
-当前 Skill 设计为单钱包单实例。如需多钱包操作，需为每个钱包准备独立的 `.env`（分别配置 `FOUNDRY_ACCOUNT`、`KEYSTORE_PASSWORD_FILE`），每次操作前切换对应配置文件。目前没有内置的多钱包并发管理功能。
-
-**Q: Skill 有更新后，我需要重新安装吗？**
-
-是的。通过原来安装 Skill 的渠道重新获取最新版本即可。更新不会覆盖你的本地配置（`.env`、`config.yaml`）。
+Yes. Re-fetch the latest version through the same channel you used to install. Updates will not overwrite your local config (`.env`, `config.yaml`).

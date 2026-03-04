@@ -1,5 +1,5 @@
-# xaut-trade 示例配置（可提交）
-# 本地实际配置请复制为 config.yaml 并按需修改。
+# xaut-trade example config (safe to commit)
+# For local use, copy to config.yaml and modify as needed.
 
 networks:
   ethereum_mainnet:
@@ -22,7 +22,7 @@ tokens:
     address: "0xdAC17F958D2ee523a2206206994597C13D831ec7"
     decimals: 6
 
-# 白名单：仅以下交易对被支持，其他一律硬停止
+# Whitelist: only the following pairs are supported; all others hard-stop
 pairs:
   - key: "USDT_XAUT"
     enabled: true
@@ -46,9 +46,9 @@ risk:
   min_eth_for_gas: "0.005"
   deadline_seconds: 300
 
-# 限价单配置（UniswapX）
+# Limit order config (UniswapX)
 limit_order:
-  default_expiry_seconds: 86400    # 默认有效期 1 天
-  max_expiry_seconds: 2592000      # 最长 30 天（API 实测上限）
-  min_expiry_seconds: 300          # 最短 5 分钟
+  default_expiry_seconds: 86400    # Default expiry: 1 day
+  max_expiry_seconds: 2592000      # Maximum: 30 days (API-tested upper bound)
+  min_expiry_seconds: 300          # Minimum: 5 minutes
   uniswapx_api: "https://api.uniswap.org/v2"

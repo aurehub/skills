@@ -1,181 +1,181 @@
 ---
 name: xaut-trade
-description: 使用 Foundry cast 在 Ethereum 上买入或卖出 XAUT（Tether Gold）。支持市价单（Uniswap V3）和限价单（UniswapX）。触发词：买 XAUT、XAUT trade、用 USDT 买黄金代币、buy XAUT、卖 XAUT、sell XAUT、用 XAUT 换 USDT、挂单、限价买 XAUT、limit order XAUT、查限价单、我的限价单、查我的挂单、撤单、cancel limit order、限价卖 XAUT、卖出限价单、限价卖出、XAUT 涨、XAUT when。
+description: Buy or sell XAUT (Tether Gold) on Ethereum using Foundry cast. Supports market orders (Uniswap V3) and limit orders (UniswapX). Triggers: buy XAUT, XAUT trade, swap USDT for XAUT, sell XAUT, swap XAUT for USDT, limit order, limit buy XAUT, limit sell XAUT, check limit order, cancel limit order, XAUT when.
 status: draft
 ---
 
 # xaut-trade
 
-通过 Uniswap V3 + Foundry `cast` 执行 `USDT -> XAUT` 买入流程。
+Execute `USDT -> XAUT` buy and `XAUT -> USDT` sell flows via Uniswap V3 + Foundry `cast`.
 
-## 适用场景
+## When to Use
 
-当用户希望买入或卖出 XAUT（Tether Gold）时使用：
-- **买入**：USDT → XAUT
-- **卖出**：XAUT → USDT
+Use when the user wants to buy or sell XAUT (Tether Gold):
+- **Buy**: USDT → XAUT
+- **Sell**: XAUT → USDT
 
-## 环境就绪检查（每次启动必须优先执行）
+## Environment Readiness Check (run first on every session)
 
-**在处理任何用户意图之前**（知识查询除外），先执行以下三项检查：
+**Before handling any user intent** (except knowledge queries), run these three checks:
 
-1. `~/.aurehub/.env` 是否存在：`ls ~/.aurehub/.env`
-2. keystore 账户 `aurehub-wallet` 是否存在：`cast wallet list` 输出中含 `aurehub-wallet`
-3. `~/.aurehub/.wallet.password` 是否存在：`ls ~/.aurehub/.wallet.password`
+1. Does `~/.aurehub/.env` exist: `ls ~/.aurehub/.env`
+2. Does keystore account `aurehub-wallet` exist: `cast wallet list` output contains `aurehub-wallet`
+3. Does `~/.aurehub/.wallet.password` exist: `ls ~/.aurehub/.wallet.password`
 
-如果**全部通过**：source `~/.aurehub/.env`，继续意图识别。
+If **all pass**: source `~/.aurehub/.env`, then proceed to intent detection.
 
-如果**任一失败**：不继续处理原始意图，转入 [references/onboarding.md](references/onboarding.md) 完成环境初始化，完成后重新执行原始意图。
+If **any fail**: do not continue with the original intent — go to [references/onboarding.md](references/onboarding.md) to complete environment initialization, then re-run the original intent.
 
-**限价单额外检查**（仅在意图为限价买入/卖出/查单/撤单时执行）：
+**Extra checks for limit orders** (only when the intent is limit buy / sell / query / cancel):
 
-4. Node.js >= 18 是否可用：`node --version`
-   失败 → 转入 [references/onboarding.md](references/onboarding.md) 的"限价单额外依赖"章节，安装后继续
-5. 限价单依赖是否已安装：`ls "$(git rev-parse --show-toplevel)/skills/xaut-trade/scripts/node_modules"`
-   失败 → 执行 `cd "$(git rev-parse --show-toplevel)/skills/xaut-trade/scripts" && npm install`，完成后继续
-   （若 `git rev-parse` 失败，先 `find ~ -name "limit-order.js" -maxdepth 6` 定位 scripts 目录，再 cd 进去执行 npm install）
-6. `UNISWAPX_API_KEY` 是否已配置：`[ -n "$UNISWAPX_API_KEY" ] && [ "$UNISWAPX_API_KEY" != "your_api_key_here" ]`
-   失败 → **硬停止**，输出：
-   > 限价单需要 UniswapX API Key。
-   > 申请步骤（约 5 分钟，免费）：
-   > 1. 访问 https://portal.1inch.dev
-   > 2. 用 Google / GitHub 登录
-   > 3. 生成 Token（选 Free tier）
-   > 4. 将 Key 添加到 ~/.aurehub/.env：`UNISWAPX_API_KEY=your_key`
-   > 5. 重新发起请求
+4. Is Node.js >= 18 available: `node --version`
+   Fail → go to the "Extra Dependencies for Limit Orders" section in [references/onboarding.md](references/onboarding.md), install, then continue
+5. Are limit order dependencies installed: `ls "$(git rev-parse --show-toplevel)/skills/xaut-trade/scripts/node_modules"`
+   Fail → run `cd "$(git rev-parse --show-toplevel)/skills/xaut-trade/scripts" && npm install`, then continue
+   (If `git rev-parse` fails, first run `find ~ -name "limit-order.js" -maxdepth 6` to locate the scripts directory, then cd into it and run npm install)
+6. Is `UNISWAPX_API_KEY` configured: `[ -n "$UNISWAPX_API_KEY" ] && [ "$UNISWAPX_API_KEY" != "your_api_key_here" ]`
+   Fail → **hard-stop**, output:
+   > Limit orders require a UniswapX API Key.
+   > How to get one (about 5 minutes, free):
+   > 1. Visit https://portal.1inch.dev
+   > 2. Sign in with Google / GitHub
+   > 3. Generate a Token (choose Free tier)
+   > 4. Add the key to ~/.aurehub/.env: `UNISWAPX_API_KEY=your_key`
+   > 5. Re-submit your request
 
-## 配置与本地文件
+## Config & Local Files
 
-- 全局配置目录：`~/.aurehub/`（跨会话持久，不在 skill 目录下）
-- `.env` 路径：`~/.aurehub/.env`
-- `config.yaml` 路径：`~/.aurehub/config.yaml`
-- 合约地址等默认值来自 `skills/xaut-trade/config.example.yaml`，onboarding 时复制为 `~/.aurehub/config.yaml`
+- Global config directory: `~/.aurehub/` (persists across sessions, not inside the skill directory)
+- `.env` path: `~/.aurehub/.env`
+- `config.yaml` path: `~/.aurehub/config.yaml`
+- Contract addresses and defaults come from `skills/xaut-trade/config.example.yaml`; copy to `~/.aurehub/config.yaml` during onboarding
 
-## 交互与执行原则（半自动）
+## Interaction & Execution Principles (semi-automated)
 
-1. 先做前置检查，再报价。
-2. 任何 `cast send` 之前必须展示完整命令预览。
-3. 必须得到用户当前会话中的显式确认（如“确认执行”）后才可执行链上写操作。
-4. 大额交易和高滑点交易必须二次确认。
+1. Run pre-flight checks first, then quote.
+2. Show a complete command preview before any `cast send`.
+3. Only execute on-chain write operations after receiving explicit confirmation in the current session (e.g. "confirm execute").
+4. Large trades and high-slippage trades require a second confirmation.
 
-## 强制安全门禁
+## Mandatory Safety Gates
 
-- 金额超过配置阈值（如 `risk.large_trade_usd`）时，必须二次确认
-- 滑点高于阈值（如 `risk.max_slippage_bps_warn`）时，必须告警并二次确认
-- ETH gas 余额不足时，硬停止并提示充值
-- 不支持网络或交易对时，硬停止
-- 交易对不在 pairs 白名单（当前：USDT_XAUT / XAUT_USDT）时，硬停止并回复"仅支持 USDT/XAUT 交易对，不支持 [用户输入的代币]"
+- When amount exceeds the config threshold (e.g. `risk.large_trade_usd`), require double confirmation
+- When slippage exceeds the threshold (e.g. `risk.max_slippage_bps_warn`), warn and require double confirmation
+- When ETH gas balance is insufficient, hard-stop and prompt to top up
+- When the network or pair is unsupported, hard-stop
+- When the pair is not in the whitelist (currently: USDT_XAUT / XAUT_USDT), hard-stop and reply "Only USDT/XAUT pairs are supported; [user's token] is not supported"
 
-## 意图识别
+## Intent Detection
 
-根据用户消息判断操作方向：
+Determine the operation from the user's message:
 
-- **买入**：包含"买"、"购买"、"buy"、"用 USDT 换"等关键词 → 执行买入流程
-- **卖出**：包含"卖"、"卖出"、"sell"、"用 XAUT 换"等关键词 → 执行卖出流程
-- **信息不足**：询问操作方向和金额，不得直接执行
-- **限价买入**：含"限价"、"挂单"、"等跌到"、"等涨到"、"limit order"、"when price reaches"，且方向为买入 → 执行限价买入流程
-- **限价卖出**：含"限价卖"、"限价卖出"、"挂单卖"、"挂单卖出"、"等涨到卖"、"XAUT 涨到 X 卖"、"limit sell"、"sell when price reaches" → 执行限价卖出流程
-- **查限价单**：含"查单"、"查挂单"、"查限价"、"order status" → 执行查单流程
-- **撤限价单**：含"撤单"、"取消挂单"、"cancel order" → 执行撤单流程
-- **XAUT 知识查询**：含"多少克"、"1g 黄金"、"换算"、"troy ounce"、"金衡盎司"、"什么是 XAUT"、"XAUT 是什么" → 直接回答，无需任何链上操作或环境检查
+- **Buy**: contains "buy", "purchase", "swap USDT for", etc. → run buy flow
+- **Sell**: contains "sell", "swap XAUT for", etc. → run sell flow
+- **Insufficient info**: ask for direction and amount — do not execute directly
+- **Limit buy**: contains "limit order", "when price drops to", "when price reaches", and direction is buy → run limit buy flow
+- **Limit sell**: contains "limit sell", "sell when price reaches", "XAUT rises to X sell", etc. → run limit sell flow
+- **Query limit order**: contains "check order", "order status" → run query flow
+- **Cancel limit order**: contains "cancel order", "cancel limit" → run cancel flow
+- **XAUT knowledge query**: contains "troy ounce", "grams", "conversion", "what is XAUT" → answer directly, no on-chain operations or environment checks needed
 
-## 买入流程（USDT → XAUT）
+## Buy Flow (USDT → XAUT)
 
-### Step 1: 前置检查
+### Step 1: Pre-flight Checks
 
-按 [references/balance.md](references/balance.md) 执行：
+Follow [references/balance.md](references/balance.md):
 - `cast --version`
 - `cast block-number --rpc-url $ETH_RPC_URL`
-- ETH 与稳定币余额检查
+- ETH and stablecoin balance checks
 
-### Step 2: 报价与风控提示
+### Step 2: Quote & Risk Warnings
 
-按 [references/quote.md](references/quote.md) 执行：
-- 调 QuoterV2 获取 `amountOut`
-- 计算 `minAmountOut`
-- 展示预估成交、滑点保护、gas 风险
+Follow [references/quote.md](references/quote.md):
+- Call QuoterV2 for `amountOut`
+- Calculate `minAmountOut`
+- Display estimated fill, slippage protection, gas risk
 
-### Step 3: 购买执行
+### Step 3: Buy Execution
 
-按 [references/buy.md](references/buy.md) 执行：
-- allowance 检查
-- 必要时 approve（USDT 需 `approve(0)` 再 `approve(amount)`）
-- 二次确认后执行 swap
-- 返回 tx hash 和持仓结果
+Follow [references/buy.md](references/buy.md):
+- allowance check
+- approve if needed (USDT requires `approve(0)` then `approve(amount)`)
+- Execute swap after second confirmation
+- Return tx hash and post-trade balance
 
-## 卖出流程（XAUT → USDT）
+## Sell Flow (XAUT → USDT)
 
-### Step 1: 前置检查
+### Step 1: Pre-flight Checks
 
-按 [references/balance.md](references/balance.md) 执行：
+Follow [references/balance.md](references/balance.md):
 - `cast --version`
 - `cast block-number --rpc-url $ETH_RPC_URL`
-- ETH 余额检查
-- **XAUT 余额检查（必需）**：不足则硬停止
+- ETH balance check
+- **XAUT balance check (required)**: hard-stop if insufficient
 
-### Step 2: 报价与风控提示
+### Step 2: Quote & Risk Warnings
 
-按 [references/sell.md](references/sell.md) 执行：
-- 输入精度检查（超过 6 位小数则硬停止）
-- 调 QuoterV2 获取 `amountOut`（XAUT → USDT 方向）
-- 计算 `minAmountOut`
-- 大额判定：用 USDT `amountOut` 估算 USD 价值
-- 展示预估成交、参考汇率、滑点保护、gas 风险
+Follow [references/sell.md](references/sell.md):
+- Precision check (hard-stop if more than 6 decimal places)
+- Call QuoterV2 for `amountOut` (XAUT → USDT direction)
+- Calculate `minAmountOut`
+- Large-trade check: estimate USD value using USDT `amountOut`
+- Display estimated fill, reference rate, slippage protection, gas risk
 
-### Step 3: 卖出执行
+### Step 3: Sell Execution
 
-按 [references/sell.md](references/sell.md) 执行：
-- allowance 检查
-- approve（XAUT 标准 ERC-20，**无需先置零**）
-- 二次确认后执行 swap
-- 返回 tx hash 和交易后 USDT 余额
+Follow [references/sell.md](references/sell.md):
+- allowance check
+- approve (XAUT is standard ERC-20, **no prior reset needed**)
+- Execute swap after second confirmation
+- Return tx hash and post-trade USDT balance
 
-## 限价挂单流程（USDT → XAUT via UniswapX）
+## Limit Buy Flow (USDT → XAUT via UniswapX)
 
-按 [references/limit-order-buy-place.md](references/limit-order-buy-place.md) 执行。
+Follow [references/limit-order-buy-place.md](references/limit-order-buy-place.md).
 
-## 限价卖出流程（XAUT → USDT via UniswapX）
+## Limit Sell Flow (XAUT → USDT via UniswapX)
 
-按 [references/limit-order-sell-place.md](references/limit-order-sell-place.md) 执行。
+Follow [references/limit-order-sell-place.md](references/limit-order-sell-place.md).
 
-## 限价查单流程
+## Limit Order Query Flow
 
-按 [references/limit-order-status.md](references/limit-order-status.md) 执行。
+Follow [references/limit-order-status.md](references/limit-order-status.md).
 
-## 限价撤单流程
+## Limit Order Cancel Flow
 
-按 [references/limit-order-cancel.md](references/limit-order-cancel.md) 执行。
+Follow [references/limit-order-cancel.md](references/limit-order-cancel.md).
 
-## 输出约定
+## Output Format
 
-输出应包含以下字段：
+Output must include:
 
-- `阶段`：`Preview` 或 `Ready to Execute`
-- `输入`：币种、金额、链
-- `报价`：预计 XAUT 数量、滑点设置、`minAmountOut`
-- `参考汇率`：`1 XAUT ≈ X USDT`（仅供对比现货价格，买卖均展示）
-- `风险提示`：大额/滑点/gas
-- `执行命令`：完整 `cast` 命令
-- `结果`：tx hash、交易后余额（执行后）
+- `Stage`: `Preview` or `Ready to Execute`
+- `Input`: token, amount, chain
+- `Quote`: estimated XAUT amount, slippage setting, `minAmountOut`
+- `Reference rate`: `1 XAUT ≈ X USDT` (for comparison with spot price; shown for both buy and sell)
+- `Risk warnings`: large trade / slippage / gas
+- `Command`: full `cast` command
+- `Result`: tx hash, post-trade balance (after execution)
 
-## 异常处理
+## Error Handling
 
-- 缺少前置变量：提示补充 `.env` 变量并停止
-- RPC 不可用：提示更换 RPC 节点并停止
-- 余额不足：提示最小补足金额并停止
-- 用户未确认：仅停留在 Preview，禁止执行
-- 交易失败：返回失败原因与可重试建议（降低金额/提高滑点上限/检查 nonce 和 gas）
+- Missing prerequisite variable: prompt to add the variable to `.env` and stop
+- RPC unavailable: prompt to switch RPC node and stop
+- Insufficient balance: report minimum top-up amount and stop
+- User has not confirmed: stay in Preview — do not execute
+- Transaction failed: return failure reason and retry suggestions (reduce amount / increase slippage tolerance / check nonce and gas)
 
-## XAUT 基础知识
+## XAUT Knowledge Base
 
-- 1 XAUT = 1 金衡盎司（troy ounce）= 31.1035 克
-- 最小精度：0.000001 XAUT（链上最小单位：1，即 10^-6）
-- 换算公式：X 克黄金 ÷ 31.1035 = XAUT 数量
-- 示例：1g ≈ 0.032151 XAUT；10g ≈ 0.32151 XAUT
-- 合约地址（Ethereum 主网）：0x68749665FF8D2d112Fa859AA293F07a622782F38
+- 1 XAUT = 1 troy ounce = 31.1035 grams
+- Minimum precision: 0.000001 XAUT (on-chain minimum unit: 1, i.e. 10^-6)
+- Conversion: X grams ÷ 31.1035 = XAUT amount
+- Examples: 1g ≈ 0.032151 XAUT; 10g ≈ 0.32151 XAUT
+- Contract address (Ethereum mainnet): 0x68749665FF8D2d112Fa859AA293F07a622782F38
 
-知识查询类问题直接用以上数据回答，无需执行任何 cast 命令。
+Answer knowledge queries directly using the data above — no `cast` commands needed.
 
-## 首轮契约（用于测试）
+## First-Turn Contract (for testing)
 
-1. 信息充分时：先给结构化预览，再请求执行确认。
-2. 信息不足时：先澄清关键信息（币种、金额、环境变量），不得直接声称已执行交易。
+1. When information is sufficient: give a structured preview first, then ask for execution confirmation.
+2. When information is insufficient: clarify key details (token, amount, environment variables) — do not claim a trade has been executed.

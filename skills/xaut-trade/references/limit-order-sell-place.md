@@ -1,37 +1,37 @@
-# 限价卖出执行（XAUT → USDT via UniswapX）
+# Limit Sell Order Placement (XAUT → USDT via UniswapX)
 
-## 0. 执行前声明
+## 0. Pre-execution Declaration
 
-- 当前阶段必须为 `Ready to Execute`
-- 必须已完成参数确认和用户显式确认
-- 必须展示完整命令后再执行
+- Current stage must be `Ready to Execute`
+- Parameters must be confirmed and user must have explicitly confirmed
+- Full command must be displayed before execution
 
-## 1. 前置检查
+## 1. Pre-flight Checks
 
 ```bash
-node --version     # 不存在则硬停止，提示安装 https://nodejs.org（市价单不受影响）
+node --version     # If not found, hard-stop and prompt to install https://nodejs.org (market orders unaffected)
 cast --version
 cast block-number --rpc-url "$ETH_RPC_URL"
-# ETH 余额检查（同 balance.md）
-# XAUT 余额检查（必须）：不足则硬停止，提示缺口
+# ETH balance check (same as balance.md)
+# XAUT balance check (required): hard-stop if insufficient, report shortfall
 ```
 
-## 2. 参数确认（Preview）
+## 2. Parameter Confirmation (Preview)
 
-展示至少：
-- 交易对：XAUT → USDT
-- 限价：`1 XAUT = X USDT`（即 minAmountOut / amountIn，人类可读）
-- 数量：卖出 `amountIn` XAUT → 至少换回 `minAmountOut` USDT
-- 有效期：`expiry` 秒 / 截止 `deadline` 时间（本地时区）
-- UniswapX Filler 风险提示：XAUT 为小众代币，若无 Filler 接单则订单在 deadline 后自动过期，资金不受损
+Display at minimum:
+- Pair: XAUT → USDT
+- Limit price: `1 XAUT = X USDT` (i.e. minAmountOut / amountIn, human-readable)
+- Amount: sell `amountIn` XAUT → receive at least `minAmountOut` USDT
+- Expiry: `expiry` seconds / deadline in local time
+- UniswapX Filler risk notice: XAUT is a low-liquidity token; if no Filler fills the order, it expires automatically after the deadline with no loss of funds
 
-## 3. 大额二次确认
+## 3. Large-Trade Double Confirmation
 
-`minAmountOut`（USDT）> `risk.large_trade_usd` 时，必须二次确认。
+If `minAmountOut` (USDT) > `risk.large_trade_usd`, double confirmation is required.
 
-## 4. Approve Permit2（若 allowance 不足）
+## 4. Approve Permit2 (if allowance is insufficient)
 
-XAUT 是标准 ERC-20，**直接 approve，无需 `approve(0)` 置零**：
+XAUT is a standard ERC-20 — **approve directly, no `approve(0)` reset needed**:
 
 ```bash
 cast call "$XAUT" "allowance(address,address)" \
@@ -39,7 +39,7 @@ cast call "$XAUT" "allowance(address,address)" \
   --rpc-url "$ETH_RPC_URL"
 ```
 
-若不足，直接授权：
+If insufficient, approve directly:
 
 ```bash
 cast send "$XAUT" "approve(address,uint256)" "$PERMIT2" "$AMOUNT_IN" \
@@ -47,9 +47,9 @@ cast send "$XAUT" "approve(address,uint256)" "$PERMIT2" "$AMOUNT_IN" \
   --rpc-url "$ETH_RPC_URL"
 ```
 
-降级（PRIVATE_KEY）：将 `--account ... --password-file ...` 替换为 `--private-key "$PRIVATE_KEY"`
+Fallback (PRIVATE_KEY): replace `--account ... --password-file ...` with `--private-key "$PRIVATE_KEY"`
 
-## 5. 挂单执行
+## 5. Place Order
 
 ```bash
 RESULT=$(node skills/xaut-trade/scripts/limit-order.js place \
@@ -63,7 +63,7 @@ RESULT=$(node skills/xaut-trade/scripts/limit-order.js place \
   --api-url        "$UNISWAPX_API")
 ```
 
-解析结果：
+Parse result:
 
 ```bash
 ORDER_HASH=$(echo "$RESULT" | python3 -c "import sys,json; print(json.load(sys.stdin)['orderHash'])")
@@ -71,21 +71,21 @@ DEADLINE=$(echo "$RESULT"   | python3 -c "import sys,json; print(json.load(sys.s
 NONCE=$(echo "$RESULT"      | python3 -c "import sys,json; print(json.load(sys.stdin)['nonce'])")
 ```
 
-## 6. 输出
+## 6. Output
 
-返回给用户：
-- `orderHash`：用于查单/撤单
-- `deadline`：订单有效截止时间（本地时区）
-- nonce（撤单时需要）
-- 提醒：订单已提交至 UniswapX，无需保持电脑在线，Filler 网络自动在价格达到时成交
+Return to user:
+- `orderHash`: for querying / cancelling the order
+- `deadline`: order expiry in local time
+- nonce (needed for cancellation)
+- Reminder: order has been submitted to UniswapX; the computer does not need to stay online — the Filler network fills automatically when the price is reached
 
-## 7. 错误处理
+## 7. Error Handling
 
-| 错误 | 处理 |
-|------|------|
-| `node` 不存在 | 硬停止，提示安装，说明市价单不受影响 |
-| XAUT 精度 > 6 位 | 脚本层硬停止（exit 1），提示最小精度为 0.000001 |
-| XAUT 余额不足 | 硬停止，提示缺口 |
-| 限价偏离当前市价 > 50% | 告警 + 二次确认（防止输错价格） |
-| UniswapX API 返回 4xx | 硬停止，提示 XAUT 可能不在支持列表，建议市价单 |
-| 授权失败 | 返回失败原因，建议重试 |
+| Error | Action |
+|-------|--------|
+| `node` not found | Hard-stop, prompt to install, note market orders are unaffected |
+| XAUT precision > 6 decimals | Script-level hard-stop (exit 1), report minimum precision of 0.000001 |
+| XAUT balance insufficient | Hard-stop, report shortfall |
+| Limit price deviates > 50% from current market | Warn + double confirmation (prevent price typos) |
+| UniswapX API returns 4xx | Hard-stop, note XAUT may not be in the supported list, suggest market order |
+| Approve failed | Return failure reason, suggest retry |

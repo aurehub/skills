@@ -1,8 +1,8 @@
-# 报价与滑点保护
+# Quote & Slippage Protection
 
-## 1. 获取报价（QuoterV2）
+## 1. Fetch Quote (QuoterV2)
 
-示例：100 USDT（6 位精度）
+Example: 100 USDT (6 decimals)
 
 ```bash
 AMOUNT_IN=100000000
@@ -12,47 +12,47 @@ QUOTE_RAW=$(cast call "$QUOTER" \
   --rpc-url "$ETH_RPC_URL")
 ```
 
-解析返回值（QuoterV2 返回 tuple：amountOut, sqrtPriceX96After, initializedTicksCrossed, gasEstimate）：
+Parse the return value (QuoterV2 returns a tuple: amountOut, sqrtPriceX96After, initializedTicksCrossed, gasEstimate):
 
 ```bash
-# 使用 cast abi-decode 解析，避免手动 hex 切割的脆弱性
+# Use cast abi-decode to parse — avoids fragile manual hex slicing
 AMOUNT_OUT=$(cast abi-decode \
   "f()(uint256,uint160,uint32,uint256)" \
   "$QUOTE_RAW" | head -1)
 
-# XAUT 精度 6 位：人类可读值 = AMOUNT_OUT / 1_000_000
-# USDT 精度同为 6 位，卖出方向同理
+# XAUT has 6 decimals: human-readable = AMOUNT_OUT / 1_000_000
+# USDT also has 6 decimals; sell direction works the same way
 ```
 
-## 2. 计算 minAmountOut
+## 2. Calculate minAmountOut
 
-默认滑点 `default_slippage_bps`（例如 50 bps = 0.5%）：
+Default slippage `default_slippage_bps` (e.g. 50 bps = 0.5%):
 
 ```bash
-# 用 python3 避免 bash 整数在大额交易时溢出
+# Use python3 to avoid bash integer overflow on large trades
 MIN_AMOUNT_OUT=$(python3 -c \
   "print(int($AMOUNT_OUT * (10000 - $DEFAULT_SLIPPAGE_BPS) // 10000))")
 ```
 
-## 3. 预览输出（Preview）
+## 3. Preview Output
 
-至少包含：
-- 输入金额（原始与最小单位）
-- 预计获得 XAUT（`amountOut`）
-- 滑点设置与 `minAmountOut`
-- 估计风险（大额/滑点/gas）
+Must include at minimum:
+- Input amount (human-readable and raw unit)
+- Estimated XAUT received (`amountOut`)
+- Slippage setting and `minAmountOut`
+- Risk indicators (large trade / slippage / gas)
 
-## 4. 显式确认门禁
+## 4. Explicit Confirmation Gate
 
-如果用户未明确确认，禁止执行任何 `cast send`。
+Do not execute any `cast send` unless the user has explicitly confirmed.
 
-确认语示例：
-- “确认执行授权”
-- “确认执行 swap”
+Accepted confirmation phrases:
+- "confirm approve"
+- "confirm swap"
 
-## 5. 二次确认条件
+## 5. Double-Confirmation Conditions
 
-- 交易金额超过 `risk.large_trade_usd`
-- 估算滑点超过 `risk.max_slippage_bps_warn`
+- Trade amount exceeds `risk.large_trade_usd`
+- Estimated slippage exceeds `risk.max_slippage_bps_warn`
 
-满足任意条件时，必须再次明确提示风险并要求二次确认。
+When either condition is met, prominently warn about the risk and require a second confirmation.

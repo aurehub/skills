@@ -1,22 +1,22 @@
-# 买入执行（USDT -> XAUT）
+# Buy Execution (USDT → XAUT)
 
-## 0. 执行前声明
+## 0. Pre-execution Declaration
 
-- 当前阶段必须为 `Ready to Execute`
-- 必须已完成报价和用户显式确认
-- 必须展示完整命令后再执行
+- Current stage must be `Ready to Execute`
+- Quote and explicit user confirmation must already be complete
+- Full command must be displayed before execution
 
-## 1. allowance 检查
+## 1. allowance Check
 
 ```bash
 cast call "$TOKEN_IN" "allowance(address,address)" "$WALLET_ADDRESS" "$ROUTER" --rpc-url "$ETH_RPC_URL"
 ```
 
-若 allowance < `AMOUNT_IN`，先授权。
+If allowance < `AMOUNT_IN`, approve first.
 
-## 2. approve（分币种）
+## 2. approve (per token)
 
-USDT（非标准，必须先置零再授权）：
+USDT (non-standard — must reset to zero before approving):
 
 ```bash
 TX_HASH=$(cast send "$USDT" "approve(address,uint256)" "$ROUTER" 0 \
@@ -32,15 +32,15 @@ TX_HASH=$(cast send "$USDT" "approve(address,uint256)" "$ROUTER" "$AMOUNT_IN" \
 echo "Approve tx: https://etherscan.io/tx/$TX_HASH"
 ```
 
-如果使用私钥降级模式，将 `--account "$FOUNDRY_ACCOUNT"` 替换为：
+If using private key fallback mode, replace `--account "$FOUNDRY_ACCOUNT"` with:
 
 ```bash
 --private-key "$PRIVATE_KEY"
 ```
 
-## 3. swap 执行
+## 3. Swap Execution
 
-先计算 `deadline`，并编码 `exactInputSingle`：
+Calculate `deadline` and encode `exactInputSingle`:
 
 ```bash
 DEADLINE=$(cast --to-uint256 $(($(date +%s) + 300)))
@@ -50,7 +50,7 @@ SWAP_DATA=$(cast calldata \
   "($TOKEN_IN,$XAUT,$FEE,$WALLET_ADDRESS,$AMOUNT_IN,$MIN_AMOUNT_OUT,0)")
 ```
 
-执行前模拟（失败则硬停止，不消耗 gas）：
+Dry-run before execution (hard-stop on failure — no gas consumed):
 
 ```bash
 cast call "$ROUTER" \
@@ -58,32 +58,32 @@ cast call "$ROUTER" \
   "$DEADLINE" "[$SWAP_DATA]" \
   --from "$WALLET_ADDRESS" \
   --rpc-url "$ETH_RPC_URL"
-# 若返回错误 → 硬停止，报告原因，不执行 cast send
+# On error → hard-stop, report reason, do not execute cast send
 ```
 
-执行 multicall：
+Execute multicall:
 
 ```bash
 TX_HASH=$(cast send "$ROUTER" "multicall(uint256,bytes[])" "$DEADLINE" "[$SWAP_DATA]" \
   --account "$FOUNDRY_ACCOUNT" --password-file "$KEYSTORE_PASSWORD_FILE" \
   --rpc-url "$ETH_RPC_URL" --json | python3 -c "import sys,json; print(json.load(sys.stdin)['transactionHash'])")
 echo "Swap tx: https://etherscan.io/tx/$TX_HASH"
-# 余额可能有数秒延迟，以 Etherscan 为准
+# Balance may take a few seconds to update; Etherscan is authoritative
 ```
 
-## 4. 结果校验
+## 4. Result Verification
 
 ```bash
 cast call "$XAUT" "balanceOf(address)" "$WALLET_ADDRESS" --rpc-url "$ETH_RPC_URL"
 ```
 
-返回：
+Return:
 - tx hash
-- 交易后 XAUT 余额
-- 若失败，返回可重试建议
+- post-trade XAUT balance
+- on failure, return retry suggestions
 
-## 5. 强制规则
+## 5. Mandatory Rules
 
-- 所有 `cast send` 前必须再次提醒“即将执行链上写入”
-- 用户没有显式确认时，不得执行
-- 大额/高滑点触发二次确认
+- Before every `cast send`, remind the user: "About to execute an on-chain write"
+- Do not execute without explicit user confirmation
+- Large trades / high slippage trigger a second confirmation
