@@ -122,7 +122,7 @@ cd "$(git rev-parse --show-toplevel)/skills/xaut-trade/scripts" && npm install
 Limit orders require a UniswapX API Key to submit and query orders.
 
 How to obtain (about 5 minutes, free):
-1. Visit https://portal.1inch.dev
+1. Visit https://developers.uniswap.org/dashboard
 2. Sign in with Google / GitHub
 3. Generate a Token (choose Free tier)
 

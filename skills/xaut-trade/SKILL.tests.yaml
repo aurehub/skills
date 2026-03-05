@@ -210,7 +210,7 @@ cases:
     expect:
       contains:
         - ["password file", "not readable", "KEYSTORE_PASSWORD_FILE"]
-        - ["chmod 600", ".my-xaut-wallet.password"]
+        - ["chmod 600", ".wallet.password"]
       not_contains:
         - ["cast send", "approve", "tx hash"]
     tier: gate

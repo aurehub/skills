@@ -1,7 +1,11 @@
 ---
 name: xaut-trade
 description: Buy or sell XAUT (Tether Gold) on Ethereum using Foundry cast. Supports market orders (Uniswap V3) and limit orders (UniswapX). Triggers: buy XAUT, XAUT trade, swap USDT for XAUT, sell XAUT, swap XAUT for USDT, limit order, limit buy XAUT, limit sell XAUT, check limit order, cancel limit order, XAUT when.
-status: draft
+license: MIT
+compatibility: Requires Foundry (cast), Node.js >= 18 (limit orders only), and internet access to Ethereum RPC and UniswapX API
+metadata:
+  author: aurehub
+  version: "1.0"
 ---
 
 # xaut-trade
@@ -37,7 +41,7 @@ If **any fail**: do not continue with the original intent — go to [references/
    Fail → **hard-stop**, output:
    > Limit orders require a UniswapX API Key.
    > How to get one (about 5 minutes, free):
-   > 1. Visit https://portal.1inch.dev
+   > 1. Visit https://developers.uniswap.org/dashboard
    > 2. Sign in with Google / GitHub
    > 3. Generate a Token (choose Free tier)
    > 4. Add the key to ~/.aurehub/.env: `UNISWAPX_API_KEY=your_key`
