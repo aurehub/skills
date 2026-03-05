@@ -3,6 +3,7 @@
 *.swo
 *~
 .env
+.idea/
 # Node artifact files
 node_modules/
 dist/
