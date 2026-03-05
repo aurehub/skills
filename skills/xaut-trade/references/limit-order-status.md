@@ -23,7 +23,7 @@ RESULT=$(node skills/xaut-trade/scripts/limit-order.js list \
 
 Returns JSON: `{ total, orders: [{ orderHash, status, inputToken, inputAmount, outputToken, outputAmount, txHash, createdAt }] }`
 
-## 2. Status Display
+## 3. Status Display
 
 | status | Display |
 |--------|---------|

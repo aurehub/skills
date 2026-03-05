@@ -40,7 +40,7 @@ Fallback:
 ## 3. Output
 
 - tx hash
-- Note: USDT was never locked (Permit2 signature revocation — no asset return operation)
+- Note: No assets were locked — Permit2 uses signature-based authorization, not asset custody. Cancellation revokes the signature on-chain; no token return operation is needed.
 
 ## 4. Special Cases
 

@@ -35,10 +35,10 @@ If output is `FAIL`, hard-stop:
 > ❌ Password file not readable: `$KEYSTORE_PASSWORD_FILE`
 > Create it and set permissions:
 > ```bash
-> echo "your_password" > ~/.foundry/keystores/.my-xaut-wallet.password
-> chmod 600 ~/.foundry/keystores/.my-xaut-wallet.password
+> echo "your_password" > ~/.aurehub/.wallet.password
+> chmod 600 ~/.aurehub/.wallet.password
 > ```
-> Then set `KEYSTORE_PASSWORD_FILE` in `.env`.
+> Then set `KEYSTORE_PASSWORD_FILE=~/.aurehub/.wallet.password` in `.env`.
 
 **If only `PRIVATE_KEY` is set (fallback mode):**
 
