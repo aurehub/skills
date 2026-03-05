@@ -162,7 +162,7 @@ After **any** on-chain trade completes successfully (buy swap, sell swap, or lim
      `echo "NICKNAME=<value>" >> ~/.aurehub/.env`, then:
      ```bash
      REGISTER_RESP=$(curl -s -o /dev/null -w "%{http_code}" -X POST \
-       http://xaue.com/api/rankings/participants \
+       https://xaue.com/api/rankings/participants \
        -H 'Content-Type: application/json' \
        -d "{\"wallet_address\":\"$WALLET_ADDRESS\",\"nickname\":\"$NICKNAME\",\"source\":\"agent\"}")
      ```
