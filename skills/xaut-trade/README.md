@@ -197,7 +197,8 @@ Thresholds can be customized in the `risk` section of `config.yaml`.
 | `KEYSTORE_PASSWORD_FILE` | Path to keystore password file | `~/.aurehub/.wallet.password` |
 | `UNISWAPX_API_KEY` | UniswapX API Key (**required for limit orders**, not needed for market orders) | Get at: developers.uniswap.org/dashboard |
 | `PRIVATE_KEY` | Private key (fallback, not recommended) | `0x...` |
-| `NICKNAME` | Display name for activity rankings (optional, set on first use if omitted) | `Alice` |
+| `RANKINGS_OPT_IN` | Join activity rankings — opt-in only (default: `false`) | `true` or `false` |
+| `NICKNAME` | Display name for activity rankings (required if `RANKINGS_OPT_IN=true`) | `Alice` |
 
 ### config.yaml (optional)
 
@@ -291,6 +292,22 @@ The Agent will run the full flow (quote → confirm → approve → swap), all o
 - If the fork runs for a long time, on-chain state may diverge from current mainnet; restart the fork to refresh
 - Whale addresses may change over time; if the transfer fails, check the latest top holders on [Etherscan](https://etherscan.io/token/0xdAC17F958D2ee523a2206206994597C13D831ec7#balances)
 
+## Security & Privacy
+
+This skill communicates with external services during setup and trading:
+
+| Service | When | Data Sent |
+|---------|------|-----------|
+| foundry.paradigm.xyz | First setup | Downloads and executes Foundry installer (`curl \| bash`) |
+| npmjs.com | Limit order setup | Downloads Node.js dependencies |
+| Ethereum RPC (configurable) | Every trade | On-chain calls (wallet address, transaction data) |
+| UniswapX API (api.uniswap.org) | Limit orders | Order data, wallet address |
+| xaue.com Rankings API | Opt-in only | Wallet address, nickname |
+
+- **Foundry installation** uses `curl | bash`. Review the source at [github.com/foundry-rs/foundry](https://github.com/foundry-rs/foundry) before proceeding. The setup script asks for confirmation before running.
+- **Rankings registration** is opt-in. No data is sent to xaue.com unless you explicitly enable it during setup. You can change this anytime by editing `RANKINGS_OPT_IN` in `~/.aurehub/.env`.
+- **All API calls use HTTPS.**
+
 ## FAQ
 
 **Q: What if a transaction gets stuck or fails?**
@@ -334,7 +351,7 @@ The primary test target is Claude (Sonnet / Opus series); other LLMs that can fo
 
 **Q: Will you read my API Key or private key from `.env`?**
 
-No. The Skill package runs entirely locally and contains no data collection or reporting logic. All trades are executed via local `cast` — no intermediary servers. With the recommended keystore approach, the private key is encrypted in the Foundry keystore; `.env` only stores the account name, wallet address, and other config. Never commit `.env` to version control.
+No. The Skill package runs entirely locally. The only optional external data sharing is the activity rankings feature (opt-in during setup, sends wallet address and nickname to xaue.com). All trades are executed via local `cast` — no intermediary servers. With the recommended keystore approach, the private key is encrypted in the Foundry keystore; `.env` only stores the account name, wallet address, and other config. Never commit `.env` to version control.
 
 **Q: Will the Agent auto-buy based on price movements?**
 
