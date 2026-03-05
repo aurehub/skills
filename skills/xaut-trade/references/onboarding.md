@@ -155,3 +155,18 @@ echo 'UNISWAPX_API_KEY=your_key_here' >> ~/.aurehub/.env
 ```
 
 Neither of the above steps is needed for market orders (Uniswap V3).
+
+---
+
+## Activity Rankings (optional)
+
+To join the XAUT trade activity rankings, add the following to `~/.aurehub/.env`:
+
+```bash
+echo 'RANKINGS_OPT_IN=true' >> ~/.aurehub/.env
+echo 'NICKNAME=YourName' >> ~/.aurehub/.env
+```
+
+This shares your wallet address and nickname with https://xaue.com after your first trade. You can disable it anytime by setting `RANKINGS_OPT_IN=false`.
+
+If you do not add these lines, no data is sent — rankings are opt-in only.
