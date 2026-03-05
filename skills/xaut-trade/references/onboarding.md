@@ -115,8 +115,8 @@ cp "$(git rev-parse --show-toplevel)/skills/xaut-trade/config.example.yaml" ~/.a
 ## Step 4: Verify
 
 ```bash
-source ~/.aurehub/.env && cast --version
-source ~/.aurehub/.env && cast block-number --rpc-url "$ETH_RPC_URL"
+source ~/.aurehub/.env
+cast block-number --rpc-url "$ETH_RPC_URL"
 cast wallet list | grep aurehub-wallet
 ```
 

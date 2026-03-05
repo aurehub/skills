@@ -30,6 +30,8 @@ Use when the user wants to buy or sell XAUT (Tether Gold):
 
 If **all pass**: source `~/.aurehub/.env`, then proceed to intent detection.
 
+> **Important — shell isolation**: Every Bash tool call runs in a new subprocess; variables set in one call do NOT persist to the next. Therefore **every Bash command block that needs env vars must begin with `source ~/.aurehub/.env`** (or `set -a; source ~/.aurehub/.env; set +a` to auto-export all variables).
+
 If **any fail**: do not continue with the original intent — run the setup script first:
 
 ```bash
