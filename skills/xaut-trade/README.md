@@ -11,70 +11,87 @@ Buy and sell XAUT (Tether Gold) on Ethereum mainnet via AI Agent, using Uniswap 
 
 ## Setup
 
-### 1. Install Foundry
+### Automated (recommended)
+
+Run the setup script — it handles Foundry installation, wallet configuration, and config file generation interactively:
+
+```bash
+bash "$(git rev-parse --show-toplevel)/skills/xaut-trade/scripts/setup.sh"
+```
+
+The script walks you through each step, clearly marks actions that require manual intervention, and explains the reason for each one.
+
+After the script completes, follow the manual steps it prints at the end (fund wallet, get API key if needed).
+
+### Manual (fallback)
+
+If you prefer to configure everything yourself, or if the script fails at a specific step:
+
+**1. Install Foundry**
 
 ```bash
 curl -L https://foundry.paradigm.xyz | bash
 foundryup
+source ~/.zshrc   # or ~/.bashrc
 ```
 
-Verify: `cast --version`
+**2. Configure wallet**
 
-### 2. Configure Wallet
-
-
-**Recommended: import an existing private key**
+Import an existing private key (use `--interactive` to avoid key appearing in shell history):
 
 ```bash
-cast wallet import aurehub-wallet --private-key <YOUR_PRIVATE_KEY>
+cast wallet import aurehub-wallet --interactive
 ```
 
-**Or: create a brand-new wallet**
+Or generate a new wallet first:
 
 ```bash
-cast wallet new   # save the output private key somewhere safe
-cast wallet import aurehub-wallet --private-key <GENERATED_PRIVATE_KEY>
+cast wallet new   # note the private key — shown only once
+cast wallet import aurehub-wallet --interactive
 ```
 
 Create the password file:
 
 ```bash
 mkdir -p ~/.aurehub
-echo "your_keystore_password" > ~/.aurehub/.wallet.password
+printf 'your_keystore_password' > ~/.aurehub/.wallet.password
 chmod 600 ~/.aurehub/.wallet.password
 ```
 
 > Foundry keystores are stored in `~/.foundry/keystores/`; the password file goes in `~/.aurehub/`.
 
-### 3. Install Node.js (limit orders only)
-
-Not required for market orders. If you need limit order functionality:
+**3. Create config files**
 
 ```bash
-# Verify
-node --version   # requires >= 18
+mkdir -p ~/.aurehub
 
-# Install if missing: https://nodejs.org
-# macOS recommended: brew install node
+# Generate .env
+WALLET_ADDRESS=$(cast wallet address --account aurehub-wallet)
+cat > ~/.aurehub/.env << EOF
+ETH_RPC_URL=https://eth.llamarpc.com
+FOUNDRY_ACCOUNT=aurehub-wallet
+KEYSTORE_PASSWORD_FILE=~/.aurehub/.wallet.password
+WALLET_ADDRESS=$WALLET_ADDRESS
+# UNISWAPX_API_KEY=your_key_here   # required for limit orders only
+EOF
+
+# Copy trade config (defaults are ready to use)
+cp skills/xaut-trade/config.example.yaml ~/.aurehub/config.yaml
 ```
 
-Install limit-order script dependencies:
+**4. Install limit order dependencies (limit orders only)**
 
 ```bash
-cd skills/xaut-trade/scripts
-npm install
+node --version   # requires >= 18; install from https://nodejs.org if missing
+cd skills/xaut-trade/scripts && npm install
 ```
 
-### 4. Get a UniswapX API Key (required for limit orders)
-
-Submitting and querying limit orders requires a UniswapX API Key.
+**5. Get a UniswapX API Key (limit orders only)**
 
 How to obtain (about 5 minutes, free):
 1. Visit [developers.uniswap.org/dashboard](https://developers.uniswap.org/dashboard)
-2. Sign in with Google / GitHub
-3. Generate a Token (choose Free tier)
-
-Add the key to `~/.aurehub/.env`:
+2. Sign in with Google or GitHub
+3. Generate a Token (Free tier)
 
 ```bash
 echo 'UNISWAPX_API_KEY=your_key_here' >> ~/.aurehub/.env
@@ -82,26 +99,10 @@ echo 'UNISWAPX_API_KEY=your_key_here' >> ~/.aurehub/.env
 
 Market orders do not require an API Key.
 
-### 5. Create Local Config
-
-```bash
-# Environment variables (copy to global config directory)
-mkdir -p ~/.aurehub
-cp skills/xaut-trade/.env.example ~/.aurehub/.env
-# Edit ~/.aurehub/.env and fill in:
-#   ETH_RPC_URL              - Ethereum mainnet RPC URL
-#   FOUNDRY_ACCOUNT          - Foundry keystore account name (pre-filled: aurehub-wallet)
-#   KEYSTORE_PASSWORD_FILE   - path to keystore password file (see Step 2)
-#   UNISWAPX_API_KEY         - required for limit orders (see Step 2.7)
-
-# Trade config (optional — defaults are ready to use)
-cp skills/xaut-trade/config.example.yaml ~/.aurehub/config.yaml
-```
-
-### 6. Fund the Wallet
+**6. Fund the wallet**
 
 - A small amount of ETH (≥ 0.005) for gas
-- USDT (for buying)
+- USDT (for buying XAUT)
 - XAUT (for selling)
 
 ## Usage
