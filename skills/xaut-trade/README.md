@@ -50,11 +50,11 @@ cast wallet new   # note the private key — shown only once
 cast wallet import aurehub-wallet --interactive
 ```
 
-Create the password file:
+Create the password file (use `read -s` to avoid the password appearing in shell history):
 
 ```bash
 mkdir -p ~/.aurehub
-printf 'your_keystore_password' > ~/.aurehub/.wallet.password
+read -rsp "Keystore password: " _pwd && printf '%s' "$_pwd" > ~/.aurehub/.wallet.password && unset _pwd
 chmod 600 ~/.aurehub/.wallet.password
 ```
 
@@ -74,6 +74,7 @@ KEYSTORE_PASSWORD_FILE=~/.aurehub/.wallet.password
 EOF
 
 # Copy trade config (defaults are ready to use)
+# Run from the repository root:
 cp skills/xaut-trade/config.example.yaml ~/.aurehub/config.yaml
 ```
 
