@@ -77,6 +77,8 @@ FOUNDRY_ACCOUNT=aurehub-wallet
 KEYSTORE_PASSWORD_FILE=~/.aurehub/.wallet.password
 # Required for limit orders, not needed for market orders:
 # UNISWAPX_API_KEY=your_api_key_here
+# Optional: nickname for future activities (set automatically on first use if not provided here)
+# NICKNAME=YourName
 EOF
 ```
 
