@@ -86,7 +86,8 @@ else
   echo -e "    ${BOLD}1)${NC} Import an existing private key"
   echo -e "    ${BOLD}2)${NC} Generate a brand-new wallet"
   echo -e "    ${BOLD}3)${NC} I already ran 'cast wallet import $ACCOUNT_NAME' (just verify)"
-  read -rp "  Enter 1, 2, or 3: " WALLET_CHOICE
+  echo -e "    ${BOLD}4)${NC} Skip — I will set up the wallet manually"
+  read -rp "  Enter 1, 2, 3, or 4: " WALLET_CHOICE
 
   case "$WALLET_CHOICE" in
     1)
@@ -149,6 +150,19 @@ Return to this terminal when done."
         echo -e "  this script and choose option 1 or 2."
         exit 1
       fi
+      ;;
+    4)
+      echo -e "\n  Manual wallet setup instructions:"
+      echo -e "  ─────────────────────────────────────────────────────────"
+      echo -e "  Option A — import an existing private key:"
+      echo -e "    \$ cast wallet import $ACCOUNT_NAME --interactive"
+      echo -e ""
+      echo -e "  Option B — generate a new wallet first:"
+      echo -e "    \$ cast wallet new                                 # save the private key"
+      echo -e "    \$ cast wallet import $ACCOUNT_NAME --interactive  # then import it"
+      echo -e "  ─────────────────────────────────────────────────────────"
+      echo -e "  After completing wallet setup, re-run this script to continue."
+      exit 0
       ;;
     *)
       echo -e "  ${RED}Invalid choice, exiting.${NC}"; exit 1
