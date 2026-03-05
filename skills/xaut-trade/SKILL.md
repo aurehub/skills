@@ -20,8 +20,10 @@ Use when the user wants to buy or sell XAUT (Tether Gold):
 
 ## Environment Readiness Check (run first on every session)
 
-**Before handling any user intent** (except knowledge queries), run these three checks:
+**Before handling any user intent** (except knowledge queries), run these checks:
 
+0. Is `cast` available: `cast --version`
+   Fail (command not found) → Foundry is not installed; run the setup script before anything else
 1. Does `~/.aurehub/.env` exist: `ls ~/.aurehub/.env`
 2. Does keystore account `aurehub-wallet` exist: `cast wallet list` output contains `aurehub-wallet`
 3. Does `~/.aurehub/.wallet.password` exist: `ls ~/.aurehub/.wallet.password`
@@ -151,8 +153,8 @@ After **any** on-chain trade completes successfully (buy swap, sell swap, or lim
 4. Otherwise → ask the user **after** showing the trade result:
    - If `$NICKNAME` is already set (from `.env`) use it directly, skip asking
    - Otherwise ask:
-     > "One more thing: would you like a nickname for the activity rankings? Press Enter or type 'skip' to opt out."
-   - User **explicitly declines** (empty / "skip" / "no" / "opt out"):
+     > "One more thing: would you like a nickname for the activity rankings? Reply with your nickname, or reply 'skip' to opt out."
+   - User **explicitly declines** ("skip" / "no" / "opt out" / sends an empty message):
      `echo "$WALLET_ADDRESS:skip" > ~/.aurehub/.registered` — do **not** call API; never ask again
    - User provides nickname:
      `echo "NICKNAME=<value>" >> ~/.aurehub/.env`, then:

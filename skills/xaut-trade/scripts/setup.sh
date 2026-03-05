@@ -19,138 +19,201 @@ step()   { STEP=$((STEP+1)); echo -e "\n${BLUE}${BOLD}[${STEP}] $1${NC}"; }
 ok()     { echo -e "  ${GREEN}✓ $1${NC}"; }
 warn()   { echo -e "  ${YELLOW}⚠ $1${NC}"; }
 manual() {
-  echo -e "\n  ${YELLOW}${BOLD}┌─ 需要手动操作 ──────────────────────────────────────────┐${NC}"
-  # Indent each line of the message
+  echo -e "\n  ${YELLOW}${BOLD}┌─ Manual action required ────────────────────────────────┐${NC}"
   while IFS= read -r line; do
     echo -e "  ${YELLOW}│${NC} $line"
   done <<< "$1"
   echo -e "  ${YELLOW}${BOLD}└─────────────────────────────────────────────────────────┘${NC}\n"
 }
 
-trap 'echo -e "\n${RED}❌ 步骤 ${STEP} 失败。${NC}\n请参考 references/onboarding.md 手动完成，然后重新运行此脚本。"; exit 1' ERR
+trap 'echo -e "\n${RED}❌ Step ${STEP} failed.${NC}\nSee references/onboarding.md for manual instructions, then re-run this script."; exit 1' ERR
 
 # ── Locate skill directory from the script's own path ──────────────────────────
 SCRIPT_DIR=$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)
 SKILL_DIR=$(dirname "$SCRIPT_DIR")    # skills/xaut-trade/
 ACCOUNT_NAME="aurehub-wallet"
 
-echo -e "\n${BOLD}xaut-trade 环境初始化${NC}"
-echo "Skill 目录: $SKILL_DIR"
+echo -e "\n${BOLD}xaut-trade environment setup${NC}"
+echo "Skill directory: $SKILL_DIR"
 
 # ── Step 1: Foundry ────────────────────────────────────────────────────────────
-step "检查 Foundry (cast)"
+step "Check Foundry (cast)"
 
 if command -v cast &>/dev/null; then
-  ok "Foundry 已安装: $(cast --version | head -1)"
+  ok "Foundry already installed: $(cast --version | head -1)"
 else
-  echo "  正在安装 Foundry..."
+  # S1: disclose what is about to run before executing curl|bash
+  echo -e "\n  ${YELLOW}Foundry (cast) is not installed.${NC}"
+  echo -e "  About to download and run the official Foundry installer from foundry.paradigm.xyz"
+  echo -e "  Source: https://github.com/foundry-rs/foundry"
+  echo
+  read -rp "  Proceed with installation? [Y/n]: " CONFIRM_FOUNDRY
+  if [[ "${CONFIRM_FOUNDRY:-}" =~ ^[Nn]$ ]]; then
+    echo -e "  Skipped. Install Foundry manually: https://book.getfoundry.sh/getting-started/installation"
+    exit 1
+  fi
+  echo "  Installing Foundry..."
   curl -L https://foundry.paradigm.xyz | bash
 
   # foundryup may not be in PATH yet; add it temporarily for this session
   export PATH="$HOME/.foundry/bin:$PATH"
   foundryup
 
-  manual "原因：Foundry 将自身写入了 ~/.foundry/bin，并在 ~/.zshrc（或 ~/.bashrc）
-里添加了 PATH。但当前终端的 PATH 不会自动刷新。
-脚本已临时将 Foundry 加入本次 PATH，可继续执行。
+  manual "Reason: Foundry writes itself to ~/.foundry/bin and appends to ~/.zshrc
+(or ~/.bashrc), but the current terminal's PATH is not refreshed automatically.
+The script has temporarily added Foundry to this session's PATH so setup can
+continue without interruption.
 
-完成后你需要刷新终端，否则新窗口中 cast 仍不可用：
-  $ source ~/.zshrc    # zsh 用户
-  $ source ~/.bashrc   # bash 用户
-或者直接重启终端。"
+After setup finishes, refresh your shell so 'cast' works in new terminals:
+  $ source ~/.zshrc    # zsh users
+  $ source ~/.bashrc   # bash users
+Or open a new terminal window."
 fi
 
-# ── Step 2: 全局配置目录 ──────────────────────────────────────────────────────
-step "创建全局配置目录 ~/.aurehub"
+# ── Step 2: Global config directory ───────────────────────────────────────────
+step "Create global config directory ~/.aurehub"
 mkdir -p ~/.aurehub
-ok "~/.aurehub 就绪"
+ok "~/.aurehub ready"
 
-# ── Step 3: 钱包 keystore ─────────────────────────────────────────────────────
-step "配置钱包 keystore"
+# ── Step 3: Wallet keystore ────────────────────────────────────────────────────
+step "Configure wallet keystore"
 
 if cast wallet list 2>/dev/null | grep -qF "$ACCOUNT_NAME"; then
-  ok "Keystore 账户 '$ACCOUNT_NAME' 已存在，跳过"
+  ok "Keystore account '$ACCOUNT_NAME' already exists, skipping"
 else
-  echo -e "  未找到 keystore 账户，请选择："
-  echo -e "    ${BOLD}1)${NC} 导入已有私钥"
-  echo -e "    ${BOLD}2)${NC} 生成全新钱包"
-  read -rp "  请输入 1 或 2: " WALLET_CHOICE
+  echo -e "  No keystore account '$ACCOUNT_NAME' found. Choose an option:"
+  echo -e "    ${BOLD}1)${NC} Import an existing private key"
+  echo -e "    ${BOLD}2)${NC} Generate a brand-new wallet"
+  echo -e "    ${BOLD}3)${NC} I already ran 'cast wallet import $ACCOUNT_NAME' (just verify)"
+  read -rp "  Enter 1, 2, or 3: " WALLET_CHOICE
 
   case "$WALLET_CHOICE" in
     1)
-      manual "原因（安全）：私钥不能以参数形式传入命令行，否则会被记录在
-shell 历史（~/.zsh_history / ~/.bash_history）中，存在泄露风险。
-使用 --interactive 模式，私钥以不回显方式输入，不进入任何日志。
+      # U2/U3: explicit "open a new terminal" + PATH reminder
+      manual "Security reason: private keys must not be passed as command-line arguments —
+they get stored in shell history (~/.zsh_history / ~/.bash_history).
+Using --interactive mode, the key is entered without echo and never logged.
 
-请在终端中手动运行（输入完毕后返回此脚本）：
+Open a NEW terminal tab or window, then run:
+
+  # If 'cast' is not found, first run:
+  source ~/.zshrc       # zsh users
+  source ~/.bashrc      # bash users
+
   $ cast wallet import $ACCOUNT_NAME --interactive
-提示：系统会先要求输入私钥，再设置 keystore 密码，请牢记该密码。"
+    → Paste your private key when prompted (input is hidden)
+    → Set a keystore password and remember it — needed in the next step
 
-      read -rp "  完成后按 Enter 继续..."
+Return to this terminal when done."
+
+      # U4: retry loop — keep checking until account actually exists
+      while ! cast wallet list 2>/dev/null | grep -qF "$ACCOUNT_NAME"; do
+        echo -e "  ${YELLOW}Account '$ACCOUNT_NAME' not found yet.${NC}"
+        read -rp "  Press Enter to check again, or type 'abort' to exit: " RETRY_INPUT
+        if [[ "${RETRY_INPUT:-}" == "abort" ]]; then
+          echo -e "  ${RED}Aborted.${NC}"; exit 1
+        fi
+      done
       ;;
     2)
-      manual "以下命令会生成新钱包并打印助记词 + 私钥，私钥只出现一次。
+      manual "Security reason: the private key appears only once and must be saved by you
+(a password manager is recommended). The script must not store or log it.
 
-原因（安全）：私钥必须由你亲自记录并妥善保存（建议密码管理器），
-脚本不会替你保存，也不应出现在任何日志中。
+Open a NEW terminal tab or window, then run these two commands in order:
 
-请依次手动运行（完成后返回此脚本）：
-  $ cast wallet new                                       # 记录输出的私钥
-  $ cast wallet import $ACCOUNT_NAME --interactive        # 导入并设置密码"
+  # If 'cast' is not found, first run:
+  source ~/.zshrc       # zsh users
+  source ~/.bashrc      # bash users
 
-      read -rp "  完成后按 Enter 继续..."
+  $ cast wallet new                                  # note down the private key output
+  $ cast wallet import $ACCOUNT_NAME --interactive   # import it and set a password
+    → Remember the password — it is needed in the next step
+
+Return to this terminal when done."
+
+      # U4: retry loop
+      while ! cast wallet list 2>/dev/null | grep -qF "$ACCOUNT_NAME"; do
+        echo -e "  ${YELLOW}Account '$ACCOUNT_NAME' not found yet.${NC}"
+        read -rp "  Press Enter to check again, or type 'abort' to exit: " RETRY_INPUT
+        if [[ "${RETRY_INPUT:-}" == "abort" ]]; then
+          echo -e "  ${RED}Aborted.${NC}"; exit 1
+        fi
+      done
+      ;;
+    3)
+      # User claims it is already done — verify
+      if ! cast wallet list 2>/dev/null | grep -qF "$ACCOUNT_NAME"; then
+        echo -e "  ${RED}❌ Account '$ACCOUNT_NAME' not found.${NC}"
+        echo -e "  Run 'cast wallet list' to confirm. If the account is missing, re-run"
+        echo -e "  this script and choose option 1 or 2."
+        exit 1
+      fi
       ;;
     *)
-      echo -e "  ${RED}无效选项，退出${NC}"; exit 1
+      echo -e "  ${RED}Invalid choice, exiting.${NC}"; exit 1
       ;;
   esac
 
-  # Verify the import actually succeeded
-  if ! cast wallet list 2>/dev/null | grep -qF "$ACCOUNT_NAME"; then
-    echo -e "  ${RED}❌ 未找到账户 '$ACCOUNT_NAME'，请检查导入步骤是否成功${NC}"
-    exit 1
-  fi
-  ok "Keystore 账户 '$ACCOUNT_NAME' 已就绪"
+  ok "Keystore account '$ACCOUNT_NAME' is ready"
 fi
 
-# ── Step 4: 密码文件 ──────────────────────────────────────────────────────────
-step "创建 keystore 密码文件"
+# ── Step 4: Password file ──────────────────────────────────────────────────────
+step "Create keystore password file"
 
 if [ -f ~/.aurehub/.wallet.password ]; then
-  ok "密码文件已存在，跳过"
+  ok "Password file already exists, skipping"
 else
-  manual "原因（安全）：密码将使用 read -s 读取，不回显、不进入 shell 历史。
-请输入你在 cast wallet import 时设置的 keystore 密码。"
-
-  read -rsp "  请输入 keystore 密码: " WALLET_PASSWORD
+  # U5: explain why the password file is needed
+  echo -e "  ${BLUE}Why this is needed:${NC} The Agent signs transactions using your Foundry"
+  echo -e "  keystore. Storing the password in a protected file (chmod 600) lets the"
+  echo -e "  Agent unlock the keystore automatically — the password never appears in"
+  echo -e "  shell history or any log file."
+  echo
+  read -rsp "  Enter the keystore password you set during 'cast wallet import': " WALLET_PASSWORD
   echo
   printf '%s' "$WALLET_PASSWORD" > ~/.aurehub/.wallet.password
   chmod 600 ~/.aurehub/.wallet.password
   unset WALLET_PASSWORD
-  ok "密码文件已创建：~/.aurehub/.wallet.password (权限: 600)"
+  ok "Password file created: ~/.aurehub/.wallet.password (permissions: 600)"
 fi
 
-# ── Step 5: 获取钱包地址 ──────────────────────────────────────────────────────
-step "获取钱包地址"
+# ── Step 5: Read wallet address ────────────────────────────────────────────────
+step "Read wallet address"
 
-WALLET_ADDRESS=$(cast wallet address \
-  --account "$ACCOUNT_NAME" \
-  --password-file ~/.aurehub/.wallet.password 2>/dev/null) || {
-  echo -e "  ${RED}❌ 无法读取钱包地址，请确认密码文件内容与导入时设置的密码一致${NC}"
+# U6: distinguish wrong password vs other errors
+WALLET_ADDRESS=""
+if ! WALLET_ADDRESS=$(cast wallet address \
+    --account "$ACCOUNT_NAME" \
+    --password-file ~/.aurehub/.wallet.password 2>/tmp/xaut_cast_err); then
+  CAST_ERR=$(cat /tmp/xaut_cast_err 2>/dev/null || true)
+  echo -e "  ${RED}❌ Could not read wallet address.${NC}"
+  if echo "$CAST_ERR" | grep -qiE "password|decrypt|mac mismatch|invalid|wrong"; then
+    echo -e "  Likely cause: the password in ~/.aurehub/.wallet.password does not match"
+    echo -e "  the password set during 'cast wallet import'."
+    echo -e "  To fix: delete the password file and re-run this script to enter the correct one."
+    echo -e "    \$ rm ~/.aurehub/.wallet.password && bash \"$0\""
+  elif echo "$CAST_ERR" | grep -qiE "not found|no such file|keystore"; then
+    echo -e "  Likely cause: keystore file for '$ACCOUNT_NAME' is missing."
+    echo -e "  Run 'cast wallet list' to check available accounts."
+  else
+    echo -e "  Details: $CAST_ERR"
+    echo -e "  Run 'cast wallet list' to confirm the account exists."
+  fi
   exit 1
-}
-ok "钱包地址: $WALLET_ADDRESS"
+fi
+ok "Wallet address: $WALLET_ADDRESS"
 
-# ── Step 6: 生成配置文件 ──────────────────────────────────────────────────────
-step "生成配置文件"
+# ── Step 6: Generate config files ─────────────────────────────────────────────
+step "Generate config files"
 
 if [ -f ~/.aurehub/.env ]; then
-  ok ".env 已存在，跳过（如需重置请删除后重新运行）"
+  ok ".env already exists, skipping (delete it and re-run to reset)"
 else
   DEFAULT_RPC="https://eth.llamarpc.com"
-  echo -e "  以太坊 RPC 地址（直接按 Enter 使用免费公共节点）："
-  echo -e "  默认: ${BOLD}$DEFAULT_RPC${NC}"
-  echo -e "  建议: Alchemy / Infura 私有节点更稳定，可后续在 ~/.aurehub/.env 中修改"
+  echo -e "  Ethereum RPC URL (press Enter to use the free public node):"
+  echo -e "  Default: ${BOLD}$DEFAULT_RPC${NC}"
+  echo -e "  Tip: Alchemy or Infura private nodes are more reliable. You can change"
+  echo -e "  ETH_RPC_URL at any time by editing ~/.aurehub/.env"
   read -rp "  ETH_RPC_URL: " INPUT_RPC
   ETH_RPC_URL="${INPUT_RPC:-$DEFAULT_RPC}"
 
@@ -164,96 +227,102 @@ WALLET_ADDRESS=$WALLET_ADDRESS
 # Optional — set automatically on first trade if omitted:
 # NICKNAME=YourName
 EOF
-  ok ".env 已生成（RPC: $ETH_RPC_URL）"
+  ok ".env generated (RPC: $ETH_RPC_URL)"
 fi
 
 if [ -f ~/.aurehub/config.yaml ]; then
-  ok "config.yaml 已存在，跳过"
+  ok "config.yaml already exists, skipping"
 else
   cp "$SKILL_DIR/config.example.yaml" ~/.aurehub/config.yaml
-  ok "config.yaml 已生成（默认值可直接使用）"
+  ok "config.yaml generated (defaults are ready to use)"
 fi
 
-# ── Step 7: npm 依赖（限价单，可选）──────────────────────────────────────────
-step "限价单依赖（可选，市价买卖不需要）"
+# ── Step 7: npm dependencies (limit orders, optional) ─────────────────────────
+step "Limit order dependencies (optional — not needed for market buy/sell)"
 
-read -rp "  是否安装限价单所需 npm 包？[y/N]: " INSTALL_LIMIT
-if [[ "$INSTALL_LIMIT" =~ ^[Yy]$ ]]; then
+read -rp "  Install npm packages for limit order support? [y/N]: " INSTALL_LIMIT
+if [[ "${INSTALL_LIMIT:-}" =~ ^[Yy]$ ]]; then
   if ! command -v node &>/dev/null; then
-    manual "需要先安装 Node.js（>= 18）。
-请访问 https://nodejs.org 或使用包管理器：
+    manual "Node.js (>= 18) is required for limit orders.
+Install it, then re-run this script:
   macOS:  brew install node
-  Linux:  https://nodejs.org/en/download/package-manager
-安装完成后重新运行此脚本。"
+  Linux:  https://nodejs.org/en/download/package-manager"
     exit 2
   fi
 
   NODE_MAJOR=$(node -e 'process.stdout.write(process.version.split(".")[0].slice(1))')
   if [ "$NODE_MAJOR" -lt 18 ]; then
-    warn "Node.js 版本过低: $(node --version)（需要 >= 18）"
-    manual "请升级 Node.js 后重新运行此脚本：
+    warn "Node.js version too old: $(node --version) (requires >= 18)"
+    manual "Upgrade Node.js, then re-run this script:
   https://nodejs.org/en/download/package-manager"
     exit 2
   fi
 
   ok "Node.js $(node --version)"
-  echo "  正在安装 npm 包..."
+  echo "  Installing npm packages..."
   cd "$SCRIPT_DIR" && npm install --silent
-  ok "npm 包安装完成"
+  ok "npm packages installed"
 else
-  echo "  已跳过"
+  echo "  Skipped"
 fi
 
-# ── Step 8: 验证 ──────────────────────────────────────────────────────────────
-step "验证环境"
+# ── Step 8: Verification ───────────────────────────────────────────────────────
+step "Verify environment"
 
 # shellcheck source=/dev/null
 source ~/.aurehub/.env
 
 cast --version | head -1 | xargs -I{} echo "  ✓ {}"
 
-BLOCK=$(cast block-number --rpc-url "$ETH_RPC_URL" 2>/dev/null) \
-  && ok "RPC 连通 (最新区块 #$BLOCK)" \
-  || warn "RPC 检查失败，请确认 ETH_RPC_URL 是否有效（当前: $ETH_RPC_URL）"
+# U8: make RPC failure a hard stop instead of a warning
+if BLOCK=$(cast block-number --rpc-url "$ETH_RPC_URL" 2>/dev/null); then
+  ok "RPC reachable (latest block #$BLOCK)"
+else
+  echo -e "  ${RED}❌ RPC check failed — ETH_RPC_URL is unreachable: $ETH_RPC_URL${NC}"
+  echo -e "  Fix: edit ~/.aurehub/.env and set a valid ETH_RPC_URL, then re-run this script."
+  echo -e "  Free public nodes: https://chainlist.org/chain/1"
+  exit 1
+fi
 
 cast wallet list 2>/dev/null | grep -qF "$ACCOUNT_NAME" \
-  && ok "Keystore 账户存在" \
-  || { echo -e "  ${RED}❌ 未找到账户${NC}"; exit 1; }
+  && ok "Keystore account exists" \
+  || { echo -e "  ${RED}❌ Account not found${NC}"; exit 1; }
 
 [ -r ~/.aurehub/.wallet.password ] \
-  && ok "密码文件可读" \
-  || { echo -e "  ${RED}❌ 密码文件不可读${NC}"; exit 1; }
+  && ok "Password file readable" \
+  || { echo -e "  ${RED}❌ Password file not readable${NC}"; exit 1; }
 
-# ── 完成摘要 ──────────────────────────────────────────────────────────────────
-echo -e "\n${GREEN}${BOLD}━━━ 自动化部分完成 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━${NC}"
-echo -e "  钱包地址: ${BOLD}$WALLET_ADDRESS${NC}"
+# ── Completion summary ─────────────────────────────────────────────────────────
+echo -e "\n${GREEN}${BOLD}━━━ Automated setup complete ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━${NC}"
+echo -e "  Wallet address: ${BOLD}$WALLET_ADDRESS${NC}"
 echo -e "${GREEN}${BOLD}━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━${NC}"
 
-echo -e "\n${YELLOW}${BOLD}以下步骤需要手动完成（脚本无法替你操作）：${NC}"
+echo -e "\n${YELLOW}${BOLD}The following steps require manual action (the script cannot do them for you):${NC}"
 
-echo -e "\n  ${BOLD}1. 充值 ETH（gas 费，必须）${NC}"
-echo -e "     原因：链上操作消耗 gas，脚本无法替你转账。"
-echo -e "     最低要求：≥ 0.005 ETH"
-echo -e "     钱包地址：${BOLD}$WALLET_ADDRESS${NC}"
+echo -e "\n  ${BOLD}1. Fund the wallet with ETH (required for gas)${NC}"
+echo -e "     Reason: on-chain operations consume gas; the script cannot transfer funds."
+echo -e "     Minimum: ≥ 0.005 ETH"
+echo -e "     Wallet address: ${BOLD}$WALLET_ADDRESS${NC}"
 
-echo -e "\n  ${BOLD}2. 充值交易本金（按需）${NC}"
-echo -e "     买入 XAUT → 需要 USDT"
-echo -e "     卖出 XAUT → 需要 XAUT"
-echo -e "     同一地址：${BOLD}$WALLET_ADDRESS${NC}"
+echo -e "\n  ${BOLD}2. Fund the wallet with trading capital (as needed)${NC}"
+echo -e "     Buy XAUT  → deposit USDT to the wallet"
+echo -e "     Sell XAUT → deposit XAUT to the wallet"
+echo -e "     Same address: ${BOLD}$WALLET_ADDRESS${NC}"
 
-echo -e "\n  ${BOLD}3. 获取 UniswapX API Key（限价单必须，市价单不需要）${NC}"
-echo -e "     原因：UniswapX API 需要认证，脚本无法替你注册。"
-echo -e "     获取方式（约 5 分钟，免费）："
-echo -e "       a. 访问 https://developers.uniswap.org/dashboard"
-echo -e "       b. 使用 Google / GitHub 登录"
-echo -e "       c. 生成 Token（选 Free 套餐）"
-echo -e "     获取后运行："
-echo -e "       \$ echo 'UNISWAPX_API_KEY=你的key' >> ~/.aurehub/.env"
+echo -e "\n  ${BOLD}3. Get a UniswapX API Key (limit orders only — not needed for market orders)${NC}"
+echo -e "     Reason: the UniswapX API requires authentication; the script cannot register on your behalf."
+echo -e "     How to get one (about 5 minutes, free):"
+echo -e "       a. Visit https://developers.uniswap.org/dashboard"
+echo -e "       b. Sign in with Google or GitHub"
+echo -e "       c. Generate a Token (Free tier)"
+echo -e "     Then add it to your config:"
+echo -e "       \$ echo 'UNISWAPX_API_KEY=your_key' >> ~/.aurehub/.env"
 
-echo -e "\n  ${BOLD}4. 刷新终端（如果本次安装了 Foundry）${NC}"
-echo -e "     原因：Foundry 修改了 shell 配置文件，当前终端 PATH 尚未更新。"
-echo -e "       \$ source ~/.zshrc    # zsh 用户"
-echo -e "       \$ source ~/.bashrc   # bash 用户"
-echo -e "     或直接重启终端。"
+echo -e "\n  ${BOLD}4. Refresh your terminal (only if Foundry was installed in this session)${NC}"
+echo -e "     Reason: Foundry modified your shell config; the PATH in the current terminal"
+echo -e "     is not yet updated."
+echo -e "       \$ source ~/.zshrc    # zsh users"
+echo -e "       \$ source ~/.bashrc   # bash users"
+echo -e "     Or open a new terminal window."
 
-echo -e "\n${BLUE}完成以上步骤后，向 Agent 发送任意交易指令即可开始。${NC}\n"
+echo -e "\n${BLUE}Once the steps above are done, send any trade instruction to the Agent to begin.${NC}\n"
