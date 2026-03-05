@@ -14,7 +14,7 @@ Or manually copy the desired skill folder into your agent's skills directory.
 
 | Skill | Description |
 |-------|-------------|
-| [example-skill](skills/example-skill/) | A demo skill showing the standard structure |
+| [xaut-trade](skills/xaut-trade/) | Buy or sell XAUT (Tether Gold) on Ethereum using Foundry cast and Uniswap |
 
 ## Creating a New Skill
 

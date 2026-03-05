@@ -3,13 +3,13 @@
 # Publish skills to ClawHub registry.
 #
 # Usage:
-#   ./scripts/publish.sh <skill-dir> <version>     # publish one skill
-#   ./scripts/publish.sh --all <bump>               # publish all skills
+#   ./scripts/publish-clawhub.sh <skill-dir> <version>     # publish one skill
+#   ./scripts/publish-clawhub.sh --all <bump>              # publish all skills
 #
 # Examples:
-#   ./scripts/publish.sh skills/crypto-market-rank 1.0.0
-#   ./scripts/publish.sh --all patch
-#   ./scripts/publish.sh --all minor --dry-run
+#   ./scripts/publish-clawhub.sh skills/crypto-market-rank 1.0.0
+#   ./scripts/publish-clawhub.sh --all patch
+#   ./scripts/publish-clawhub.sh --all minor --dry-run
 #
 # Options:
 #   --dry-run    Preview what would be published without actually publishing
@@ -154,17 +154,17 @@ publish_all() {
 usage() {
   cat <<'EOF'
 Usage:
-  ./scripts/publish.sh <skill-dir> <version>     Publish one skill
-  ./scripts/publish.sh --all <bump>              Publish all skills (bump: patch|minor|major)
+  ./scripts/publish-clawhub.sh <skill-dir> <version>     Publish one skill
+  ./scripts/publish-clawhub.sh --all <bump>              Publish all skills (bump: patch|minor|major)
 
 Options:
   --dry-run    Preview without publishing
   --no-prefix  Don't add "aurehub-" prefix to slug
 
 Examples:
-  ./scripts/publish.sh skills/crypto-market-rank 1.0.0
-  ./scripts/publish.sh --all patch
-  ./scripts/publish.sh --all minor --dry-run
+  ./scripts/publish-clawhub.sh skills/crypto-market-rank 1.0.0
+  ./scripts/publish-clawhub.sh --all patch
+  ./scripts/publish-clawhub.sh --all minor --dry-run
 EOF
   exit 1
 }

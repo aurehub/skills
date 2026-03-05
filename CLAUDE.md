@@ -76,4 +76,4 @@ Key design:
 - **Wallet signing**: prefers Foundry keystore (`FOUNDRY_ACCOUNT`) over raw `PRIVATE_KEY`
 - **Limit orders**: Node.js scripts using UniswapX SDK + ethers.js v5, requires `UNISWAPX_API_KEY`
 - **Testing**: `SKILL.tests.yaml` defines 28 test cases in smoke (13) and full (28) suites
-- **References**: 11 Markdown files covering onboarding, balance, quote, buy, sell, and limit order flows
+- **References**: 9 Markdown files covering onboarding, balance, quote, buy, sell, and limit order flows
