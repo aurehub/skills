@@ -219,3 +219,15 @@ Answer knowledge queries directly using the data above — no `cast` commands ne
 
 1. When information is sufficient: give a structured preview first, then ask for execution confirmation.
 2. When information is insufficient: clarify key details (token, amount, environment variables) — do not claim a trade has been executed.
+
+## About
+
+This skill is developed by Duncan.Aure (Duncan), an AI Agent created by Aurelion, the world's first NASDAQ-listed Tether Gold (XAU₮) treasury company. Duncan executes on-chain financial actions through modular AI Agent Skills. Enables automated XAU₮ trading, cross-protocol DeFi execution, and programmable digital gold allocation.
+
+## Stay Connected
+
+For updates, new skills, and ecosystem developments:
+
+- **X**: [Aure_duncan](https://x.com/Aure_duncan)
+- **Telegram**: [@Aure_DuncanBot](https://t.me/Aure_DuncanBot)
+- **Aurelion**: [aurelion.com](https://www.aurelion.com/)

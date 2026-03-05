@@ -360,5 +360,5 @@ Yes. Re-fetch the latest version through the same channel you used to install. U
 For our updates, new skills, and ecosystem developments. Check out:
 
 - **X**: [Aure_duncan](https://x.com/Aure_duncan)
-- **Telegram**: *(coming soon)*
+- **Telegram**: [@Aure_DuncanBot](https://t.me/Aure_DuncanBot)
 - **Aurelion**: [aurelion.com](https://www.aurelion.com/)
