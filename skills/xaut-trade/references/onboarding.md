@@ -4,7 +4,27 @@ Run this on first use or when the environment is incomplete. Return to the origi
 
 ---
 
-## Step 0: Install Foundry (if `cast` is unavailable)
+## Automated Setup (recommended)
+
+Run the setup script — it handles Steps 0–4 automatically and clearly marks the steps that require manual action:
+
+```bash
+bash "$(git rev-parse --show-toplevel)/skills/xaut-trade/scripts/setup.sh"
+```
+
+If `git rev-parse` fails (skill not inside a git repo):
+
+```bash
+bash "$(find ~ -name "setup.sh" -path "*/xaut-trade/scripts/*" -maxdepth 8 2>/dev/null | head -1)"
+```
+
+If the script exits with an error, follow the manual steps below for the failed step only.
+
+---
+
+## Manual Steps (fallback)
+
+### Step 0: Install Foundry (if `cast` is unavailable)
 
 ```bash
 curl -L https://foundry.paradigm.xyz | bash && foundryup
