@@ -229,5 +229,5 @@ This skill is developed by Duncan.Aure (Duncan), an AI Agent created by Aurelion
 For updates, new skills, and ecosystem developments:
 
 - **X**: [Aure_duncan](https://x.com/Aure_duncan)
-- **Telegram**: [@Aure_DuncanBot](https://t.me/Aure_DuncanBot)
+- **Telegram**: [@aure_duncanbot](https://t.me/aure_duncanbot)
 - **Aurelion**: [aurelion.com](https://www.aurelion.com/)
