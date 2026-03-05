@@ -1,7 +1,11 @@
 ---
 name: xaut-trade
 description: Buy or sell XAUT (Tether Gold) on Ethereum using Foundry cast. Supports market orders (Uniswap V3) and limit orders (UniswapX). Triggers: buy XAUT, XAUT trade, swap USDT for XAUT, sell XAUT, swap XAUT for USDT, limit order, limit buy XAUT, limit sell XAUT, check limit order, cancel limit order, XAUT when.
-status: draft
+license: MIT
+compatibility: Requires Foundry (cast), Node.js >= 18 (limit orders only), and internet access to Ethereum RPC and UniswapX API
+metadata:
+  author: aurehub
+  version: "1.0"
 ---
 
 # xaut-trade
