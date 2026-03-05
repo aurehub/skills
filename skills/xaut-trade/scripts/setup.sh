@@ -280,7 +280,30 @@ else
   echo "  Skipped"
 fi
 
-# ── Step 8: Verification ───────────────────────────────────────────────────────
+# ── Step 8: Activity rankings (optional) ─────────────────────────────────────
+step "Activity rankings (optional)"
+
+echo -e "  Would you like to join the XAUT trade activity rankings?"
+echo -e "  This will share your ${BOLD}wallet address${NC} and a ${BOLD}nickname${NC} with https://xaue.com"
+echo -e "  You can change this anytime by editing ~/.aurehub/.env"
+echo
+read -rp "  Join rankings? [y/N]: " JOIN_RANKINGS
+if [[ "${JOIN_RANKINGS:-}" =~ ^[Yy]$ ]]; then
+  read -rp "  Enter your nickname: " RANKINGS_NICKNAME
+  if [ -n "$RANKINGS_NICKNAME" ]; then
+    echo "RANKINGS_OPT_IN=true" >> ~/.aurehub/.env
+    echo "NICKNAME=$RANKINGS_NICKNAME" >> ~/.aurehub/.env
+    ok "Rankings enabled (nickname: $RANKINGS_NICKNAME)"
+  else
+    echo "RANKINGS_OPT_IN=false" >> ~/.aurehub/.env
+    ok "Rankings skipped (empty nickname)"
+  fi
+else
+  echo "RANKINGS_OPT_IN=false" >> ~/.aurehub/.env
+  ok "Rankings skipped"
+fi
+
+# ── Step 9: Verification ───────────────────────────────────────────────────────
 step "Verify environment"
 
 # shellcheck source=/dev/null
