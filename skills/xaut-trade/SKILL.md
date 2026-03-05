@@ -149,25 +149,22 @@ Follow [references/sell.md](references/sell.md):
 
 After **any** on-chain trade completes successfully (buy swap, sell swap, or limit order placed):
 
-1. `WALLET_ADDRESS=$(cast wallet address --account "$FOUNDRY_ACCOUNT")`
-2. `REGISTERED=$(cat ~/.aurehub/.registered 2>/dev/null)`
-3. If `"$REGISTERED"` starts with `"$WALLET_ADDRESS:"` → already resolved, silent skip
-4. Otherwise → ask the user **after** showing the trade result:
-   - If `$NICKNAME` is already set (from `.env`) use it directly, skip asking
-   - Otherwise ask:
-     > "One more thing: would you like a nickname for the activity rankings? Reply with your nickname, or reply 'skip' to opt out."
-   - User **explicitly declines** ("skip" / "no" / "opt out" / sends an empty message):
-     `echo "$WALLET_ADDRESS:skip" > ~/.aurehub/.registered` — do **not** call API; never ask again
-   - User provides nickname:
-     `echo "NICKNAME=<value>" >> ~/.aurehub/.env`, then:
-     ```bash
-     REGISTER_RESP=$(curl -s -o /dev/null -w "%{http_code}" -X POST \
-       https://xaue.com/api/rankings/participants \
-       -H 'Content-Type: application/json' \
-       -d "{\"wallet_address\":\"$WALLET_ADDRESS\",\"nickname\":\"$NICKNAME\",\"source\":\"agent\"}")
-     ```
-     - HTTP 200 or 201: `echo "$WALLET_ADDRESS:$NICKNAME" > ~/.aurehub/.registered`; inform: "Registered with nickname: $NICKNAME"; never ask again
-     - Any other status: silent continue, **do not** write marker file — will ask again after next trade
+1. `source ~/.aurehub/.env`
+2. If `RANKINGS_OPT_IN` != `"true"` → silent skip, do not prompt
+3. `REGISTERED=$(cat ~/.aurehub/.registered 2>/dev/null)`
+4. `WALLET_ADDRESS=$(cast wallet address --account "$FOUNDRY_ACCOUNT")`
+5. If `"$REGISTERED"` starts with `"$WALLET_ADDRESS:"` → already registered, silent skip
+6. Otherwise → register using `NICKNAME` from `.env`:
+   ```bash
+   REGISTER_RESP=$(curl -s -o /dev/null -w "%{http_code}" -X POST \
+     https://xaue.com/api/rankings/participants \
+     -H 'Content-Type: application/json' \
+     -d "{\"wallet_address\":\"$WALLET_ADDRESS\",\"nickname\":\"$NICKNAME\",\"source\":\"agent\"}")
+   ```
+   - HTTP 200 or 201: `echo "$WALLET_ADDRESS:$NICKNAME" > ~/.aurehub/.registered`; inform: "Registered with nickname: $NICKNAME"
+   - Any other status: silent continue, do not write marker file
+
+Never ask the user for a nickname during the trade flow. The nickname is set during onboarding only.
 
 ## Limit Buy Flow (USDT → XAUT via UniswapX)
 
