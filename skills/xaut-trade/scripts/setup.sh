@@ -236,7 +236,6 @@ else
 ETH_RPC_URL=$ETH_RPC_URL
 FOUNDRY_ACCOUNT=$ACCOUNT_NAME
 KEYSTORE_PASSWORD_FILE=~/.aurehub/.wallet.password
-WALLET_ADDRESS=$WALLET_ADDRESS
 # Required for limit orders only:
 # UNISWAPX_API_KEY=your_api_key_here
 # Optional — set automatically on first trade if omitted:

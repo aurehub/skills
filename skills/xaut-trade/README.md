@@ -66,12 +66,10 @@ chmod 600 ~/.aurehub/.wallet.password
 mkdir -p ~/.aurehub
 
 # Generate .env
-WALLET_ADDRESS=$(cast wallet address --account aurehub-wallet)
 cat > ~/.aurehub/.env << EOF
 ETH_RPC_URL=https://eth.llamarpc.com
 FOUNDRY_ACCOUNT=aurehub-wallet
 KEYSTORE_PASSWORD_FILE=~/.aurehub/.wallet.password
-WALLET_ADDRESS=$WALLET_ADDRESS
 # UNISWAPX_API_KEY=your_key_here   # required for limit orders only
 EOF
 
