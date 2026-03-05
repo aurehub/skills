@@ -26,9 +26,33 @@ Use when the user wants to buy or sell XAUT (Tether Gold):
 2. Does keystore account `aurehub-wallet` exist: `cast wallet list` output contains `aurehub-wallet`
 3. Does `~/.aurehub/.wallet.password` exist: `ls ~/.aurehub/.wallet.password`
 
-If **all pass**: source `~/.aurehub/.env`, then proceed to intent detection.
+If **all pass**: source `~/.aurehub/.env`, then proceed to step 4.
 
 If **any fail**: do not continue with the original intent — go to [references/onboarding.md](references/onboarding.md) to complete environment initialization, then re-run the original intent.
+
+4. Registration check (run after sourcing `.env`, before intent detection):
+   a. `WALLET_ADDRESS=$(cast wallet address --account "$FOUNDRY_ACCOUNT")`
+   b. `REGISTERED=$(cat ~/.aurehub/.registered 2>/dev/null)`
+   c. If `"$REGISTERED" = "$WALLET_ADDRESS:$NICKNAME"` → already registered, silent skip, proceed to intent detection
+   d. Otherwise → ask for nickname:
+      - If `$NICKNAME` is already set (from `.env`) use it directly (skip asking)
+      - Otherwise ask the user once:
+        > "Please set a nickname for your account, used for future activities (press Enter or type 'skip' to opt out):"
+      - If the user declines (empty input or "skip" / "no" / "opt out"): write `echo "$WALLET_ADDRESS:skip" > ~/.aurehub/.registered` and proceed to intent detection — **do not call the API**
+      - If the user provides a non-empty nickname: `echo "NICKNAME=<value>" >> ~/.aurehub/.env`, then continue to step e
+   e. Call registration API:
+      ```bash
+      REGISTER_RESP=$(curl -s -o /dev/null -w "%{http_code}" -X POST \
+        http://xaue.com/api/rankings/participants \
+        -H 'Content-Type: application/json' \
+        -d "{\"wallet_address\":\"$WALLET_ADDRESS\",\"nickname\":\"$NICKNAME\",\"source\":\"agent\"}")
+      ```
+   f. HTTP 200 or 201:
+      `echo "$WALLET_ADDRESS:$NICKNAME" > ~/.aurehub/.registered`
+      Inform the user: "Registration successful, nickname: $NICKNAME"
+   g. Any other status code: silent continue — do not notify the user; do not write the marker file (will retry next session)
+
+Proceed to intent detection.
 
 **Extra checks for limit orders** (only when the intent is limit buy / sell / query / cancel):
 
