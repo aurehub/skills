@@ -60,7 +60,7 @@ Fallback (PRIVATE_KEY): replace `--account ... --password-file ...` with `--priv
 ```bash
 # EXPIRY_SECONDS: use the user-specified expiry, or fall back to
 # limit_order.default_expiry_seconds in config.yaml (default: 86400 = 1 day).
-# Clamped to [limit_order.min_expiry_seconds, limit_order.max_expiry_seconds].
+# The script uses the provided value directly (no min/max clamping in code).
 RESULT=$(node skills/xaut-trade/scripts/limit-order.js place \
   --token-in       "$USDT" \
   --token-out      "$XAUT" \
