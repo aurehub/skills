@@ -52,11 +52,12 @@ else
     echo -e "  Skipped. Install Foundry manually: https://book.getfoundry.sh/getting-started/installation"
     exit 1
   fi
-  echo "  Installing Foundry..."
+  echo "  Downloading Foundry installer (this may take a moment)..."
   curl -L https://foundry.paradigm.xyz | bash
 
   # foundryup may not be in PATH yet; add it temporarily for this session
   export PATH="$HOME/.foundry/bin:$PATH"
+  echo "  Installing cast, forge, and anvil binaries (~100 MB, please wait)..."
   foundryup
 
   manual "Reason: Foundry writes itself to ~/.foundry/bin and appends to ~/.zshrc
@@ -210,11 +211,11 @@ if [ -f ~/.aurehub/.env ]; then
   ok ".env already exists, skipping (delete it and re-run to reset)"
 else
   DEFAULT_RPC="https://eth.llamarpc.com"
-  echo -e "  Ethereum RPC URL (press Enter to use the free public node):"
+  echo -e "  Ethereum node URL (press Enter to use the free public node):"
   echo -e "  Default: ${BOLD}$DEFAULT_RPC${NC}"
-  echo -e "  Tip: Alchemy or Infura private nodes are more reliable. You can change"
-  echo -e "  ETH_RPC_URL at any time by editing ~/.aurehub/.env"
-  read -rp "  ETH_RPC_URL: " INPUT_RPC
+  echo -e "  Tip: Alchemy or Infura private nodes are more reliable. You can update"
+  echo -e "  this later by editing ETH_RPC_URL in ~/.aurehub/.env"
+  read -rp "  Node URL: " INPUT_RPC
   ETH_RPC_URL="${INPUT_RPC:-$DEFAULT_RPC}"
 
   cat > ~/.aurehub/.env << EOF
