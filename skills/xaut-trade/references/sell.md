@@ -33,7 +33,7 @@ Parse return value:
 ```bash
 AMOUNT_OUT=$(cast abi-decode \
   "f()(uint256,uint160,uint32,uint256)" \
-  "$QUOTE_RAW" | head -1)
+  "$QUOTE_RAW" | head -1 | awk '{print $1}')
 # USDT has 6 decimals: human-readable = AMOUNT_OUT / 1_000_000
 ```
 
