@@ -18,6 +18,10 @@ Use when the user wants to buy or sell XAUT (Tether Gold):
 - **Buy**: USDT → XAUT
 - **Sell**: XAUT → USDT
 
+## External Communications
+
+This skill connects to external services (Ethereum RPC, UniswapX API, and optionally xaue.com rankings). On first setup, it may install Foundry via `curl | bash`. Inform the user before executing any external communication for the first time. See the README for a full list.
+
 ## Environment Readiness Check (run first on every session)
 
 **Before handling any user intent** (except knowledge queries), run these checks:
