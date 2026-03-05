@@ -22,6 +22,7 @@ Verify: `cast --version`
 
 ### 2. Configure Wallet
 
+
 **Recommended: import an existing private key**
 
 ```bash
@@ -45,7 +46,7 @@ chmod 600 ~/.aurehub/.wallet.password
 
 > Foundry keystores are stored in `~/.foundry/keystores/`; the password file goes in `~/.aurehub/`.
 
-### 2.6 Install Node.js (limit orders only)
+### 3. Install Node.js (limit orders only)
 
 Not required for market orders. If you need limit order functionality:
 
@@ -64,7 +65,7 @@ cd skills/xaut-trade/scripts
 npm install
 ```
 
-### 2.7 Get a UniswapX API Key (required for limit orders)
+### 4. Get a UniswapX API Key (required for limit orders)
 
 Submitting and querying limit orders requires a UniswapX API Key.
 
@@ -81,7 +82,7 @@ echo 'UNISWAPX_API_KEY=your_key_here' >> ~/.aurehub/.env
 
 Market orders do not require an API Key.
 
-### 3. Create Local Config
+### 5. Create Local Config
 
 ```bash
 # Environment variables (copy to global config directory)
@@ -97,7 +98,7 @@ cp skills/xaut-trade/.env.example ~/.aurehub/.env
 cp skills/xaut-trade/config.example.yaml ~/.aurehub/config.yaml
 ```
 
-### 4. Fund the Wallet
+### 6. Fund the Wallet
 
 - A small amount of ETH (≥ 0.005) for gas
 - USDT (for buying)
@@ -194,6 +195,7 @@ Thresholds can be customized in the `risk` section of `config.yaml`.
 | `KEYSTORE_PASSWORD_FILE` | Path to keystore password file | `~/.aurehub/.wallet.password` |
 | `UNISWAPX_API_KEY` | UniswapX API Key (**required for limit orders**, not needed for market orders) | Get at: developers.uniswap.org/dashboard |
 | `PRIVATE_KEY` | Private key (fallback, not recommended) | `0x...` |
+| `NICKNAME` | Display name for activity rankings (optional, set on first use if omitted) | `Alice` |
 
 ### config.yaml (optional)
 
@@ -205,7 +207,17 @@ risk:
   max_slippage_bps_warn: 50     # Slippage warning threshold
   large_trade_usd: 1000         # Large trade threshold (USD)
   min_eth_for_gas: "0.005"      # Minimum ETH for gas
-  deadline_seconds: 300         # Transaction timeout (seconds)
+  deadline_seconds: 300         # Swap transaction timeout (seconds)
+
+token_rules:
+  USDT:
+    requires_reset_approve: true  # USDT needs approve(0) before approve(amount)
+
+limit_order:
+  default_expiry_seconds: 86400   # Default order expiry: 1 day
+  min_expiry_seconds: 300         # Minimum: 5 minutes
+  max_expiry_seconds: 2592000     # Maximum: 30 days
+  uniswapx_api: "https://api.uniswap.org/v2"  # Override for local mock testing
 ```
 
 ## Local Testing (Anvil Fork)
@@ -285,7 +297,7 @@ The Agent will provide retry suggestions: reduce amount, increase slippage toler
 **Q: Why does USDT approval require two steps?**
 USDT's non-standard implementation requires `approve(0)` to reset the allowance before `approve(amount)`. XAUT does not.
 
-**Q: Is other chains supported?**
+**Q: Are other chains supported?**
 Only Ethereum mainnet (chain_id: 1) is currently supported. Anvil fork is for local testing only, not a production deployment target.
 
 **Q: `cast send` returns `Device not configured (os error 6)` — what do I do?**

@@ -1,13 +1,16 @@
 # xaut-trade example config (safe to commit)
 # For local use, copy to config.yaml and modify as needed.
 
+# Informational only — not read by scripts.
+# The active RPC endpoint comes from ETH_RPC_URL in ~/.aurehub/.env.
+# chain_id is passed explicitly when needed (e.g. --chain-id 1 for limit orders).
 networks:
   ethereum_mainnet:
     chain_id: 1
-    default_rpc_env: ETH_RPC_URL
+    rpc_env: ETH_RPC_URL
   anvil_fork:
     chain_id: 31337
-    default_rpc: http://127.0.0.1:8545
+    rpc: http://127.0.0.1:8545   # for local fork testing with `anvil --fork-url`
 
 contracts:
   router: "0x68b3465833fb72A70ecDF485E0e4C7bD8665Fc45"

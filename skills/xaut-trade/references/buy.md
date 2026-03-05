@@ -16,7 +16,7 @@ If allowance < `AMOUNT_IN`, approve first.
 
 ## 2. approve (per token)
 
-USDT (non-standard — must reset to zero before approving):
+USDT (non-standard — `token_rules.USDT.requires_reset_approve: true` in config — must reset to zero before approving):
 
 ```bash
 TX_HASH=$(cast send "$USDT" "approve(address,uint256)" "$ROUTER" 0 \
@@ -43,7 +43,8 @@ If using private key fallback mode, replace `--account "$FOUNDRY_ACCOUNT"` with:
 Calculate `deadline` and encode `exactInputSingle`:
 
 ```bash
-DEADLINE=$(cast --to-uint256 $(($(date +%s) + 300)))
+# DEADLINE_SECONDS from risk.deadline_seconds in config.yaml
+DEADLINE=$(cast --to-uint256 $(($(date +%s) + $DEADLINE_SECONDS)))
 
 SWAP_DATA=$(cast calldata \
   "exactInputSingle((address,address,uint24,address,uint256,uint256,uint160))" \
