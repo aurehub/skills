@@ -37,7 +37,7 @@ If **any fail**: do not continue with the original intent — go to [references/
    Fail → **hard-stop**, output:
    > Limit orders require a UniswapX API Key.
    > How to get one (about 5 minutes, free):
-   > 1. Visit https://portal.1inch.dev
+   > 1. Visit https://developers.uniswap.org/dashboard
    > 2. Sign in with Google / GitHub
    > 3. Generate a Token (choose Free tier)
    > 4. Add the key to ~/.aurehub/.env: `UNISWAPX_API_KEY=your_key`

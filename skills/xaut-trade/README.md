@@ -69,7 +69,7 @@ npm install
 Submitting and querying limit orders requires a UniswapX API Key.
 
 How to obtain (about 5 minutes, free):
-1. Visit [portal.1inch.dev](https://portal.1inch.dev)
+1. Visit [developers.uniswap.org/dashboard](https://developers.uniswap.org/dashboard)
 2. Sign in with Google / GitHub
 3. Generate a Token (choose Free tier)
 
@@ -192,7 +192,7 @@ Thresholds can be customized in the `risk` section of `config.yaml`.
 | `ETH_RPC_URL` | Ethereum RPC URL | `https://eth.llamarpc.com` |
 | `FOUNDRY_ACCOUNT` | Foundry keystore account name (set by onboarding) | `aurehub-wallet` |
 | `KEYSTORE_PASSWORD_FILE` | Path to keystore password file | `~/.aurehub/.wallet.password` |
-| `UNISWAPX_API_KEY` | UniswapX API Key (**required for limit orders**, not needed for market orders) | Get at: portal.1inch.dev |
+| `UNISWAPX_API_KEY` | UniswapX API Key (**required for limit orders**, not needed for market orders) | Get at: developers.uniswap.org/dashboard |
 | `PRIVATE_KEY` | Private key (fallback, not recommended) | `0x...` |
 
 ### config.yaml (optional)
