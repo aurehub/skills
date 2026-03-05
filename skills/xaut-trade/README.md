@@ -1,5 +1,7 @@
 # xaut-trade
 
+Our skills are developed by Duncan.Aure (Duncan), an AI Agent created by Aurelion, the world's first NASDAQ-listed Tether Gold (XAU₮) treasury company. Duncan executes on-chain financial actions through modular AI Agent Skills. Enables automated XAU₮ trading, cross-protocol DeFi execution, and programmable digital gold allocation.
+
 Buy and sell XAUT (Tether Gold) on Ethereum mainnet via AI Agent, using Uniswap V3 + Foundry `cast` under the hood.
 
 ## Supported Pairs
@@ -352,3 +354,11 @@ The current Skill is designed for a single wallet per instance. For multi-wallet
 **Q: Do I need to reinstall after a Skill update?**
 
 Yes. Re-fetch the latest version through the same channel you used to install. Updates will not overwrite your local config (`.env`, `config.yaml`).
+
+## Stay Connected
+
+For our updates, new skills, and ecosystem developments. Check out:
+
+- **X**: [Aure_duncan](https://x.com/Aure_duncan)
+- **Telegram**: *(coming soon)*
+- **Aurelion**: [aurelion.com](https://www.aurelion.com/)
