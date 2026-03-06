@@ -192,7 +192,7 @@ _install_nodejs() {
     if command -v brew &>/dev/null; then
       suggestion="brew install node"
     else
-      suggestion="# Install Homebrew first: https://brew.sh\nbrew install node"
+      suggestion=$'# Install Homebrew first: https://brew.sh\nbrew install node'
     fi
   elif command -v apt-get &>/dev/null; then
     suggestion="sudo apt install nodejs npm"
@@ -251,7 +251,9 @@ if [ "$NODE_OK" = true ]; then
   read -rp "  Enter API Key (or press Enter to skip): " UNISWAPX_KEY
   if [ -n "$UNISWAPX_KEY" ]; then
     # Remove any existing UNISWAPX_API_KEY line then append
-    grep -v '^UNISWAPX_API_KEY=' ~/.aurehub/.env > /tmp/.env.tmp && mv /tmp/.env.tmp ~/.aurehub/.env || true
+    if grep -v '^UNISWAPX_API_KEY=' ~/.aurehub/.env > /tmp/.env.tmp 2>/dev/null && [ -s /tmp/.env.tmp ]; then
+      mv /tmp/.env.tmp ~/.aurehub/.env
+    fi
     echo "UNISWAPX_API_KEY=$UNISWAPX_KEY" >> ~/.aurehub/.env
     unset UNISWAPX_KEY
     ok "UNISWAPX_API_KEY saved to ~/.aurehub/.env"
