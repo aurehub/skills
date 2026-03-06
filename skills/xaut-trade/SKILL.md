@@ -43,13 +43,28 @@ If **all pass**: source `~/.aurehub/.env`, then proceed to intent detection.
 > ```
 > This ensures the address always matches the actual keystore, regardless of session state.
 
-If **any fail**: do not continue with the original intent — run the setup script first:
+If **any fail**: do not continue with the original intent. Note which checks failed, then present the following options to the user (fill in [原始意图] with a one-sentence summary of what the user originally asked for):
 
-```bash
-bash "$(git rev-parse --show-toplevel)/skills/xaut-trade/scripts/setup.sh"
-```
+---
+环境未就绪（[具体失败项]）。
 
-If `git rev-parse` fails, fall back to [references/onboarding.md](references/onboarding.md) for manual steps. After setup completes, re-run the original intent.
+请选择：
+
+  **A) 推荐：手动运行 setup.sh**
+  ```bash
+  bash "$(git rev-parse --show-toplevel)/skills/xaut-trade/scripts/setup.sh"
+  ```
+  （如果 `git rev-parse` 失败，请使用：`bash "$(find ~ -name "setup.sh" -path "*/xaut-trade/scripts/*" -maxdepth 8 2>/dev/null | head -1)"`）
+
+  **B) 由 Agent 逐步引导完成配置**
+
+选 A 完成后告诉我，我会继续你之前的操作（[原始意图]）。
+
+---
+
+Wait for the user's reply:
+- User chooses **A** or completes setup.sh and reports back → re-run all environment checks (steps 0–3); if all pass, continue original intent; if any still fail, report the specific item and show the options again
+- User chooses **B** → load [references/onboarding.md](references/onboarding.md) and follow the agent-guided steps
 
 Proceed to intent detection.
 
