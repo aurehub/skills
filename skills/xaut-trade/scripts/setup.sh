@@ -112,114 +112,14 @@ step "Configure wallet keystore"
 if cast wallet list 2>/dev/null | grep -qF "$ACCOUNT_NAME"; then
   ok "Keystore account '$ACCOUNT_NAME' already exists, skipping"
 else
-  echo -e "  No keystore account '$ACCOUNT_NAME' found. Choose an option:"
-  echo -e "    ${BOLD}1)${NC} Import an existing private key"
-  echo -e "    ${BOLD}2)${NC} Generate a brand-new wallet"
-  echo -e "    ${BOLD}3)${NC} I already ran 'cast wallet import $ACCOUNT_NAME' (just verify)"
-  echo -e "    ${BOLD}4)${NC} Skip — I will set up the wallet manually"
-  read -rp "  Enter 1, 2, 3, or 4: " WALLET_CHOICE
-
-  case "$WALLET_CHOICE" in
-    1)
-      # U2/U3: explicit "open a new terminal" + PATH reminder
-      manual "Security reason: private keys must not be passed as command-line arguments —
-they get stored in shell history (~/.zsh_history / ~/.bash_history).
-Using --interactive mode, the key is entered without echo and never logged.
-
-Open a NEW terminal tab or window, then run:
-
-  # If 'cast' is not found, first run:
-  source ~/.zshrc       # zsh users
-  source ~/.bashrc      # bash users
-
-  $ cast wallet import $ACCOUNT_NAME --interactive
-    → Paste your private key when prompted (input is hidden)
-    → Set a keystore password and remember it — needed in the next step
-
-Return to this terminal when done."
-
-      # U4: retry loop — keep checking until account actually exists
-      while ! cast wallet list 2>/dev/null | grep -qF "$ACCOUNT_NAME"; do
-        echo -e "  ${YELLOW}Account '$ACCOUNT_NAME' not found yet.${NC}"
-        read -rp "  Press Enter to check again, or type 'abort' to exit: " RETRY_INPUT
-        if [[ "${RETRY_INPUT:-}" == "abort" ]]; then
-          echo -e "  ${RED}Aborted.${NC}"; exit 1
-        fi
-      done
-      ;;
-    2)
-      manual "Security reason: the private key appears only once and must be saved by you
-(a password manager is recommended). The script must not store or log it.
-
-Open a NEW terminal tab or window, then run these two commands in order:
-
-  # If 'cast' is not found, first run:
-  source ~/.zshrc       # zsh users
-  source ~/.bashrc      # bash users
-
-  $ cast wallet new                                  # note down the private key output
-  $ cast wallet import $ACCOUNT_NAME --interactive   # import it and set a password
-    → Remember the password — it is needed in the next step
-
-Return to this terminal when done."
-
-      # U4: retry loop
-      while ! cast wallet list 2>/dev/null | grep -qF "$ACCOUNT_NAME"; do
-        echo -e "  ${YELLOW}Account '$ACCOUNT_NAME' not found yet.${NC}"
-        read -rp "  Press Enter to check again, or type 'abort' to exit: " RETRY_INPUT
-        if [[ "${RETRY_INPUT:-}" == "abort" ]]; then
-          echo -e "  ${RED}Aborted.${NC}"; exit 1
-        fi
-      done
-      ;;
-    3)
-      # User claims it is already done — verify
-      if ! cast wallet list 2>/dev/null | grep -qF "$ACCOUNT_NAME"; then
-        echo -e "  ${RED}❌ Account '$ACCOUNT_NAME' not found.${NC}"
-        echo -e "  Run 'cast wallet list' to confirm. If the account is missing, re-run"
-        echo -e "  this script and choose option 1 or 2."
-        exit 1
-      fi
-      ;;
-    4)
-      echo -e "\n  Manual wallet setup instructions:"
-      echo -e "  ─────────────────────────────────────────────────────────"
-      echo -e "  Option A — import an existing private key:"
-      echo -e "    \$ cast wallet import $ACCOUNT_NAME --interactive"
-      echo -e ""
-      echo -e "  Option B — generate a new wallet first:"
-      echo -e "    \$ cast wallet new                                 # save the private key"
-      echo -e "    \$ cast wallet import $ACCOUNT_NAME --interactive  # then import it"
-      echo -e "  ─────────────────────────────────────────────────────────"
-      echo -e "  After completing wallet setup, re-run this script to continue."
-      exit 0
-      ;;
-    *)
-      echo -e "  ${RED}Invalid choice, exiting.${NC}"; exit 1
-      ;;
-  esac
-
-  ok "Keystore account '$ACCOUNT_NAME' is ready"
-fi
-
-# ── Step 4: Password file ──────────────────────────────────────────────────────
-step "Create keystore password file"
-
-if [ -f ~/.aurehub/.wallet.password ]; then
-  ok "Password file already exists, skipping"
-else
-  # U5: explain why the password file is needed
-  echo -e "  ${BLUE}Why this is needed:${NC} The Agent signs transactions using your Foundry"
-  echo -e "  keystore. Storing the password in a protected file (chmod 600) lets the"
-  echo -e "  Agent unlock the keystore automatically — the password never appears in"
-  echo -e "  shell history or any log file."
+  echo -e "  No keystore account '${BOLD}$ACCOUNT_NAME${NC}' found. Generating a new wallet..."
+  echo -e "  ${YELLOW}⚠ The private key will be displayed once. Save it to a secure location (e.g. password manager).${NC}"
   echo
-  read -rsp "  Enter the keystore password you set during 'cast wallet import': " WALLET_PASSWORD
-  echo
-  printf '%s' "$WALLET_PASSWORD" > ~/.aurehub/.wallet.password
-  chmod 600 ~/.aurehub/.wallet.password
-  unset WALLET_PASSWORD
-  ok "Password file created: ~/.aurehub/.wallet.password (permissions: 600)"
+
+  cast wallet new ~/.foundry/keystores "$ACCOUNT_NAME" \
+    --unsafe-password "$(cat ~/.aurehub/.wallet.password)"
+
+  ok "Keystore account '$ACCOUNT_NAME' created"
 fi
 
 # ── Step 5: Read wallet address ────────────────────────────────────────────────
