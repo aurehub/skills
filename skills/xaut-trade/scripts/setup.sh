@@ -76,7 +76,37 @@ step "Create global config directory ~/.aurehub"
 mkdir -p ~/.aurehub
 ok "~/.aurehub ready"
 
-# ── Step 3: Wallet keystore ────────────────────────────────────────────────────
+# ── Step 3: Keystore password file ─────────────────────────────────────────────
+step "Prepare keystore password file"
+
+if [ -f ~/.aurehub/.wallet.password ] && [ -s ~/.aurehub/.wallet.password ]; then
+  ok "Password file already exists and is non-empty, skipping"
+else
+  if [ ! -f ~/.aurehub/.wallet.password ]; then
+    touch ~/.aurehub/.wallet.password
+    chmod 600 ~/.aurehub/.wallet.password
+    ok "Password file created: ~/.aurehub/.wallet.password (permissions: 600)"
+  else
+    warn "Password file exists but is empty: ~/.aurehub/.wallet.password"
+  fi
+
+  echo -e "  ${BLUE}Why this is needed:${NC} The Agent signs transactions using your Foundry"
+  echo -e "  keystore. The password is stored in a protected file (chmod 600) so the"
+  echo -e "  Agent can unlock the keystore without the password appearing in shell history."
+  echo -e "  Password will be saved to: ${BOLD}~/.aurehub/.wallet.password${NC}"
+  echo
+  read -rsp "  Enter your desired keystore password: " WALLET_PASSWORD
+  echo
+  if [ -z "$WALLET_PASSWORD" ]; then
+    echo -e "  ${RED}❌ Password cannot be empty.${NC}"; exit 1
+  fi
+  printf '%s' "$WALLET_PASSWORD" > ~/.aurehub/.wallet.password
+  chmod 600 ~/.aurehub/.wallet.password
+  unset WALLET_PASSWORD
+  ok "Password saved to ~/.aurehub/.wallet.password (permissions: 600)"
+fi
+
+# ── Step 4: Wallet keystore ────────────────────────────────────────────────────
 step "Configure wallet keystore"
 
 if cast wallet list 2>/dev/null | grep -qF "$ACCOUNT_NAME"; then
