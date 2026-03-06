@@ -242,23 +242,26 @@ if [ "$NODE_OK" = true ]; then
   cd "$SCRIPT_DIR" && npm install --silent
   ok "npm packages installed"
 
-  # Prompt for UniswapX API Key inline
-  echo
-  echo -e "  ${BOLD}UniswapX API Key${NC} (required for limit orders, not needed for market orders)"
-  echo -e "  Get one free (~5 min): ${BOLD}https://developers.uniswap.org/dashboard${NC}"
-  echo -e "  Sign in with Google/GitHub → Generate Token (Free tier)"
-  echo
-  read -rp "  Enter API Key (or press Enter to skip): " UNISWAPX_KEY
-  if [ -n "$UNISWAPX_KEY" ]; then
-    # Remove any existing UNISWAPX_API_KEY line then append
-    if grep -v '^UNISWAPX_API_KEY=' ~/.aurehub/.env > /tmp/.env.tmp 2>/dev/null && [ -s /tmp/.env.tmp ]; then
-      mv /tmp/.env.tmp ~/.aurehub/.env
-    fi
-    echo "UNISWAPX_API_KEY=$UNISWAPX_KEY" >> ~/.aurehub/.env
-    unset UNISWAPX_KEY
-    ok "UNISWAPX_API_KEY saved to ~/.aurehub/.env"
+  # Prompt for UniswapX API Key inline (skip if already configured)
+  if grep -q '^UNISWAPX_API_KEY=.\+' ~/.aurehub/.env 2>/dev/null; then
+    ok "UNISWAPX_API_KEY already configured, skipping"
   else
-    ok "Skipped (add UNISWAPX_API_KEY to ~/.aurehub/.env later if needed)"
+    echo
+    echo -e "  ${BOLD}UniswapX API Key${NC} (required for limit orders, not needed for market orders)"
+    echo -e "  Get one free (~5 min): ${BOLD}https://developers.uniswap.org/dashboard${NC}"
+    echo -e "  Sign in with Google/GitHub → Generate Token (Free tier)"
+    echo
+    read -rp "  Enter API Key (or press Enter to skip): " UNISWAPX_KEY
+    if [ -n "$UNISWAPX_KEY" ]; then
+      if grep -v '^UNISWAPX_API_KEY=' ~/.aurehub/.env > /tmp/.env.tmp 2>/dev/null && [ -s /tmp/.env.tmp ]; then
+        mv /tmp/.env.tmp ~/.aurehub/.env
+      fi
+      echo "UNISWAPX_API_KEY=$UNISWAPX_KEY" >> ~/.aurehub/.env
+      unset UNISWAPX_KEY
+      ok "UNISWAPX_API_KEY saved to ~/.aurehub/.env"
+    else
+      ok "Skipped (add UNISWAPX_API_KEY to ~/.aurehub/.env later if needed)"
+    fi
   fi
 else
   warn "Limit orders unavailable (Node.js not installed). Re-run setup.sh after installing Node.js >= 18."
