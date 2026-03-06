@@ -37,28 +37,24 @@ foundryup
 source ~/.zshrc   # or ~/.bashrc
 ```
 
-**2. Configure wallet**
+**2. Create password file and configure wallet**
 
-Import an existing private key (use `--interactive` to avoid key appearing in shell history):
-
-```bash
-cast wallet import aurehub-wallet --interactive
-```
-
-Or generate a new wallet first:
-
-```bash
-cast wallet new   # note the private key — shown only once
-cast wallet import aurehub-wallet --interactive
-```
-
-Create the password file (use `read -s` to avoid the password appearing in shell history):
+Create the password file first (password is hidden, file gets `600` permissions atomically):
 
 ```bash
 mkdir -p ~/.aurehub
-read -rsp "Keystore password: " _pwd && printf '%s' "$_pwd" > ~/.aurehub/.wallet.password && unset _pwd
-chmod 600 ~/.aurehub/.wallet.password
+( umask 077; read -rsp "Keystore password: " _pwd && printf '%s' "$_pwd" > ~/.aurehub/.wallet.password ); unset _pwd
 ```
+
+Generate a new wallet using the password file:
+
+```bash
+mkdir -p ~/.foundry/keystores
+cast wallet new ~/.foundry/keystores aurehub-wallet \
+  --password-file ~/.aurehub/.wallet.password
+```
+
+> ⚠️ The private key is shown only once. Save it to a secure location (e.g. password manager) and clear your terminal scrollback after saving.
 
 > Foundry keystores are stored in `~/.foundry/keystores/`; the password file goes in `~/.aurehub/`.
 
