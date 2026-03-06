@@ -11,7 +11,7 @@ cast block-number --rpc-url "$ETH_RPC_URL"
 
 If either fails, stop and prompt:
 - Foundry not installed: install Foundry first
-- RPC unavailable: replace `ETH_RPC_URL`
+- RPC unavailable: trigger RPC fallback sequence (see RPC Fallback section in SKILL.md)
 
 ## 2. Signing Mode Detection
 
@@ -48,6 +48,18 @@ Skip keystore checks and continue.
 
 Hard-stop:
 > ❌ No signing method configured. Set `FOUNDRY_ACCOUNT` (recommended) or `PRIVATE_KEY` (fallback) in `.env`.
+
+After completing signing-mode validation, derive the wallet address:
+
+```bash
+WALLET_ADDRESS=$(cast wallet address --account "$FOUNDRY_ACCOUNT" --password-file "$KEYSTORE_PASSWORD_FILE")
+```
+
+If using private key fallback mode:
+
+```bash
+WALLET_ADDRESS=$(cast wallet address "$PRIVATE_KEY")
+```
 
 ## 3. Wallet & Gas Check
 
