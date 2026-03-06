@@ -183,33 +183,83 @@ else
   ok "config.yaml generated (defaults are ready to use)"
 fi
 
-# ── Step 7: npm dependencies (limit orders, optional) ─────────────────────────
-step "Limit order dependencies (optional — not needed for market buy/sell)"
+# ── Step N: Limit order dependencies (npm + UniswapX API Key) ─────────────────
+step "Limit order dependencies (npm + UniswapX API Key)"
 
-read -rp "  Install npm packages for limit order support? [y/N]: " INSTALL_LIMIT
-if [[ "${INSTALL_LIMIT:-}" =~ ^[Yy]$ ]]; then
-  if ! command -v node &>/dev/null; then
-    manual "Node.js (>= 18) is required for limit orders.
-Install it, then re-run this script:
-  macOS:  brew install node
-  Linux:  https://nodejs.org/en/download/package-manager"
-    exit 2
+_install_nodejs() {
+  local suggestion=""
+  if [[ "$OSTYPE" == "darwin"* ]]; then
+    if command -v brew &>/dev/null; then
+      suggestion="brew install node"
+    else
+      suggestion="# Install Homebrew first: https://brew.sh\nbrew install node"
+    fi
+  elif command -v apt-get &>/dev/null; then
+    suggestion="sudo apt install nodejs npm"
+  elif command -v dnf &>/dev/null; then
+    suggestion="sudo dnf install nodejs"
+  elif command -v yum &>/dev/null; then
+    suggestion="sudo yum install nodejs"
+  else
+    echo -e "  ${YELLOW}Could not detect package manager. Install Node.js >= 18 from: https://nodejs.org${NC}"
+    return 1
   fi
 
+  echo -e "  Node.js >= 18 is required for limit orders."
+  echo -e "  Suggested install command:"
+  echo -e "    ${BOLD}$(echo -e "$suggestion")${NC}"
+  echo
+  read -rp "  Run it now? [Y/n]: " RUN_NODE_INSTALL
+  if [[ "${RUN_NODE_INSTALL:-}" =~ ^[Nn]$ ]]; then
+    echo -e "  ${YELLOW}Skipped. Limit orders will not be available until Node.js >= 18 is installed.${NC}"
+    return 1
+  fi
+  eval "$suggestion"
+}
+
+# Check Node.js
+NODE_OK=false
+if command -v node &>/dev/null; then
   NODE_MAJOR=$(node -e 'process.stdout.write(process.version.split(".")[0].slice(1))')
-  if [ "$NODE_MAJOR" -lt 18 ]; then
+  if [ "$NODE_MAJOR" -ge 18 ]; then
+    ok "Node.js $(node --version)"
+    NODE_OK=true
+  else
     warn "Node.js version too old: $(node --version) (requires >= 18)"
-    manual "Upgrade Node.js, then re-run this script:
-  https://nodejs.org/en/download/package-manager"
-    exit 2
+    if _install_nodejs; then
+      NODE_OK=true
+    fi
   fi
+else
+  warn "Node.js not found"
+  if _install_nodejs; then
+    NODE_OK=true
+  fi
+fi
 
-  ok "Node.js $(node --version)"
+if [ "$NODE_OK" = true ]; then
   echo "  Installing npm packages..."
   cd "$SCRIPT_DIR" && npm install --silent
   ok "npm packages installed"
+
+  # Prompt for UniswapX API Key inline
+  echo
+  echo -e "  ${BOLD}UniswapX API Key${NC} (required for limit orders, not needed for market orders)"
+  echo -e "  Get one free (~5 min): ${BOLD}https://developers.uniswap.org/dashboard${NC}"
+  echo -e "  Sign in with Google/GitHub → Generate Token (Free tier)"
+  echo
+  read -rp "  Enter API Key (or press Enter to skip): " UNISWAPX_KEY
+  if [ -n "$UNISWAPX_KEY" ]; then
+    # Remove any existing UNISWAPX_API_KEY line then append
+    grep -v '^UNISWAPX_API_KEY=' ~/.aurehub/.env > /tmp/.env.tmp && mv /tmp/.env.tmp ~/.aurehub/.env || true
+    echo "UNISWAPX_API_KEY=$UNISWAPX_KEY" >> ~/.aurehub/.env
+    unset UNISWAPX_KEY
+    ok "UNISWAPX_API_KEY saved to ~/.aurehub/.env"
+  else
+    ok "Skipped (add UNISWAPX_API_KEY to ~/.aurehub/.env later if needed)"
+  fi
 else
-  echo "  Skipped"
+  warn "Limit orders unavailable (Node.js not installed). Re-run setup.sh after installing Node.js >= 18."
 fi
 
 # ── Step 8: Activity rankings (optional) ─────────────────────────────────────
