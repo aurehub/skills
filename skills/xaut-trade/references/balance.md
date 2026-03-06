@@ -85,5 +85,19 @@ cast call "$USDT" "balanceOf(address)" "$WALLET_ADDRESS" --rpc-url "$ETH_RPC_URL
 cast call "$XAUT" "balanceOf(address)" "$WALLET_ADDRESS" --rpc-url "$ETH_RPC_URL"
 ```
 
+## Parsing Rule (MANDATORY)
+
+**Never** use return-type annotations (e.g. `balanceOf(address)(uint256)`) when the result will be used in scripts or Python interpolation. The annotated form produces output like `24980609 [2.498e7]` which breaks shell variable assignment and Python `-c` strings.
+
+Always parse `cast call` output with one of these two patterns:
+
+```bash
+# Pattern A: no annotation + cast to-dec (preferred)
+BALANCE=$(cast to-dec $(cast call "$TOKEN" "balanceOf(address)" "$WALLET" --rpc-url "$RPC"))
+
+# Pattern B: annotation + awk to strip the comment
+BALANCE=$(cast call "$TOKEN" "balanceOf(address)(uint256)" "$WALLET" --rpc-url "$RPC" | awk '{print $1}')
+```
+
 - **Sell flow (required)**: check if balance covers the sell amount; if not, hard-stop and report the shortfall
 - **Buy flow (optional)**: used for pre/post-trade position comparison
