@@ -27,9 +27,13 @@ If the script exits with an error, follow the manual steps below for the failed 
 ### Step 0: Install Foundry (if `cast` is unavailable)
 
 ```bash
-curl -L https://foundry.paradigm.xyz | bash && foundryup
+curl -L https://foundry.paradigm.xyz | bash && \
+  export PATH="$HOME/.foundry/bin:$PATH" && \
+  foundryup
 cast --version   # Expected output: cast Version: x.y.z
 ```
+
+> After installation, open a new terminal or run `source ~/.zshrc` (zsh) / `source ~/.bashrc` (bash) so `cast` is available in future sessions.
 
 Skip this step if `cast --version` succeeds.
 
