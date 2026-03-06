@@ -47,50 +47,67 @@ mkdir -p ~/.aurehub
 
 ---
 
-## Step 2: Wallet Setup
+## Step 2: Prepare Password File
 
-**Auto-detect** — do not ask the user for a preference; check in order:
+Before creating the wallet, the password file must exist and have content.
 
-### Case A: User wants to import an existing private key
-
-When the user provides a private key (64-character hex string starting with `0x`):
+Check if `~/.aurehub/.wallet.password` exists and is non-empty:
 
 ```bash
-cast wallet import aurehub-wallet --private-key <PRIVATE_KEY>
-# When prompted for a keystore password, use the user-provided password or suggest a strong random one
+[ -s ~/.aurehub/.wallet.password ] && echo "ready" || echo "missing or empty"
 ```
 
-### Case B: User wants to create a brand-new wallet
+If missing or empty, instruct the user to run in their terminal (password will not appear in chat):
 
-```bash
-# Generate a new wallet; outputs address and private key
-cast wallet new
+```
+Please run the following in your terminal (input is hidden):
 
-# Immediately import into keystore (use the private key from the previous step)
-cast wallet import aurehub-wallet --private-key <GENERATED_PRIVATE_KEY>
+  read -rsp "Keystore password: " p && \
+  printf '%s' "$p" > ~/.aurehub/.wallet.password && \
+  chmod 600 ~/.aurehub/.wallet.password
+
+Tell me when done.
 ```
 
-> ⚠️ The private key of the new wallet is shown only once. Make sure the user saves it to a safe location before continuing.
-
-**Both paths complete with**: create password file
+Wait for user confirmation, then verify:
 
 ```bash
-# Ask user for the keystore password (set during import)
-echo "<keystore_password>" > ~/.aurehub/.wallet.password
-chmod 600 ~/.aurehub/.wallet.password
+[ -s ~/.aurehub/.wallet.password ] && echo "ready" || echo "still empty"
 ```
 
-**Auto-fetch wallet address** (no manual input required):
+If still empty → repeat the prompt.
+
+---
+
+## Step 3: Wallet Setup
+
+**Auto-detect**: if `aurehub-wallet` already exists in the keystore, skip this step.
 
 ```bash
-cast wallet address --account aurehub-wallet --password-file ~/.aurehub/.wallet.password
-# Example output: 0xf39Fd6e51aad88F6F4ce6aB8827279cffFb92266
+cast wallet list 2>/dev/null | grep -qF "aurehub-wallet" && echo "exists" || echo "missing"
+```
+
+If missing, create a new wallet using the password file:
+
+```bash
+mkdir -p ~/.foundry/keystores
+cast wallet new ~/.foundry/keystores aurehub-wallet \
+  --password-file ~/.aurehub/.wallet.password
+```
+
+> ⚠️ The private key is shown only once. Ask the user to save it to a secure location before continuing. Remind them to clear terminal scrollback after saving.
+
+**Auto-fetch wallet address**:
+
+```bash
+source ~/.aurehub/.env
 WALLET_ADDRESS=$(cast wallet address --account aurehub-wallet --password-file ~/.aurehub/.wallet.password)
+echo "Wallet address: $WALLET_ADDRESS"
 ```
 
 ---
 
-## Step 3: Generate Config Files
+## Step 4: Generate Config Files
 
 Write `~/.aurehub/.env` (write directly — do not ask the user to copy manually):
 
@@ -118,7 +135,7 @@ cp "$(git rev-parse --show-toplevel)/skills/xaut-trade/config.example.yaml" ~/.a
 
 ---
 
-## Step 4: Verify
+## Step 5: Verify
 
 ```bash
 source ~/.aurehub/.env
