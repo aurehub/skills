@@ -234,6 +234,9 @@ else
 
   cat > ~/.aurehub/.env << EOF
 ETH_RPC_URL=$ETH_RPC_URL
+# Fallback RPCs tried in order when primary fails with a network error (429/502/timeout)
+# Add a paid Alchemy/Infura node at the front for higher reliability
+ETH_RPC_URL_FALLBACK=https://eth.merkle.io,https://rpc.flashbots.net/fast,https://eth.drpc.org,https://ethereum.publicnode.com
 FOUNDRY_ACCOUNT=$ACCOUNT_NAME
 KEYSTORE_PASSWORD_FILE=~/.aurehub/.wallet.password
 # Required for limit orders only:

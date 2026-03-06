@@ -5,7 +5,7 @@ license: MIT
 compatibility: Requires Foundry (cast), Node.js >= 18 (limit orders only), and internet access to Ethereum RPC and UniswapX API
 metadata:
   author: aurehub
-  version: "1.0"
+  version: "1.1.0"
 ---
 
 # xaut-trade
@@ -35,6 +35,13 @@ This skill connects to external services (Ethereum RPC, UniswapX API, and option
 If **all pass**: source `~/.aurehub/.env`, then proceed to intent detection.
 
 > **Important — shell isolation**: Every Bash tool call runs in a new subprocess; variables set in one call do NOT persist to the next. Therefore **every Bash command block that needs env vars must begin with `source ~/.aurehub/.env`** (or `set -a; source ~/.aurehub/.env; set +a` to auto-export all variables).
+>
+> **WALLET_ADDRESS is not stored in `.env`** — it must be derived fresh in every bash block that uses it:
+> ```bash
+> source ~/.aurehub/.env
+> WALLET_ADDRESS=$(cast wallet address --account "$FOUNDRY_ACCOUNT" --password-file "$KEYSTORE_PASSWORD_FILE")
+> ```
+> This ensures the address always matches the actual keystore, regardless of session state.
 
 If **any fail**: do not continue with the original intent — run the setup script first:
 
@@ -84,6 +91,24 @@ Proceed to intent detection.
 - When ETH gas balance is insufficient, hard-stop and prompt to top up
 - When the network or pair is unsupported, hard-stop
 - When the pair is not in the whitelist (currently: USDT_XAUT / XAUT_USDT), hard-stop and reply "Only USDT/XAUT pairs are supported; [user's token] is not supported"
+
+## RPC Fallback
+
+After sourcing `~/.aurehub/.env`, parse `ETH_RPC_URL_FALLBACK` as a comma-separated list of fallback RPC URLs.
+
+If any `cast call` or `cast send` command fails and its output contains any of the following:
+`429`, `502`, `503`, `timeout`, `connection refused`, `rate limit`, `Too Many Requests`
+
+Then:
+1. Try the same command with each fallback URL in order (replace `--rpc-url "$ETH_RPC_URL"` with the fallback URL)
+2. First success → set that URL as the active RPC for all remaining commands this session; do not retry the primary
+3. All fallbacks exhausted → hard-stop with:
+   > RPC unavailable. All configured nodes failed (primary + N fallbacks).
+   > To fix: add a paid RPC (Alchemy/Infura) at the front of `ETH_RPC_URL_FALLBACK` in `~/.aurehub/.env`
+
+Do NOT trigger fallback for non-network errors: insufficient balance, contract revert, invalid parameters, nonce mismatch. Report these directly to the user.
+
+**Session stickiness:** Once a fallback is selected, use it for every subsequent `--rpc-url` in this session. Never switch back to the primary or try other fallbacks unless the current one also fails.
 
 ## Intent Detection
 
@@ -156,7 +181,7 @@ After **any** on-chain trade completes successfully (buy swap, sell swap, or lim
 1. `source ~/.aurehub/.env`
 2. If `RANKINGS_OPT_IN` != `"true"` → silent skip, do not prompt
 3. `REGISTERED=$(cat ~/.aurehub/.registered 2>/dev/null)`
-4. `WALLET_ADDRESS=$(cast wallet address --account "$FOUNDRY_ACCOUNT")`
+4. `WALLET_ADDRESS=$(cast wallet address --account "$FOUNDRY_ACCOUNT" --password-file ~/.aurehub/.wallet.password)`
 5. If `"$REGISTERED"` starts with `"$WALLET_ADDRESS:"` → already registered, silent skip
 6. Otherwise → register using `NICKNAME` from `.env`:
    ```bash
@@ -201,7 +226,7 @@ Output must include:
 ## Error Handling
 
 - Missing prerequisite variable: prompt to add the variable to `.env` and stop
-- RPC unavailable: prompt to switch RPC node and stop
+- RPC network error (429/502/timeout): trigger RPC fallback sequence (see RPC Fallback section)
 - Insufficient balance: report minimum top-up amount and stop
 - User has not confirmed: stay in Preview — do not execute
 - Transaction failed: return failure reason and retry suggestions (reduce amount / increase slippage tolerance / check nonce and gas)

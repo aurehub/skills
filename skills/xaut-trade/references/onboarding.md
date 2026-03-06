@@ -79,9 +79,9 @@ chmod 600 ~/.aurehub/.wallet.password
 **Auto-fetch wallet address** (no manual input required):
 
 ```bash
-cast wallet address --account aurehub-wallet
+cast wallet address --account aurehub-wallet --password-file ~/.aurehub/.wallet.password
 # Example output: 0xf39Fd6e51aad88F6F4ce6aB8827279cffFb92266
-WALLET_ADDRESS=$(cast wallet address --account aurehub-wallet)
+WALLET_ADDRESS=$(cast wallet address --account aurehub-wallet --password-file ~/.aurehub/.wallet.password)
 ```
 
 ---
@@ -93,6 +93,8 @@ Write `~/.aurehub/.env` (write directly — do not ask the user to copy manually
 ```bash
 cat > ~/.aurehub/.env << 'EOF'
 ETH_RPC_URL=https://eth.llamarpc.com
+# Fallback RPCs (tried in order on network error; add a paid node at front for reliability)
+ETH_RPC_URL_FALLBACK=https://eth.merkle.io,https://rpc.flashbots.net/fast,https://eth.drpc.org,https://ethereum.publicnode.com
 FOUNDRY_ACCOUNT=aurehub-wallet
 KEYSTORE_PASSWORD_FILE=~/.aurehub/.wallet.password
 # Required for limit orders, not needed for market orders:
@@ -102,7 +104,7 @@ KEYSTORE_PASSWORD_FILE=~/.aurehub/.wallet.password
 EOF
 ```
 
-> If the user has a faster RPC (e.g. Alchemy/Infura), replace `ETH_RPC_URL`.
+> If the user has a paid RPC (e.g. Alchemy/Infura), replace `ETH_RPC_URL` or prepend it to `ETH_RPC_URL_FALLBACK` for automatic failover.
 
 Copy contract config (defaults are ready to use — no user edits needed):
 
@@ -123,7 +125,7 @@ cast wallet list | grep aurehub-wallet
 If all pass, the environment is ready. Inform the user:
 
 ```bash
-WALLET_ADDRESS=$(cast wallet address --account aurehub-wallet)
+WALLET_ADDRESS=$(cast wallet address --account aurehub-wallet --password-file ~/.aurehub/.wallet.password)
 echo "Environment initialized. Wallet address: $WALLET_ADDRESS"
 echo "Make sure the wallet holds a small amount of ETH (≥ 0.005) for gas."
 ```

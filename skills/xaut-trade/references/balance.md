@@ -11,7 +11,7 @@ cast block-number --rpc-url "$ETH_RPC_URL"
 
 If either fails, stop and prompt:
 - Foundry not installed: install Foundry first
-- RPC unavailable: replace `ETH_RPC_URL`
+- RPC unavailable: trigger RPC fallback sequence (see RPC Fallback section in SKILL.md)
 
 ## 2. Signing Mode Detection
 
@@ -49,6 +49,18 @@ Skip keystore checks and continue.
 Hard-stop:
 > ❌ No signing method configured. Set `FOUNDRY_ACCOUNT` (recommended) or `PRIVATE_KEY` (fallback) in `.env`.
 
+After completing signing-mode validation, derive the wallet address:
+
+```bash
+WALLET_ADDRESS=$(cast wallet address --account "$FOUNDRY_ACCOUNT" --password-file "$KEYSTORE_PASSWORD_FILE")
+```
+
+If using private key fallback mode:
+
+```bash
+WALLET_ADDRESS=$(cast wallet address "$PRIVATE_KEY")
+```
+
 ## 3. Wallet & Gas Check
 
 ```bash
@@ -71,6 +83,20 @@ cast call "$USDT" "balanceOf(address)" "$WALLET_ADDRESS" --rpc-url "$ETH_RPC_URL
 
 ```bash
 cast call "$XAUT" "balanceOf(address)" "$WALLET_ADDRESS" --rpc-url "$ETH_RPC_URL"
+```
+
+## Parsing Rule (MANDATORY)
+
+**Never** use return-type annotations (e.g. `balanceOf(address)(uint256)`) when the result will be used in scripts or Python interpolation. The annotated form produces output like `24980609 [2.498e7]` which breaks shell variable assignment and Python `-c` strings.
+
+Always parse `cast call` output with one of these two patterns:
+
+```bash
+# Pattern A: no annotation + cast to-dec (preferred)
+BALANCE=$(cast to-dec $(cast call "$TOKEN" "balanceOf(address)" "$WALLET" --rpc-url "$RPC"))
+
+# Pattern B: annotation + awk to strip the comment
+BALANCE=$(cast call "$TOKEN" "balanceOf(address)(uint256)" "$WALLET" --rpc-url "$RPC" | awk '{print $1}')
 ```
 
 - **Sell flow (required)**: check if balance covers the sell amount; if not, hard-stop and report the shortfall

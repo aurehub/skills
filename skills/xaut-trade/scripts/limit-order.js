@@ -82,7 +82,8 @@ async function place(args) {
   const nonceRes = await fetch(`${apiUrl}/nonce?address=${wallet}&chainId=${chainId}`, { headers: uniswapHeaders });
   if (!nonceRes.ok) throw new Error(`Nonce fetch failed: ${nonceRes.status} ${await nonceRes.text()}`);
   const nonceData = await nonceRes.json();
-  const nonce = nonceData.nonce;
+  // Allow --nonce override to skip a used nonce; otherwise use API-returned nonce
+  const nonce = args.nonce || nonceData.nonce;
 
   // 3. Build order using DutchOrderBuilder (no LimitOrderBuilder in SDK v2)
   //    Set decayStartTime === decayEndTime === deadline → zero decay = limit order
