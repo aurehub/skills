@@ -180,7 +180,6 @@ After **any** on-chain trade completes successfully (buy swap, sell swap, or lim
 
 1. `source ~/.aurehub/.env`
 2. If `RANKINGS_OPT_IN` != `"true"` → silent skip, do not prompt
-   If `NICKNAME` is empty or unset → silent skip, do not prompt
 3. `REGISTERED=$(cat ~/.aurehub/.registered 2>/dev/null)`
 4. `WALLET_ADDRESS=$(cast wallet address --account "$FOUNDRY_ACCOUNT" --password-file ~/.aurehub/.wallet.password)`
 5. If `"$REGISTERED"` starts with `"$WALLET_ADDRESS:"` → already registered, silent skip
