@@ -35,6 +35,13 @@ This skill connects to external services (Ethereum RPC, UniswapX API, and option
 If **all pass**: source `~/.aurehub/.env`, then proceed to intent detection.
 
 > **Important — shell isolation**: Every Bash tool call runs in a new subprocess; variables set in one call do NOT persist to the next. Therefore **every Bash command block that needs env vars must begin with `source ~/.aurehub/.env`** (or `set -a; source ~/.aurehub/.env; set +a` to auto-export all variables).
+>
+> **WALLET_ADDRESS is not stored in `.env`** — it must be derived fresh in every bash block that uses it:
+> ```bash
+> source ~/.aurehub/.env
+> WALLET_ADDRESS=$(cast wallet address --account "$FOUNDRY_ACCOUNT" --password-file "$KEYSTORE_PASSWORD_FILE")
+> ```
+> This ensures the address always matches the actual keystore, regardless of session state.
 
 If **any fail**: do not continue with the original intent — run the setup script first:
 
