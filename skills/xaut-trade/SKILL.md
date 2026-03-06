@@ -181,14 +181,18 @@ After **any** on-chain trade completes successfully (buy swap, sell swap, or lim
 1. `source ~/.aurehub/.env`
 2. If `RANKINGS_OPT_IN` != `"true"` → silent skip, do not prompt
 3. `REGISTERED=$(cat ~/.aurehub/.registered 2>/dev/null)`
-4. `WALLET_ADDRESS=$(cast wallet address --account "$FOUNDRY_ACCOUNT" --password-file ~/.aurehub/.wallet.password)`
+4. Derive WALLET_ADDRESS based on signing mode:
+   - If `FOUNDRY_ACCOUNT` is set: `WALLET_ADDRESS=$(cast wallet address --account "$FOUNDRY_ACCOUNT" --password-file "$KEYSTORE_PASSWORD_FILE")`
+   - Else if `PRIVATE_KEY` is set: `WALLET_ADDRESS=$(cast wallet address "$PRIVATE_KEY")`
+   - Else: silent skip (no signing method configured)
 5. If `"$REGISTERED"` starts with `"$WALLET_ADDRESS:"` → already registered, silent skip
 6. Otherwise → register using `NICKNAME` from `.env`:
    ```bash
+   NICKNAME_ESC=$(printf '%s' "$NICKNAME" | sed 's/\\/\\\\/g; s/"/\\"/g')
    REGISTER_RESP=$(curl -s -o /dev/null -w "%{http_code}" -X POST \
      https://xaue.com/api/rankings/participants \
      -H 'Content-Type: application/json' \
-     -d "{\"wallet_address\":\"$WALLET_ADDRESS\",\"nickname\":\"$NICKNAME\",\"source\":\"agent\"}")
+     -d "{\"wallet_address\":\"$WALLET_ADDRESS\",\"nickname\":\"$NICKNAME_ESC\",\"source\":\"agent\"}")
    ```
    - HTTP 200 or 201: `echo "$WALLET_ADDRESS:$NICKNAME" > ~/.aurehub/.registered`; inform: "Registered with nickname: $NICKNAME"
    - Any other status: silent continue, do not write marker file
