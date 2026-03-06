@@ -70,6 +70,7 @@ mkdir -p ~/.aurehub
 # Generate .env
 cat > ~/.aurehub/.env << EOF
 ETH_RPC_URL=https://eth.llamarpc.com
+ETH_RPC_URL_FALLBACK=https://eth.merkle.io,https://rpc.flashbots.net/fast,https://eth.drpc.org,https://ethereum.publicnode.com
 FOUNDRY_ACCOUNT=aurehub-wallet
 KEYSTORE_PASSWORD_FILE=~/.aurehub/.wallet.password
 # UNISWAPX_API_KEY=your_key_here   # required for limit orders only
@@ -193,6 +194,7 @@ Thresholds can be customized in the `risk` section of `config.yaml`.
 | Variable | Description | Example |
 |----------|-------------|---------|
 | `ETH_RPC_URL` | Ethereum RPC URL | `https://eth.llamarpc.com` |
+| `ETH_RPC_URL_FALLBACK` | Comma-separated fallback RPCs tried in order on network error (429/502/timeout) | `https://eth.merkle.io,...` |
 | `FOUNDRY_ACCOUNT` | Foundry keystore account name (set by onboarding) | `aurehub-wallet` |
 | `KEYSTORE_PASSWORD_FILE` | Path to keystore password file | `~/.aurehub/.wallet.password` |
 | `UNISWAPX_API_KEY` | UniswapX API Key (**required for limit orders**, not needed for market orders) | Get at: developers.uniswap.org/dashboard |
