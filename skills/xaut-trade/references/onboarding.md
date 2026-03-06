@@ -79,9 +79,9 @@ chmod 600 ~/.aurehub/.wallet.password
 **Auto-fetch wallet address** (no manual input required):
 
 ```bash
-cast wallet address --account aurehub-wallet
+cast wallet address --account aurehub-wallet --password-file ~/.aurehub/.wallet.password
 # Example output: 0xf39Fd6e51aad88F6F4ce6aB8827279cffFb92266
-WALLET_ADDRESS=$(cast wallet address --account aurehub-wallet)
+WALLET_ADDRESS=$(cast wallet address --account aurehub-wallet --password-file ~/.aurehub/.wallet.password)
 ```
 
 ---
@@ -125,7 +125,7 @@ cast wallet list | grep aurehub-wallet
 If all pass, the environment is ready. Inform the user:
 
 ```bash
-WALLET_ADDRESS=$(cast wallet address --account aurehub-wallet)
+WALLET_ADDRESS=$(cast wallet address --account aurehub-wallet --password-file ~/.aurehub/.wallet.password)
 echo "Environment initialized. Wallet address: $WALLET_ADDRESS"
 echo "Make sure the wallet holds a small amount of ETH (≥ 0.005) for gas."
 ```
