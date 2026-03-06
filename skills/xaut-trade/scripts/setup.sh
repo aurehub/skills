@@ -83,9 +83,7 @@ if [ -f ~/.aurehub/.wallet.password ] && [ -s ~/.aurehub/.wallet.password ]; the
   ok "Password file already exists and is non-empty, skipping"
 else
   if [ ! -f ~/.aurehub/.wallet.password ]; then
-    touch ~/.aurehub/.wallet.password
-    chmod 600 ~/.aurehub/.wallet.password
-    ok "Password file created: ~/.aurehub/.wallet.password (permissions: 600)"
+    ( umask 077; touch ~/.aurehub/.wallet.password )
   else
     warn "Password file exists but is empty: ~/.aurehub/.wallet.password"
   fi
@@ -100,8 +98,7 @@ else
   if [ -z "$WALLET_PASSWORD" ]; then
     echo -e "  ${RED}❌ Password cannot be empty.${NC}"; exit 1
   fi
-  printf '%s' "$WALLET_PASSWORD" > ~/.aurehub/.wallet.password
-  chmod 600 ~/.aurehub/.wallet.password
+  ( umask 077; printf '%s' "$WALLET_PASSWORD" > ~/.aurehub/.wallet.password )
   unset WALLET_PASSWORD
   ok "Password saved to ~/.aurehub/.wallet.password (permissions: 600)"
 fi
@@ -113,11 +110,13 @@ if cast wallet list 2>/dev/null | grep -qF "$ACCOUNT_NAME"; then
   ok "Keystore account '$ACCOUNT_NAME' already exists, skipping"
 else
   echo -e "  No keystore account '${BOLD}$ACCOUNT_NAME${NC}' found. Generating a new wallet..."
-  echo -e "  ${YELLOW}⚠ The private key will be displayed once. Save it to a secure location (e.g. password manager).${NC}"
+  echo -e "  ${YELLOW}⚠ The private key will be displayed once. Save it to a secure location"
+  echo -e "  (e.g. password manager). Clear your terminal scrollback after saving.${NC}"
   echo
 
+  mkdir -p ~/.foundry/keystores
   cast wallet new ~/.foundry/keystores "$ACCOUNT_NAME" \
-    --unsafe-password "$(cat ~/.aurehub/.wallet.password)"
+    --password-file ~/.aurehub/.wallet.password
 
   ok "Keystore account '$ACCOUNT_NAME' created"
 fi
