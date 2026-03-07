@@ -124,7 +124,13 @@ If agent-guided setup is blocked by local terminal constraints, run setup manual
 _saved=$(cat ~/.aurehub/.setup_path 2>/dev/null); [ -f "$_saved" ] && SETUP_PATH="$_saved"
 [ -z "$SETUP_PATH" ] && { GIT_ROOT=$(git rev-parse --show-toplevel 2>/dev/null); [ -n "$GIT_ROOT" ] && [ -f "$GIT_ROOT/skills/xaut-trade/scripts/setup.sh" ] && SETUP_PATH="$GIT_ROOT/skills/xaut-trade/scripts/setup.sh"; }
 [ -z "$SETUP_PATH" ] && SETUP_PATH=$(find "$HOME" -maxdepth 6 -type f -path "*/xaut-trade/scripts/setup.sh" 2>/dev/null | head -1)
-bash "$SETUP_PATH"
+if [ -n "$SETUP_PATH" ] && [ -f "$SETUP_PATH" ]; then
+  bash "$SETUP_PATH"
+else
+  echo "setup.sh not found. Run:"
+  echo '  find "$HOME" -maxdepth 6 -type f -path "*/xaut-trade/scripts/setup.sh" 2>/dev/null | head -1'
+  exit 1
+fi
 ```
 
 Then return to chat and continue your original trade intent.

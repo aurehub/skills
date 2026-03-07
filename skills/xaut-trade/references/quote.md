@@ -46,7 +46,7 @@ Must include at minimum:
 
 Determine confirmation level by USD notional and risk:
 
-- `< risk.confirm_trade_usd`: optional/light confirmation
+- `< risk.confirm_trade_usd`: show full preview, then execute without blocking confirmation
 - `>= risk.confirm_trade_usd` and `< risk.large_trade_usd`: single confirmation required
 - `>= risk.large_trade_usd`: double confirmation required
 - Estimated slippage exceeds `risk.max_slippage_bps_warn`: double confirmation required

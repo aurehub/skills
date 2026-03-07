@@ -236,18 +236,24 @@ step "Limit order dependencies (npm + UniswapX API Key)"
 
 _install_nodejs() {
   local suggestion=""
+  local install_mode=""
   if [[ "$OSTYPE" == "darwin"* ]]; then
     if command -v brew &>/dev/null; then
       suggestion="brew install node"
+      install_mode="brew"
     else
       suggestion=$'# Install Homebrew first: https://brew.sh\nbrew install node'
+      install_mode="manual-brew"
     fi
   elif command -v apt-get &>/dev/null; then
     suggestion="sudo apt install nodejs npm"
+    install_mode="apt"
   elif command -v dnf &>/dev/null; then
     suggestion="sudo dnf install nodejs"
+    install_mode="dnf"
   elif command -v yum &>/dev/null; then
     suggestion="sudo yum install nodejs"
+    install_mode="yum"
   else
     echo -e "  ${YELLOW}Could not detect package manager. Install Node.js >= 18 from: https://nodejs.org${NC}"
     return 1
@@ -262,7 +268,28 @@ _install_nodejs() {
     echo -e "  ${YELLOW}Skipped. Limit orders will not be available until Node.js >= 18 is installed.${NC}"
     return 1
   fi
-  eval "$suggestion"
+  case "$install_mode" in
+    brew)
+      brew install node
+      ;;
+    apt)
+      sudo apt install nodejs npm
+      ;;
+    dnf)
+      sudo dnf install nodejs
+      ;;
+    yum)
+      sudo yum install nodejs
+      ;;
+    manual-brew)
+      echo -e "  ${YELLOW}Homebrew is not installed. Please install Homebrew first, then run: brew install node${NC}"
+      return 1
+      ;;
+    *)
+      echo -e "  ${YELLOW}Unsupported install mode. Install Node.js >= 18 from: https://nodejs.org${NC}"
+      return 1
+      ;;
+  esac
 }
 
 # Check Node.js
@@ -330,6 +357,7 @@ if [ "$NODE_OK" = true ]; then
         grep -v '^UNISWAPX_API_KEY=' ~/.aurehub/.env > "$ENV_TMP_FILE" 2>/dev/null || true
         mv "$ENV_TMP_FILE" ~/.aurehub/.env
         echo "UNISWAPX_API_KEY=$UNISWAPX_KEY" >> ~/.aurehub/.env
+        chmod 600 ~/.aurehub/.env
         unset UNISWAPX_KEY
         ok "UNISWAPX_API_KEY saved to ~/.aurehub/.env"
         break

@@ -206,7 +206,10 @@ Pre-flight checks → On-chain quote → Preview display → [Threshold-based co
 ```
 
 Before on-chain writes, the Agent always displays full commands. Confirmation level is policy-driven:
-- Trade confirmation uses USD thresholds (`confirm_trade_usd`, `large_trade_usd`)
+- Trade confirmation uses USD thresholds (`confirm_trade_usd`, `large_trade_usd`):
+  - `< confirm_trade_usd`: preview shown, no blocking confirmation required
+  - `>= confirm_trade_usd` and `< large_trade_usd`: single confirmation required
+  - `>= large_trade_usd` (or high slippage): double confirmation required
 - Approval confirmation uses `approve_confirmation_mode` with oversize safety override
 
 ## Risk Controls
@@ -248,7 +251,7 @@ risk:
   max_slippage_bps_warn: 50     # Slippage warning threshold
   confirm_trade_usd: 10         # Single-confirm threshold (USD)
   large_trade_usd: 1000         # Large trade threshold (USD)
-  approve_confirmation_mode: "first_only" # always | first_only | never
+  approve_confirmation_mode: "first_only" # always | first_only | never (never is high-risk)
   approve_force_confirm_multiple: 10       # Force confirm if approve > 10x amount_in
   min_eth_for_gas: "0.005"      # Minimum ETH for gas
   deadline_seconds: 300         # Swap transaction timeout (seconds)
@@ -407,7 +410,7 @@ No. The Agent does not monitor prices or make autonomous decisions. It is an exe
 
 **Q: Do I need to manually confirm each trade? Can it spend my money without confirmation?**
 
-By default, confirmation is threshold-based: small trades can run with light/no confirmation, medium trades require one confirmation, and large/high-risk trades require double confirmation. Approval confirmations are controlled by `approve_confirmation_mode`, with a mandatory override for oversized approvals. The Agent cannot sign without your local keystore/password setup.
+By default, confirmation is threshold-based: small trades show full preview and can execute without blocking confirmation, medium trades require one confirmation, and large/high-risk trades require double confirmation. Approval confirmations are controlled by `approve_confirmation_mode`, with a mandatory override for oversized approvals. `approve_confirmation_mode=never` is high-risk and intended for advanced users only. The Agent cannot sign without your local keystore/password setup.
 
 **Q: Can I use multiple wallets simultaneously?**
 

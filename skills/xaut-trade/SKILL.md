@@ -120,10 +120,10 @@ Proceed to intent detection.
 1. Run pre-flight checks first, then quote.
 2. Show a complete command preview before any `cast send`.
 3. Trade execution confirmation follows USD thresholds:
-   - `< risk.confirm_trade_usd`: optional/light confirmation
+   - `< risk.confirm_trade_usd`: show full preview, then execute without blocking confirmation
    - `>= risk.confirm_trade_usd` and `< risk.large_trade_usd`: single confirmation
    - `>= risk.large_trade_usd`: double confirmation
-4. Approval confirmation follows `risk.approve_confirmation_mode` (`always` / `first_only` / `never`) with a mandatory safety override:
+4. Approval confirmation follows `risk.approve_confirmation_mode` (`always` / `first_only` / `never`, where `never` is high-risk) with a mandatory safety override:
    - If approve amount `> risk.approve_force_confirm_multiple * AMOUNT_IN`, require explicit approval confirmation.
 
 ## Mandatory Safety Gates

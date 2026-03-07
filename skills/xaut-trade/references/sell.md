@@ -151,7 +151,7 @@ Return:
 
 - Before every `cast send`, remind the user: "About to execute an on-chain write"
 - Trade execution confirmation follows:
-  - `< risk.confirm_trade_usd`: optional/light confirmation
+  - `< risk.confirm_trade_usd`: show full preview, then execute without blocking confirmation
   - `>= risk.confirm_trade_usd` and `< risk.large_trade_usd`: single confirmation
   - `>= risk.large_trade_usd` or high slippage: double confirmation
 - Approval confirmation follows `risk.approve_confirmation_mode` with force override:
