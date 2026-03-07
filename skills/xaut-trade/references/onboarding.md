@@ -9,13 +9,31 @@ Run this on first use or when the environment is incomplete. Return to the origi
 Run the setup script — it handles Steps 0–4 automatically and clearly marks the steps that require manual action:
 
 ```bash
-bash "$(git rev-parse --show-toplevel)/skills/xaut-trade/scripts/setup.sh"
+bash "$(
+  p=$(cat ~/.aurehub/.setup_path 2>/dev/null)
+  if [ -f "$p" ]; then
+    echo "$p"
+  else
+    for _p in \
+      "$HOME/.claude/skills/xaut-trade/scripts/setup.sh" \
+      "$HOME/.aurehub/.agents/skills/xaut-trade/scripts/setup.sh" \
+      "$HOME/.agents/skills/xaut-trade/scripts/setup.sh"; do
+      [ -f "$_p" ] && echo "$_p" && break
+    done
+  fi
+)"
 ```
 
-If `git rev-parse` fails (skill not inside a git repo):
+If the command above does not resolve setup.sh, use one of these fallbacks:
+- Git repo fallback:
+  ```bash
+  GIT_ROOT=$(git rev-parse --show-toplevel 2>/dev/null)
+  bash "$GIT_ROOT/skills/xaut-trade/scripts/setup.sh"
+  ```
+- Bounded search fallback:
 
 ```bash
-bash "$(find ~ -name "setup.sh" -path "*/xaut-trade/scripts/*" -maxdepth 8 2>/dev/null | head -1)"
+bash "$(find ~/.claude ~/.aurehub ~/.agents -name "setup.sh" -path "*/xaut-trade/scripts/*" -maxdepth 6 2>/dev/null | head -1)"
 ```
 
 If the script exits with an error, follow the manual steps below for the failed step only.
@@ -130,7 +148,15 @@ EOF
 Copy contract config (defaults are ready to use — no user edits needed):
 
 ```bash
-cp "$(git rev-parse --show-toplevel)/skills/xaut-trade/config.example.yaml" ~/.aurehub/config.yaml
+SETUP_PATH=$(cat ~/.aurehub/.setup_path 2>/dev/null)
+if [ -f "$SETUP_PATH" ]; then
+  SKILL_DIR=$(cd "$(dirname "$SETUP_PATH")/.." && pwd)
+elif GIT_ROOT=$(git rev-parse --show-toplevel 2>/dev/null) && [ -f "$GIT_ROOT/skills/xaut-trade/config.example.yaml" ]; then
+  SKILL_DIR="$GIT_ROOT/skills/xaut-trade"
+else
+  SKILL_DIR=$(cd "$(dirname "$(find ~/.claude ~/.aurehub ~/.agents -name "setup.sh" -path "*/xaut-trade/scripts/*" -maxdepth 6 2>/dev/null | head -1)")/.." && pwd)
+fi
+cp "$SKILL_DIR/config.example.yaml" ~/.aurehub/config.yaml
 ```
 
 ---
@@ -159,7 +185,15 @@ echo "Make sure the wallet holds a small amount of ETH (≥ 0.005) for gas."
 
 ```bash
 node --version   # If version < 18 or command not found: https://nodejs.org
-cd "$(git rev-parse --show-toplevel)/skills/xaut-trade/scripts" && npm install
+SETUP_PATH=$(cat ~/.aurehub/.setup_path 2>/dev/null)
+if [ -f "$SETUP_PATH" ]; then
+  SCRIPTS_DIR=$(dirname "$SETUP_PATH")
+elif GIT_ROOT=$(git rev-parse --show-toplevel 2>/dev/null) && [ -d "$GIT_ROOT/skills/xaut-trade/scripts" ]; then
+  SCRIPTS_DIR="$GIT_ROOT/skills/xaut-trade/scripts"
+else
+  SCRIPTS_DIR=$(dirname "$(find ~/.claude ~/.aurehub ~/.agents -name "setup.sh" -path "*/xaut-trade/scripts/*" -maxdepth 6 2>/dev/null | head -1)")
+fi
+cd "$SCRIPTS_DIR" && npm install
 ```
 
 ### 2. Get a UniswapX API Key (required)
