@@ -28,7 +28,9 @@ If the command above does not resolve setup.sh, use one of these fallbacks:
 - Git repo fallback:
   ```bash
   GIT_ROOT=$(git rev-parse --show-toplevel 2>/dev/null)
-  bash "$GIT_ROOT/skills/xaut-trade/scripts/setup.sh"
+  if [ -n "$GIT_ROOT" ] && [ -f "$GIT_ROOT/skills/xaut-trade/scripts/setup.sh" ]; then
+    bash "$GIT_ROOT/skills/xaut-trade/scripts/setup.sh"
+  fi
   ```
 - Bounded search fallback:
 
