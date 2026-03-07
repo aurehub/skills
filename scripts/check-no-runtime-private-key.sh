@@ -8,23 +8,23 @@ echo "[check] scanning for forbidden runtime private-key signing patterns..."
 
 patterns=(
   '--private-key'
-  'cast wallet address "\$PRIVATE_KEY"'
+  'cast wallet address.*PRIVATE_KEY'
   'new ethers\.Wallet\(privateKey\)'
   'private key fallback mode'
 )
 
 failed=0
+OUT_FILE=$(mktemp)
+trap 'rm -f "$OUT_FILE"' EXIT
 
 for p in "${patterns[@]}"; do
-  if rg -n -S "$p" skills >/tmp/private_key_check.out 2>/dev/null; then
+  if rg -n -S "$p" skills >"$OUT_FILE" 2>/dev/null; then
     echo
     echo "[fail] matched pattern: $p"
-    cat /tmp/private_key_check.out
+    cat "$OUT_FILE"
     failed=1
   fi
 done
-
-rm -f /tmp/private_key_check.out
 
 if [[ $failed -eq 1 ]]; then
   echo

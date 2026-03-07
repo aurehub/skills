@@ -9,29 +9,9 @@ Run this on first use or when the environment is incomplete. Return to the origi
 Run the setup script — it handles Steps 0–4 automatically and clearly marks the steps that require manual action:
 
 ```bash
-SETUP_PATH="$(
-  p=$(cat ~/.aurehub/.setup_path 2>/dev/null)
-  if [ -f "$p" ]; then
-    echo "$p"
-  fi
-)"
-[ -n "$SETUP_PATH" ] && [ -f "$SETUP_PATH" ] && bash "$SETUP_PATH"
-```
-
-If the command above does not resolve setup.sh, use one of these fallbacks:
-- Git repo fallback:
-  ```bash
-  GIT_ROOT=$(git rev-parse --show-toplevel 2>/dev/null)
-  if [ -n "$GIT_ROOT" ] && [ -f "$GIT_ROOT/skills/xaut-trade/scripts/setup.sh" ]; then
-    bash "$GIT_ROOT/skills/xaut-trade/scripts/setup.sh"
-  else
-    echo "Git fallback not available. Use bounded search fallback below."
-  fi
-  ```
-- Bounded search fallback:
-
-```bash
-SETUP_PATH=$(find "$HOME" -maxdepth 6 -type f -path "*/xaut-trade/scripts/setup.sh" 2>/dev/null | head -1)
+_saved=$(cat ~/.aurehub/.setup_path 2>/dev/null); [ -f "$_saved" ] && SETUP_PATH="$_saved"
+[ -z "$SETUP_PATH" ] && { GIT_ROOT=$(git rev-parse --show-toplevel 2>/dev/null); [ -n "$GIT_ROOT" ] && [ -f "$GIT_ROOT/skills/xaut-trade/scripts/setup.sh" ] && SETUP_PATH="$GIT_ROOT/skills/xaut-trade/scripts/setup.sh"; }
+[ -z "$SETUP_PATH" ] && SETUP_PATH=$(find "$HOME" -maxdepth 6 -type f -path "*/xaut-trade/scripts/setup.sh" 2>/dev/null | head -1)
 [ -n "$SETUP_PATH" ] && [ -f "$SETUP_PATH" ] && bash "$SETUP_PATH"
 ```
 
@@ -143,6 +123,8 @@ FOUNDRY_ACCOUNT=aurehub-wallet
 KEYSTORE_PASSWORD_FILE=~/.aurehub/.wallet.password
 # Required for limit orders, not needed for market orders:
 # UNISWAPX_API_KEY=your_api_key_here
+# Optional: rankings opt-in (default false)
+# RANKINGS_OPT_IN=false
 # Optional: nickname for future activities (set automatically on first use if not provided here)
 # NICKNAME=YourName
 EOF

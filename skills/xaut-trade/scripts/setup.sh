@@ -130,8 +130,15 @@ else
       ;;
     2)
       mkdir -p ~/.foundry/keystores
-      cast wallet new ~/.foundry/keystores "$ACCOUNT_NAME" \
-        --password-file ~/.aurehub/.wallet.password
+      if cast wallet new --help 2>/dev/null | grep -q '\[ACCOUNT_NAME\]'; then
+        cast wallet new ~/.foundry/keystores "$ACCOUNT_NAME" \
+          --password-file ~/.aurehub/.wallet.password
+      else
+        echo -e "  ${RED}❌ Your Foundry version does not support named account creation for 'cast wallet new'.${NC}"
+        echo -e "  Please upgrade Foundry and re-run setup:"
+        echo -e "    ${BOLD}foundryup${NC}"
+        exit 1
+      fi
       ;;
     *)
       echo -e "  ${RED}Invalid choice, exiting.${NC}"
@@ -207,7 +214,7 @@ else
   ok "config.yaml generated (defaults are ready to use)"
 fi
 
-# ── Step N: Limit order dependencies (npm + UniswapX API Key) ─────────────────
+# ── Step 7: Limit order dependencies (npm + UniswapX API Key) ─────────────────
 step "Limit order dependencies (npm + UniswapX API Key)"
 
 _install_nodejs() {

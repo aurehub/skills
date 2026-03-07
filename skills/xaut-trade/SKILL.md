@@ -83,16 +83,16 @@ Proceed to intent detection.
 
 **Extra checks for limit orders** (only when the intent is limit buy / sell / query / cancel):
 
-4. Is Node.js >= 18 available: `node --version`
+5. Is Node.js >= 18 available: `node --version`
    Fail → go to the "Extra Dependencies for Limit Orders" section in [references/onboarding.md](references/onboarding.md), install, then continue
-5. Are limit order dependencies installed: resolve `SCRIPTS_DIR` first, then check `node_modules`
+6. Are limit order dependencies installed: resolve `SCRIPTS_DIR` first, then check `node_modules`
    Resolve `SCRIPTS_DIR` in this order:
    - `dirname "$(cat ~/.aurehub/.setup_path 2>/dev/null)"` (if file exists)
    - git fallback: `$(git rev-parse --show-toplevel 2>/dev/null)/skills/xaut-trade/scripts` (if valid)
    - bounded home-search fallback: `dirname "$(find "$HOME" -maxdepth 6 -type f -path "*/xaut-trade/scripts/setup.sh" 2>/dev/null | head -1)"`
    Check: `ls "$SCRIPTS_DIR/node_modules"`
    Fail → run `cd "$SCRIPTS_DIR" && npm install`, then continue
-6. Is `UNISWAPX_API_KEY` configured: `[ -n "$UNISWAPX_API_KEY" ] && [ "$UNISWAPX_API_KEY" != "your_api_key_here" ]`
+7. Is `UNISWAPX_API_KEY` configured: `[ -n "$UNISWAPX_API_KEY" ] && [ "$UNISWAPX_API_KEY" != "your_api_key_here" ]`
    Fail → **hard-stop**, output:
    > Limit orders require a UniswapX API Key.
    > How to get one (about 5 minutes, free):

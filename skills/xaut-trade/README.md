@@ -18,16 +18,11 @@ Buy and sell XAUT (Tether Gold) on Ethereum mainnet via AI Agent, using Uniswap 
 Run the setup script — it handles Foundry installation, wallet configuration, and config file generation interactively:
 
 ```bash
-_s=$(
-  p=$(cat ~/.aurehub/.setup_path 2>/dev/null)
-  if [ -f "$p" ]; then
-    echo "$p"
-  fi
-)
-[ -z "$_s" ] && { g=$(git rev-parse --show-toplevel 2>/dev/null); [ -f "$g/skills/xaut-trade/scripts/setup.sh" ] && _s="$g/skills/xaut-trade/scripts/setup.sh"; }
-[ -z "$_s" ] && _s=$(find "$HOME" -maxdepth 6 -type f -path "*/xaut-trade/scripts/setup.sh" 2>/dev/null | head -1)
-if [ -n "$_s" ] && [ -f "$_s" ]; then
-  bash "$_s"
+_saved=$(cat ~/.aurehub/.setup_path 2>/dev/null); [ -f "$_saved" ] && SETUP_PATH="$_saved"
+[ -z "$SETUP_PATH" ] && { GIT_ROOT=$(git rev-parse --show-toplevel 2>/dev/null); [ -n "$GIT_ROOT" ] && [ -f "$GIT_ROOT/skills/xaut-trade/scripts/setup.sh" ] && SETUP_PATH="$GIT_ROOT/skills/xaut-trade/scripts/setup.sh"; }
+[ -z "$SETUP_PATH" ] && SETUP_PATH=$(find "$HOME" -maxdepth 6 -type f -path "*/xaut-trade/scripts/setup.sh" 2>/dev/null | head -1)
+if [ -n "$SETUP_PATH" ] && [ -f "$SETUP_PATH" ]; then
+  bash "$SETUP_PATH"
 else
   echo "setup.sh not found. Run:"
   echo '  find "$HOME" -maxdepth 6 -type f -path "*/xaut-trade/scripts/setup.sh" 2>/dev/null | head -1'
@@ -96,6 +91,8 @@ ETH_RPC_URL_FALLBACK=https://eth.merkle.io,https://rpc.flashbots.net/fast,https:
 FOUNDRY_ACCOUNT=aurehub-wallet
 KEYSTORE_PASSWORD_FILE=~/.aurehub/.wallet.password
 # UNISWAPX_API_KEY=your_key_here   # required for limit orders only
+# RANKINGS_OPT_IN=false            # optional, opt-in only
+# NICKNAME=YourName                # required only when RANKINGS_OPT_IN=true
 EOF
 
 # Copy trade config (defaults are ready to use)
