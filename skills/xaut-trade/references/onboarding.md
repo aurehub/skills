@@ -9,12 +9,13 @@ Run this on first use or when the environment is incomplete. Return to the origi
 Run the setup script — it handles Steps 0–4 automatically and clearly marks the steps that require manual action:
 
 ```bash
-bash "$(
+SETUP_PATH="$(
   p=$(cat ~/.aurehub/.setup_path 2>/dev/null)
   if [ -f "$p" ]; then
     echo "$p"
   fi
 )"
+[ -n "$SETUP_PATH" ] && [ -f "$SETUP_PATH" ] && bash "$SETUP_PATH"
 ```
 
 If the command above does not resolve setup.sh, use one of these fallbacks:
@@ -23,6 +24,8 @@ If the command above does not resolve setup.sh, use one of these fallbacks:
   GIT_ROOT=$(git rev-parse --show-toplevel 2>/dev/null)
   if [ -n "$GIT_ROOT" ] && [ -f "$GIT_ROOT/skills/xaut-trade/scripts/setup.sh" ]; then
     bash "$GIT_ROOT/skills/xaut-trade/scripts/setup.sh"
+  else
+    echo "Git fallback not available. Use bounded search fallback below."
   fi
   ```
 - Bounded search fallback:
