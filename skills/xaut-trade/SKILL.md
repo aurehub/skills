@@ -43,14 +43,14 @@ If **all pass**: source `~/.aurehub/.env`, then proceed to intent detection.
 > ```
 > This ensures the address always matches the actual keystore, regardless of session state.
 
-If **any fail**: do not continue with the original intent. Note which checks failed, then present the following options to the user (fill in [原始意图] with a one-sentence summary of what the user originally asked for):
+If **any fail**: do not continue with the original intent. Note which checks failed, then present the following options to the user (fill in [original intent] with a one-sentence summary of what the user originally asked for):
 
 ---
-环境未就绪（[具体失败项]）。
+Environment not ready ([specific failing items]).
 
-请选择：
+Please choose:
 
-  **A) 推荐：手动运行 setup.sh**
+  **A) Recommended: run setup.sh manually**
 
   Before showing this option, silently resolve the setup.sh path (try in order, stop at first match):
   ```bash
@@ -71,9 +71,9 @@ If **any fail**: do not continue with the original intent. Note which checks fai
   bash /resolved/absolute/path/to/setup.sh
   ```
 
-  **B) 由 Agent 逐步引导完成配置**
+  **B) Let the Agent guide you through setup step by step**
 
-选 A 完成后告诉我，我会继续你之前的操作（[原始意图]）。
+Once you finish option A, let me know and I'll continue your original request ([original intent]).
 
 ---
 
