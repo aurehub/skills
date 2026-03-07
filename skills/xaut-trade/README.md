@@ -202,21 +202,21 @@ check my XAUT balance
 For both buy and sell, the Agent follows this semi-automated flow:
 
 ```
-Pre-flight checks → On-chain quote → Preview display → [User confirms] → Approve → [User confirms] → Swap → Result verification
+Pre-flight checks → On-chain quote → Preview display → [Threshold-based confirmation] → Approve (mode-based confirmation) → Swap → Result verification
 ```
 
-Before every on-chain write operation (approve / swap), the Agent will:
-1. Display the full `cast` command
-2. Wait for you to explicitly say **"confirm execute"** before proceeding
-
-**Nothing happens on-chain until you confirm.**
+Before on-chain writes, the Agent always displays full commands. Confirmation level is policy-driven:
+- Trade confirmation uses USD thresholds (`confirm_trade_usd`, `large_trade_usd`)
+- Approval confirmation uses `approve_confirmation_mode` with oversize safety override
 
 ## Risk Controls
 
 | Rule | Default Threshold | Behavior |
 |------|-------------------|----------|
+| Trade confirm threshold | `confirm_trade_usd = $10` | Above threshold requires confirmation |
 | Large trade | > $1,000 USD | Double confirmation required |
 | High slippage | > 50 bps (0.5%) | Warning + double confirmation |
+| Oversized approval | `approve > 10x amount_in` | Force approval confirmation |
 | Insufficient gas | ETH < 0.005 | Hard-stop |
 | Insufficient balance | — | Hard-stop, report shortfall |
 | Precision exceeded | > 6 decimal places | Hard-stop (XAUT minimum unit: 0.000001) |
@@ -246,7 +246,10 @@ Key adjustable parameters:
 risk:
   default_slippage_bps: 50      # Default slippage protection 0.5%
   max_slippage_bps_warn: 50     # Slippage warning threshold
+  confirm_trade_usd: 10         # Single-confirm threshold (USD)
   large_trade_usd: 1000         # Large trade threshold (USD)
+  approve_confirmation_mode: "first_only" # always | first_only | never
+  approve_force_confirm_multiple: 10       # Force confirm if approve > 10x amount_in
   min_eth_for_gas: "0.005"      # Minimum ETH for gas
   deadline_seconds: 300         # Swap transaction timeout (seconds)
 
@@ -347,7 +350,7 @@ This skill communicates with external services during setup and trading:
 | xaue.com Rankings API | Opt-in only | Wallet address, nickname |
 
 - **Foundry installation** uses `curl | bash`. Review the source at [github.com/foundry-rs/foundry](https://github.com/foundry-rs/foundry) before proceeding. The setup script asks for confirmation before running.
-- **Rankings registration** is opt-in. No data is sent to xaue.com unless you explicitly enable it during setup. You can change this anytime by editing `RANKINGS_OPT_IN` in `~/.aurehub/.env`.
+- **Rankings registration** remains opt-in (`RANKINGS_OPT_IN=false` by default). If not enabled during setup, the Agent can prompt once after your first successful trade.
 - **All API calls use HTTPS.**
 
 ## FAQ
@@ -375,7 +378,7 @@ This happens on macOS when the system Keychain is inaccessible in a non-interact
 
 **Q: What is a Skill package? How does it drive the AI to trade gold?**
 
-A Skill package is a set of structured AI instruction files (`SKILL.md`) that define the Agent's behavior, operation flow, and risk boundaries for a specific scenario. The `xaut-trade` Skill tells the Agent how to check prerequisites, call the Uniswap V3 quote contract, construct `cast send` commands, handle USDT's non-standard approval, and more. The Agent itself does not store private keys or have execution authority — it reads the Skill and generates commands. Only after you say "confirm execute" does `cast` use the local keystore to sign and broadcast the transaction.
+A Skill package is a set of structured AI instruction files (`SKILL.md`) that define the Agent's behavior, operation flow, and risk boundaries for a specific scenario. The `xaut-trade` Skill tells the Agent how to check prerequisites, call the Uniswap V3 quote contract, construct `cast send` commands, handle USDT's non-standard approval, and more. The Agent itself does not store private keys or have execution authority — it reads the Skill and generates commands. Depending on the configured risk thresholds, the Agent requests the required confirmation(s) before signing and broadcasting.
 
 **Q: Do I need a computer running 24/7?**
 
@@ -393,7 +396,7 @@ The primary test target is Claude (Sonnet / Opus series); other LLMs that can fo
 
 **Q: Will you read my API Key or private key from `.env`?**
 
-No. The Skill package runs entirely locally. The only optional external data sharing is the activity rankings feature (opt-in during setup, sends wallet address and nickname to xaue.com). All trades are executed via local `cast` — no intermediary servers. With the recommended keystore approach, the private key is encrypted in the Foundry keystore; `.env` only stores the account name, wallet address, and other config. Never commit `.env` to version control.
+No. The Skill package runs entirely locally. The only optional external data sharing is the activity rankings feature (opt-in during setup or first-success prompt, sends wallet address and nickname to xaue.com). All trades are executed via local `cast` — no intermediary servers. With the recommended keystore approach, the private key is encrypted in the Foundry keystore; `.env` only stores the account name, wallet address, and other config. Never commit `.env` to version control.
 
 **Q: Will the Agent auto-buy based on price movements?**
 
@@ -404,7 +407,7 @@ No. The Agent does not monitor prices or make autonomous decisions. It is an exe
 
 **Q: Do I need to manually confirm each trade? Can it spend my money without confirmation?**
 
-Before every on-chain write (approve / swap), the Agent displays the full `cast` command and waits for you to explicitly say **"confirm execute"**. Without your confirmation, no on-chain operation occurs. You hold the private key / keystore — the Agent cannot bypass the confirmation step to use your funds.
+By default, confirmation is threshold-based: small trades can run with light/no confirmation, medium trades require one confirmation, and large/high-risk trades require double confirmation. Approval confirmations are controlled by `approve_confirmation_mode`, with a mandatory override for oversized approvals. The Agent cannot sign without your local keystore/password setup.
 
 **Q: Can I use multiple wallets simultaneously?**
 

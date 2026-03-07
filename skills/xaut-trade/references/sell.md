@@ -150,6 +150,10 @@ Return:
 ## 9. Mandatory Rules
 
 - Before every `cast send`, remind the user: "About to execute an on-chain write"
-- Do not execute without explicit user confirmation
-- Large trades / high slippage trigger a second confirmation
+- Trade execution confirmation follows:
+  - `< risk.confirm_trade_usd`: optional/light confirmation
+  - `>= risk.confirm_trade_usd` and `< risk.large_trade_usd`: single confirmation
+  - `>= risk.large_trade_usd` or high slippage: double confirmation
+- Approval confirmation follows `risk.approve_confirmation_mode` with force override:
+  - If approve amount `> risk.approve_force_confirm_multiple * AMOUNT_IN`, require explicit approval confirmation
 - Hard-stop if input precision exceeds 6 decimal places

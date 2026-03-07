@@ -45,7 +45,10 @@ token_rules:
 risk:
   default_slippage_bps: 50
   max_slippage_bps_warn: 50
+  confirm_trade_usd: 10
   large_trade_usd: 1000
+  approve_confirmation_mode: "first_only" # always | first_only | never
+  approve_force_confirm_multiple: 10
   min_eth_for_gas: "0.005"
   deadline_seconds: 300
 

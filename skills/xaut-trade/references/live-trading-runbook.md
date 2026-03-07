@@ -19,7 +19,7 @@ Agent (automatic):
 User (manual checkpoints only):
 1. Sensitive wallet input (interactive key import / password input)
 2. Wallet funding (ETH for gas, USDT/XAUT as needed)
-3. Final on-chain write confirmation (`confirm execute`)
+3. Confirmation when required by thresholds/policy
 
 ---
 
@@ -41,7 +41,10 @@ The Agent will:
 1. Run readiness checks
 2. If environment is incomplete, switch to agent-guided setup
 3. Return a Preview (quote, risk warnings, full command)
-4. Wait for explicit confirmation before any on-chain write
+4. Apply confirmation policy:
+   - small trades: light/optional confirmation
+   - medium trades: single confirmation
+   - large/high-risk trades: double confirmation
 
 ---
 
@@ -66,10 +69,11 @@ Before live execution, ensure your wallet has:
 
 ### Checkpoint C: Final Execution Confirmation
 
-No on-chain write runs until you explicitly confirm:
+When confirmation is required by policy, explicitly confirm:
 
 ```text
-confirm execute
+confirm approve
+confirm swap
 ```
 
 ---
@@ -80,7 +84,7 @@ confirm execute
 2. Agent: checks + preview
 3. You: handle mandatory manual checkpoint(s) if prompted
 4. Agent: updated preview / ready state
-5. You: `confirm execute`
+5. You: `confirm approve` / `confirm swap` when prompted
 6. Agent: tx hash + post-trade balances/result
 
 ---

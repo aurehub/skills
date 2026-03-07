@@ -119,13 +119,19 @@ Proceed to intent detection.
 
 1. Run pre-flight checks first, then quote.
 2. Show a complete command preview before any `cast send`.
-3. Only execute on-chain write operations after receiving explicit confirmation in the current session (e.g. "confirm execute").
-4. Large trades and high-slippage trades require a second confirmation.
+3. Trade execution confirmation follows USD thresholds:
+   - `< risk.confirm_trade_usd`: optional/light confirmation
+   - `>= risk.confirm_trade_usd` and `< risk.large_trade_usd`: single confirmation
+   - `>= risk.large_trade_usd`: double confirmation
+4. Approval confirmation follows `risk.approve_confirmation_mode` (`always` / `first_only` / `never`) with a mandatory safety override:
+   - If approve amount `> risk.approve_force_confirm_multiple * AMOUNT_IN`, require explicit approval confirmation.
 
 ## Mandatory Safety Gates
 
-- When amount exceeds the config threshold (e.g. `risk.large_trade_usd`), require double confirmation
+- When amount exceeds `risk.confirm_trade_usd`, require explicit execution confirmation
+- When amount exceeds `risk.large_trade_usd`, require double confirmation
 - When slippage exceeds the threshold (e.g. `risk.max_slippage_bps_warn`), warn and require double confirmation
+- When approval amount is oversized (`> risk.approve_force_confirm_multiple * AMOUNT_IN`), force approval confirmation regardless of mode
 - When ETH gas balance is insufficient, hard-stop and prompt to top up
 - When the network or pair is unsupported, hard-stop
 - When the pair is not in the whitelist (currently: USDT_XAUT / XAUT_USDT), hard-stop and reply "Only USDT/XAUT pairs are supported; [user's token] is not supported"
@@ -184,7 +190,7 @@ Follow [references/quote.md](references/quote.md):
 Follow [references/buy.md](references/buy.md):
 - allowance check
 - approve if needed (USDT requires `approve(0)` then `approve(amount)`)
-- Execute swap after second confirmation
+- Execute swap with the confirmation level required by thresholds/policy
 - Return tx hash and post-trade balance
 
 ## Sell Flow (XAUT → USDT)
@@ -211,7 +217,7 @@ Follow [references/sell.md](references/sell.md):
 Follow [references/sell.md](references/sell.md):
 - allowance check
 - approve (XAUT is standard ERC-20, **no prior reset needed**)
-- Execute swap after second confirmation
+- Execute swap with the confirmation level required by thresholds/policy
 - Return tx hash and post-trade USDT balance
 
 ## Post-Trade Registration
@@ -219,12 +225,19 @@ Follow [references/sell.md](references/sell.md):
 After **any** on-chain trade completes successfully (buy swap, sell swap, or limit order placed):
 
 1. `source ~/.aurehub/.env`
-2. If `RANKINGS_OPT_IN` != `"true"` → silent skip, do not prompt
-3. `REGISTERED=$(cat ~/.aurehub/.registered 2>/dev/null)`
-4. Derive WALLET_ADDRESS from keystore mode:
+2. Derive WALLET_ADDRESS from keystore mode:
    - `WALLET_ADDRESS=$(cast wallet address --account "$FOUNDRY_ACCOUNT" --password-file "$KEYSTORE_PASSWORD_FILE")`
-5. If `"$REGISTERED"` starts with `"$WALLET_ADDRESS:"` → already registered, silent skip
-6. Otherwise → register using `NICKNAME` from `.env`:
+3. `REGISTERED=$(cat ~/.aurehub/.registered 2>/dev/null)`
+4. If `"$REGISTERED"` starts with `"$WALLET_ADDRESS:"` → already registered, silent skip
+5. If `RANKINGS_OPT_IN` != `"true"`:
+   - Check marker: `PROMPTED=$(cat ~/.aurehub/.rankings_prompted 2>/dev/null)`
+   - If marker starts with `"$WALLET_ADDRESS:"` → skip prompt
+   - Otherwise ask once: "Join XAUT activity rankings now? (yes/no)"
+     - If user says `no`: `echo "$WALLET_ADDRESS:declined" > ~/.aurehub/.rankings_prompted`; stop
+     - If user says `yes`:
+       - If `NICKNAME` is empty: ask user for nickname
+       - Persist opt-in in `~/.aurehub/.env` (`RANKINGS_OPT_IN=true`, `NICKNAME=<value>`)
+6. If `RANKINGS_OPT_IN` == `"true"` and nickname exists, register:
    ```bash
    NICKNAME_ESC=$(printf '%s' "$NICKNAME" | sed 's/\\/\\\\/g; s/"/\\"/g')
    REGISTER_RESP=$(curl -s -o /dev/null -w "%{http_code}" -X POST \
@@ -235,7 +248,7 @@ After **any** on-chain trade completes successfully (buy swap, sell swap, or lim
    - HTTP 200 or 201: `echo "$WALLET_ADDRESS:$NICKNAME" > ~/.aurehub/.registered`; inform: "Registered with nickname: $NICKNAME"
    - Any other status: silent continue, do not write marker file
 
-Never ask the user for a nickname during the trade flow. The nickname is set during onboarding only.
+Only prompt once per wallet when rankings are not enabled yet.
 
 ## Limit Buy Flow (USDT → XAUT via UniswapX)
 
