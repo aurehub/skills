@@ -18,12 +18,30 @@ Buy and sell XAUT (Tether Gold) on Ethereum mainnet via AI Agent, using Uniswap 
 Run the setup script — it handles Foundry installation, wallet configuration, and config file generation interactively:
 
 ```bash
-bash "$(git rev-parse --show-toplevel)/skills/xaut-trade/scripts/setup.sh"
+_saved=$(cat ~/.aurehub/.setup_path 2>/dev/null); [ -f "$_saved" ] && SETUP_PATH="$_saved"
+[ -z "$SETUP_PATH" ] && { GIT_ROOT=$(git rev-parse --show-toplevel 2>/dev/null); [ -n "$GIT_ROOT" ] && [ -f "$GIT_ROOT/skills/xaut-trade/scripts/setup.sh" ] && SETUP_PATH="$GIT_ROOT/skills/xaut-trade/scripts/setup.sh"; }
+[ -z "$SETUP_PATH" ] && SETUP_PATH=$(find "$HOME" -maxdepth 6 -type f -path "*/xaut-trade/scripts/setup.sh" 2>/dev/null | head -1)
+if [ -n "$SETUP_PATH" ] && [ -f "$SETUP_PATH" ]; then
+  bash "$SETUP_PATH"
+else
+  echo "setup.sh not found. Run:"
+  echo '  find "$HOME" -maxdepth 6 -type f -path "*/xaut-trade/scripts/setup.sh" 2>/dev/null | head -1'
+  exit 1
+fi
+```
+
+If the command above cannot find setup.sh (first-time install with a non-standard agent), locate it manually:
+
+```bash
+find "$HOME" -maxdepth 6 -type f -path "*/xaut-trade/scripts/setup.sh" 2>/dev/null | head -1
 ```
 
 The script walks you through each step, clearly marks actions that require manual intervention, and explains the reason for each one.
 
 After the script completes, follow the manual steps it prints at the end (fund wallet, get API key if needed).
+
+For a chat-first real-mainnet walkthrough (Agent-driven, minimal manual steps), see:
+- `references/live-trading-runbook.md`
 
 ### Manual (fallback)
 
@@ -37,27 +55,29 @@ foundryup
 source ~/.zshrc   # or ~/.bashrc
 ```
 
-**2. Configure wallet**
+**2. Create password file and configure wallet**
 
-Import an existing private key (use `--interactive` to avoid key appearing in shell history):
-
-```bash
-cast wallet import aurehub-wallet --interactive
-```
-
-Or generate a new wallet first:
-
-```bash
-cast wallet new   # note the private key — shown only once
-cast wallet import aurehub-wallet --interactive
-```
-
-Create the password file (use `read -s` to avoid the password appearing in shell history):
+Create the password file first (password is hidden, file gets `600` permissions atomically):
 
 ```bash
 mkdir -p ~/.aurehub
-read -rsp "Keystore password: " _pwd && printf '%s' "$_pwd" > ~/.aurehub/.wallet.password && unset _pwd
-chmod 600 ~/.aurehub/.wallet.password
+( umask 077; read -rsp "Keystore password: " _pwd && printf '%s' "$_pwd" > ~/.aurehub/.wallet.password ); unset _pwd
+```
+
+Then choose one initialization method:
+
+Import an existing private key into keystore (interactive):
+
+```bash
+cast wallet import aurehub-wallet --interactive
+```
+
+Or create a brand-new keystore wallet:
+
+```bash
+mkdir -p ~/.foundry/keystores
+cast wallet new ~/.foundry/keystores aurehub-wallet \
+  --password-file ~/.aurehub/.wallet.password
 ```
 
 > Foundry keystores are stored in `~/.foundry/keystores/`; the password file goes in `~/.aurehub/`.
@@ -74,18 +94,35 @@ ETH_RPC_URL_FALLBACK=https://eth.merkle.io,https://rpc.flashbots.net/fast,https:
 FOUNDRY_ACCOUNT=aurehub-wallet
 KEYSTORE_PASSWORD_FILE=~/.aurehub/.wallet.password
 # UNISWAPX_API_KEY=your_key_here   # required for limit orders only
+# RANKINGS_OPT_IN=false            # optional, opt-in only
+# NICKNAME=YourName                # required only when RANKINGS_OPT_IN=true
 EOF
 
 # Copy trade config (defaults are ready to use)
-# Run from the repository root:
-cp skills/xaut-trade/config.example.yaml ~/.aurehub/config.yaml
+SETUP_PATH=$(cat ~/.aurehub/.setup_path 2>/dev/null)
+if [ -f "$SETUP_PATH" ]; then
+  SKILL_DIR=$(cd "$(dirname "$SETUP_PATH")/.." && pwd)
+elif GIT_ROOT=$(git rev-parse --show-toplevel 2>/dev/null) && [ -f "$GIT_ROOT/skills/xaut-trade/config.example.yaml" ]; then
+  SKILL_DIR="$GIT_ROOT/skills/xaut-trade"
+else
+  SKILL_DIR=$(cd "$(dirname "$(find "$HOME" -maxdepth 6 -type f -path "*/xaut-trade/scripts/setup.sh" 2>/dev/null | head -1)")/.." && pwd)
+fi
+cp "$SKILL_DIR/config.example.yaml" ~/.aurehub/config.yaml
 ```
 
 **4. Install limit order dependencies (limit orders only)**
 
 ```bash
 node --version   # requires >= 18; install from https://nodejs.org if missing
-cd skills/xaut-trade/scripts && npm install
+SETUP_PATH=$(cat ~/.aurehub/.setup_path 2>/dev/null)
+if [ -f "$SETUP_PATH" ]; then
+  SCRIPTS_DIR=$(dirname "$SETUP_PATH")
+elif GIT_ROOT=$(git rev-parse --show-toplevel 2>/dev/null) && [ -d "$GIT_ROOT/skills/xaut-trade/scripts" ]; then
+  SCRIPTS_DIR="$GIT_ROOT/skills/xaut-trade/scripts"
+else
+  SCRIPTS_DIR=$(dirname "$(find "$HOME" -maxdepth 6 -type f -path "*/xaut-trade/scripts/setup.sh" 2>/dev/null | head -1)")
+fi
+cd "$SCRIPTS_DIR" && npm install
 ```
 
 **5. Get a UniswapX API Key (limit orders only)**
@@ -165,21 +202,24 @@ check my XAUT balance
 For both buy and sell, the Agent follows this semi-automated flow:
 
 ```
-Pre-flight checks → On-chain quote → Preview display → [User confirms] → Approve → [User confirms] → Swap → Result verification
+Pre-flight checks → On-chain quote → Preview display → [Threshold-based confirmation] → Approve (mode-based confirmation) → Swap → Result verification
 ```
 
-Before every on-chain write operation (approve / swap), the Agent will:
-1. Display the full `cast` command
-2. Wait for you to explicitly say **"confirm execute"** before proceeding
-
-**Nothing happens on-chain until you confirm.**
+Before on-chain writes, the Agent always displays full commands. Confirmation level is policy-driven:
+- Trade confirmation uses USD thresholds (`confirm_trade_usd`, `large_trade_usd`):
+  - `< confirm_trade_usd`: preview shown, no blocking confirmation required
+  - `>= confirm_trade_usd` and `< large_trade_usd`: single confirmation required
+  - `>= large_trade_usd` or estimated slippage exceeds `max_slippage_bps_warn`: double confirmation required
+- Approval confirmation uses `approve_confirmation_mode` with oversize safety override
 
 ## Risk Controls
 
 | Rule | Default Threshold | Behavior |
 |------|-------------------|----------|
+| Trade confirm threshold | `confirm_trade_usd = $10` | Above threshold requires confirmation |
 | Large trade | > $1,000 USD | Double confirmation required |
 | High slippage | > 50 bps (0.5%) | Warning + double confirmation |
+| Oversized approval | `approve > 10x amount_in` | Force approval confirmation |
 | Insufficient gas | ETH < 0.005 | Hard-stop |
 | Insufficient balance | — | Hard-stop, report shortfall |
 | Precision exceeded | > 6 decimal places | Hard-stop (XAUT minimum unit: 0.000001) |
@@ -198,7 +238,6 @@ Thresholds can be customized in the `risk` section of `config.yaml`.
 | `FOUNDRY_ACCOUNT` | Foundry keystore account name (set by onboarding) | `aurehub-wallet` |
 | `KEYSTORE_PASSWORD_FILE` | Path to keystore password file | `~/.aurehub/.wallet.password` |
 | `UNISWAPX_API_KEY` | UniswapX API Key (**required for limit orders**, not needed for market orders) | Get at: developers.uniswap.org/dashboard |
-| `PRIVATE_KEY` | Private key (fallback, not recommended) | `0x...` |
 | `RANKINGS_OPT_IN` | Join activity rankings — opt-in only (default: `false`) | `true` or `false` |
 | `NICKNAME` | Display name for activity rankings (required if `RANKINGS_OPT_IN=true`) | `Alice` |
 
@@ -210,7 +249,10 @@ Key adjustable parameters:
 risk:
   default_slippage_bps: 50      # Default slippage protection 0.5%
   max_slippage_bps_warn: 50     # Slippage warning threshold
+  confirm_trade_usd: 10         # Single-confirm threshold (USD)
   large_trade_usd: 1000         # Large trade threshold (USD)
+  approve_confirmation_mode: "first_only" # always | first_only | never (never is high-risk)
+  approve_force_confirm_multiple: 10       # Force confirm if approve > 10x amount_in
   min_eth_for_gas: "0.005"      # Minimum ETH for gas
   deadline_seconds: 300         # Swap transaction timeout (seconds)
 
@@ -250,10 +292,14 @@ Anvil starts with 10 pre-funded accounts, each with 10,000 ETH. Default: `http:/
 ```bash
 # .env
 ETH_RPC_URL=http://127.0.0.1:8545
-PRIVATE_KEY=0xac0974bec39a17e36ba4a6b4d238ff944bacb478cbed5efcae784d7bf4f2ff80  # Anvil account #0 private key
+FOUNDRY_ACCOUNT=aurehub-wallet
+KEYSTORE_PASSWORD_FILE=~/.aurehub/.wallet.password
 ```
+If you want to use Anvil account #0, import it once into keystore:
 
-> This is Anvil's hardcoded test account with a public key — for local testing only.
+```bash
+cast wallet import aurehub-wallet --interactive
+```
 
 ### 3. Fund the Test Account with USDT
 
@@ -290,7 +336,7 @@ The Agent will run the full flow (quote → confirm → approve → swap), all o
 ### 5. Notes
 
 - Anvil fork state is **temporary** and resets on restart (unless using `anvil --state` for persistence)
-- Local testing uses `--unlocked` + `--from` instead of keystore, but the skill uses `--private-key` or `--account` in production — results are equivalent
+- Local testing may use `--unlocked` + `--from` for manual token funding, while skill runtime signing remains keystore-only (`--account` + `--password-file`)
 - If the fork runs for a long time, on-chain state may diverge from current mainnet; restart the fork to refresh
 - Whale addresses may change over time; if the transfer fails, check the latest top holders on [Etherscan](https://etherscan.io/token/0xdAC17F958D2ee523a2206206994597C13D831ec7#balances)
 
@@ -307,7 +353,7 @@ This skill communicates with external services during setup and trading:
 | xaue.com Rankings API | Opt-in only | Wallet address, nickname |
 
 - **Foundry installation** uses `curl | bash`. Review the source at [github.com/foundry-rs/foundry](https://github.com/foundry-rs/foundry) before proceeding. The setup script asks for confirmation before running.
-- **Rankings registration** is opt-in. No data is sent to xaue.com unless you explicitly enable it during setup. You can change this anytime by editing `RANKINGS_OPT_IN` in `~/.aurehub/.env`.
+- **Rankings registration** remains opt-in (`RANKINGS_OPT_IN=false` by default). If not enabled during setup, the Agent can prompt once after your first successful trade.
 - **All API calls use HTTPS.**
 
 ## FAQ
@@ -335,7 +381,7 @@ This happens on macOS when the system Keychain is inaccessible in a non-interact
 
 **Q: What is a Skill package? How does it drive the AI to trade gold?**
 
-A Skill package is a set of structured AI instruction files (`SKILL.md`) that define the Agent's behavior, operation flow, and risk boundaries for a specific scenario. The `xaut-trade` Skill tells the Agent how to check prerequisites, call the Uniswap V3 quote contract, construct `cast send` commands, handle USDT's non-standard approval, and more. The Agent itself does not store private keys or have execution authority — it reads the Skill and generates commands. Only after you say "confirm execute" does `cast` use the local keystore to sign and broadcast the transaction.
+A Skill package is a set of structured AI instruction files (`SKILL.md`) that define the Agent's behavior, operation flow, and risk boundaries for a specific scenario. The `xaut-trade` Skill tells the Agent how to check prerequisites, call the Uniswap V3 quote contract, construct `cast send` commands, handle USDT's non-standard approval, and more. The Agent itself does not store private keys or have execution authority — it reads the Skill and generates commands. Depending on the configured risk thresholds, the Agent requests the required confirmation(s) before signing and broadcasting.
 
 **Q: Do I need a computer running 24/7?**
 
@@ -353,7 +399,7 @@ The primary test target is Claude (Sonnet / Opus series); other LLMs that can fo
 
 **Q: Will you read my API Key or private key from `.env`?**
 
-No. The Skill package runs entirely locally. The only optional external data sharing is the activity rankings feature (opt-in during setup, sends wallet address and nickname to xaue.com). All trades are executed via local `cast` — no intermediary servers. With the recommended keystore approach, the private key is encrypted in the Foundry keystore; `.env` only stores the account name, wallet address, and other config. Never commit `.env` to version control.
+No. The Skill package runs entirely locally. The only optional external data sharing is the activity rankings feature (opt-in during setup or first-success prompt, sends wallet address and nickname to xaue.com). All trades are executed via local `cast` — no intermediary servers. With the recommended keystore approach, the private key is encrypted in the Foundry keystore; `.env` only stores the account name, wallet address, and other config. Never commit `.env` to version control.
 
 **Q: Will the Agent auto-buy based on price movements?**
 
@@ -364,7 +410,7 @@ No. The Agent does not monitor prices or make autonomous decisions. It is an exe
 
 **Q: Do I need to manually confirm each trade? Can it spend my money without confirmation?**
 
-Before every on-chain write (approve / swap), the Agent displays the full `cast` command and waits for you to explicitly say **"confirm execute"**. Without your confirmation, no on-chain operation occurs. You hold the private key / keystore — the Agent cannot bypass the confirmation step to use your funds.
+By default, confirmation is threshold-based: small trades show full preview and can execute without blocking confirmation, medium trades require one confirmation, and large/high-risk trades require double confirmation. Approval confirmations are controlled by `approve_confirmation_mode`, with a mandatory override for oversized approvals. `approve_confirmation_mode=never` is high-risk and intended for advanced users only. The Agent cannot sign without your local keystore/password setup.
 
 **Q: Can I use multiple wallets simultaneously?**
 

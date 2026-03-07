@@ -5,7 +5,7 @@ license: MIT
 compatibility: Requires Foundry (cast), Node.js >= 18 (limit orders only), and internet access to Ethereum RPC and UniswapX API
 metadata:
   author: aurehub
-  version: "1.1.1"
+  version: "2.0.0"
 ---
 
 # xaut-trade
@@ -31,6 +31,8 @@ This skill connects to external services (Ethereum RPC, UniswapX API, and option
 1. Does `~/.aurehub/.env` exist: `ls ~/.aurehub/.env`
 2. Does keystore account `aurehub-wallet` exist: `cast wallet list` output contains `aurehub-wallet`
 3. Does `~/.aurehub/.wallet.password` exist: `ls ~/.aurehub/.wallet.password`
+4. Is runtime `PRIVATE_KEY` unset: after sourcing env, check `[ -z "${PRIVATE_KEY:-}" ]`
+   Fail → hard-stop and ask user to migrate to keystore runtime mode via setup.sh
 
 If **all pass**: source `~/.aurehub/.env`, then proceed to intent detection.
 
@@ -43,24 +45,59 @@ If **all pass**: source `~/.aurehub/.env`, then proceed to intent detection.
 > ```
 > This ensures the address always matches the actual keystore, regardless of session state.
 
-If **any fail**: do not continue with the original intent — run the setup script first:
+If **any fail**: do not continue with the original intent. Note which checks failed, then present the following options to the user (fill in [original intent] with a one-sentence summary of what the user originally asked for):
 
-```bash
-bash "$(git rev-parse --show-toplevel)/skills/xaut-trade/scripts/setup.sh"
-```
+---
+Environment not ready ([specific failing items]).
 
-If `git rev-parse` fails, fall back to [references/onboarding.md](references/onboarding.md) for manual steps. After setup completes, re-run the original intent.
+Please choose:
+
+  **A) Recommended: let the Agent guide setup step by step**
+
+  Agent-guided mode (default behavior):
+  - The Agent runs all safe/non-sensitive checks and commands automatically
+  - The Agent pauses only when manual input is required (interactive key import / password entry / wallet funding)
+  - After each manual step, the Agent resumes automatically and continues original intent
+
+  **B) Fallback: run setup.sh manually**
+
+  Before showing this option, silently resolve the setup.sh path (try in order, stop at first match):
+  ```bash
+  # 1. Saved path from previous run (validate it still exists)
+  _saved=$(cat ~/.aurehub/.setup_path 2>/dev/null); [ -f "$_saved" ] && SETUP_PATH="$_saved"
+  # 2. Git repo (fallback)
+  [ -z "$SETUP_PATH" ] && { GIT_ROOT=$(git rev-parse --show-toplevel 2>/dev/null); [ -n "$GIT_ROOT" ] && [ -f "$GIT_ROOT/skills/xaut-trade/scripts/setup.sh" ] && SETUP_PATH="$GIT_ROOT/skills/xaut-trade/scripts/setup.sh"; }
+  # 3. Bounded home search fallback
+  [ -z "$SETUP_PATH" ] && SETUP_PATH=$(find "$HOME" -maxdepth 6 -type f -path "*/xaut-trade/scripts/setup.sh" 2>/dev/null | head -1)
+  echo "$SETUP_PATH"
+  ```
+  Then show the user only the resolved absolute path:
+  ```bash
+  bash /resolved/absolute/path/to/setup.sh
+  ```
+
+Once setup is done in option B, continue original request ([original intent]).
+
+---
+
+Wait for the user's reply:
+- User chooses **A** → load [references/onboarding.md](references/onboarding.md) and follow the agent-guided steps
+- User chooses **B** or completes setup.sh and reports back → re-run all environment checks (steps 0–4); if all pass, continue original intent; if any still fail, report the specific item and show the options again
 
 Proceed to intent detection.
 
 **Extra checks for limit orders** (only when the intent is limit buy / sell / query / cancel):
 
-4. Is Node.js >= 18 available: `node --version`
+5. Is Node.js >= 18 available: `node --version`
    Fail → go to the "Extra Dependencies for Limit Orders" section in [references/onboarding.md](references/onboarding.md), install, then continue
-5. Are limit order dependencies installed: `ls "$(git rev-parse --show-toplevel)/skills/xaut-trade/scripts/node_modules"`
-   Fail → run `cd "$(git rev-parse --show-toplevel)/skills/xaut-trade/scripts" && npm install`, then continue
-   (If `git rev-parse` fails, first run `find ~ -name "limit-order.js" -maxdepth 6` to locate the scripts directory, then cd into it and run npm install)
-6. Is `UNISWAPX_API_KEY` configured: `[ -n "$UNISWAPX_API_KEY" ] && [ "$UNISWAPX_API_KEY" != "your_api_key_here" ]`
+6. Are limit order dependencies installed: resolve `SCRIPTS_DIR` first, then check `node_modules`
+   Resolve `SCRIPTS_DIR` in this order:
+   - `dirname "$(cat ~/.aurehub/.setup_path 2>/dev/null)"` (if file exists)
+   - git fallback: `$(git rev-parse --show-toplevel 2>/dev/null)/skills/xaut-trade/scripts` (if valid)
+   - bounded home-search fallback: `dirname "$(find "$HOME" -maxdepth 6 -type f -path "*/xaut-trade/scripts/setup.sh" 2>/dev/null | head -1)"`
+   Check: `ls "$SCRIPTS_DIR/node_modules"`
+   Fail → run `cd "$SCRIPTS_DIR" && npm install`, then continue
+7. Is `UNISWAPX_API_KEY` configured: `[ -n "$UNISWAPX_API_KEY" ] && [ "$UNISWAPX_API_KEY" != "your_api_key_here" ]`
    Fail → **hard-stop**, output:
    > Limit orders require a UniswapX API Key.
    > How to get one (about 5 minutes, free):
@@ -76,18 +113,25 @@ Proceed to intent detection.
 - `.env` path: `~/.aurehub/.env`
 - `config.yaml` path: `~/.aurehub/config.yaml`
 - Contract addresses and defaults come from `skills/xaut-trade/config.example.yaml`; copy to `~/.aurehub/config.yaml` during onboarding
+- Human operator runbook: [references/live-trading-runbook.md](references/live-trading-runbook.md)
 
 ## Interaction & Execution Principles (semi-automated)
 
 1. Run pre-flight checks first, then quote.
 2. Show a complete command preview before any `cast send`.
-3. Only execute on-chain write operations after receiving explicit confirmation in the current session (e.g. "confirm execute").
-4. Large trades and high-slippage trades require a second confirmation.
+3. Trade execution confirmation follows USD thresholds:
+   - `< risk.confirm_trade_usd`: show full preview, then execute without blocking confirmation
+   - `>= risk.confirm_trade_usd` and `< risk.large_trade_usd`: single confirmation
+   - `>= risk.large_trade_usd` or estimated slippage exceeds `risk.max_slippage_bps_warn`: double confirmation
+4. Approval confirmation follows `risk.approve_confirmation_mode` (`always` / `first_only` / `never`, where `never` is high-risk) with a mandatory safety override:
+   - If approve amount `> risk.approve_force_confirm_multiple * AMOUNT_IN`, require explicit approval confirmation.
 
 ## Mandatory Safety Gates
 
-- When amount exceeds the config threshold (e.g. `risk.large_trade_usd`), require double confirmation
+- When amount exceeds `risk.confirm_trade_usd`, require explicit execution confirmation
+- When amount exceeds `risk.large_trade_usd`, require double confirmation
 - When slippage exceeds the threshold (e.g. `risk.max_slippage_bps_warn`), warn and require double confirmation
+- When approval amount is oversized (`> risk.approve_force_confirm_multiple * AMOUNT_IN`), force approval confirmation regardless of mode
 - When ETH gas balance is insufficient, hard-stop and prompt to top up
 - When the network or pair is unsupported, hard-stop
 - When the pair is not in the whitelist (currently: USDT_XAUT / XAUT_USDT), hard-stop and reply "Only USDT/XAUT pairs are supported; [user's token] is not supported"
@@ -97,18 +141,20 @@ Proceed to intent detection.
 After sourcing `~/.aurehub/.env`, parse `ETH_RPC_URL_FALLBACK` as a comma-separated list of fallback RPC URLs.
 
 If any `cast call` or `cast send` command fails and its output contains any of the following:
-`429`, `502`, `503`, `timeout`, `connection refused`, `rate limit`, `Too Many Requests`
+`429`, `502`, `503`, `timeout`, `connection refused`, `rate limit`, `Too Many Requests`, `-32603`, `no response`, `method is not whitelisted`, `HTTP error 403`
 
 Then:
 1. Try the same command with each fallback URL in order (replace `--rpc-url "$ETH_RPC_URL"` with the fallback URL)
-2. First success → set that URL as the active RPC for all remaining commands this session; do not retry the primary
+2. First success → set that URL as the active RPC for this operation class in this session:
+   - read operations (`cast call`, quote, balance checks)
+   - write operations (`cast send`)
 3. All fallbacks exhausted → hard-stop with:
    > RPC unavailable. All configured nodes failed (primary + N fallbacks).
    > To fix: add a paid RPC (Alchemy/Infura) at the front of `ETH_RPC_URL_FALLBACK` in `~/.aurehub/.env`
 
 Do NOT trigger fallback for non-network errors: insufficient balance, contract revert, invalid parameters, nonce mismatch. Report these directly to the user.
 
-**Session stickiness:** Once a fallback is selected, use it for every subsequent `--rpc-url` in this session. Never switch back to the primary or try other fallbacks unless the current one also fails.
+**Session stickiness:** Once a fallback is selected, keep it sticky per operation class (read/write) for the rest of the session. Do not switch back to primary unless the active node fails.
 
 ## Intent Detection
 
@@ -144,7 +190,7 @@ Follow [references/quote.md](references/quote.md):
 Follow [references/buy.md](references/buy.md):
 - allowance check
 - approve if needed (USDT requires `approve(0)` then `approve(amount)`)
-- Execute swap after second confirmation
+- Execute swap with the confirmation level required by thresholds/policy
 - Return tx hash and post-trade balance
 
 ## Sell Flow (XAUT → USDT)
@@ -171,7 +217,7 @@ Follow [references/sell.md](references/sell.md):
 Follow [references/sell.md](references/sell.md):
 - allowance check
 - approve (XAUT is standard ERC-20, **no prior reset needed**)
-- Execute swap after second confirmation
+- Execute swap with the confirmation level required by thresholds/policy
 - Return tx hash and post-trade USDT balance
 
 ## Post-Trade Registration
@@ -179,14 +225,19 @@ Follow [references/sell.md](references/sell.md):
 After **any** on-chain trade completes successfully (buy swap, sell swap, or limit order placed):
 
 1. `source ~/.aurehub/.env`
-2. If `RANKINGS_OPT_IN` != `"true"` → silent skip, do not prompt
+2. Derive WALLET_ADDRESS from keystore mode:
+   - `WALLET_ADDRESS=$(cast wallet address --account "$FOUNDRY_ACCOUNT" --password-file "$KEYSTORE_PASSWORD_FILE")`
 3. `REGISTERED=$(cat ~/.aurehub/.registered 2>/dev/null)`
-4. Derive WALLET_ADDRESS based on signing mode:
-   - If `FOUNDRY_ACCOUNT` is set: `WALLET_ADDRESS=$(cast wallet address --account "$FOUNDRY_ACCOUNT" --password-file "$KEYSTORE_PASSWORD_FILE")`
-   - Else if `PRIVATE_KEY` is set: `WALLET_ADDRESS=$(cast wallet address "$PRIVATE_KEY")`
-   - Else: silent skip (no signing method configured)
-5. If `"$REGISTERED"` starts with `"$WALLET_ADDRESS:"` → already registered, silent skip
-6. Otherwise → register using `NICKNAME` from `.env`:
+4. If `"$REGISTERED"` starts with `"$WALLET_ADDRESS:"` → already registered, silent skip
+5. If `RANKINGS_OPT_IN` != `"true"`:
+   - Check marker: `PROMPTED=$(cat ~/.aurehub/.rankings_prompted 2>/dev/null)`
+   - If marker starts with `"$WALLET_ADDRESS:"` → skip prompt
+   - Otherwise ask once: "Join XAUT activity rankings now? (yes/no)"
+     - If user says `no`: `echo "$WALLET_ADDRESS:declined" > ~/.aurehub/.rankings_prompted`; stop
+     - If user says `yes`:
+       - If `NICKNAME` is empty: ask user for nickname
+       - Persist opt-in in `~/.aurehub/.env` (`RANKINGS_OPT_IN=true`, `NICKNAME=<value>`)
+6. If `RANKINGS_OPT_IN` == `"true"` and nickname exists, register:
    ```bash
    NICKNAME_ESC=$(printf '%s' "$NICKNAME" | sed 's/\\/\\\\/g; s/"/\\"/g')
    REGISTER_RESP=$(curl -s -o /dev/null -w "%{http_code}" -X POST \
@@ -197,7 +248,7 @@ After **any** on-chain trade completes successfully (buy swap, sell swap, or lim
    - HTTP 200 or 201: `echo "$WALLET_ADDRESS:$NICKNAME" > ~/.aurehub/.registered`; inform: "Registered with nickname: $NICKNAME"
    - Any other status: silent continue, do not write marker file
 
-Never ask the user for a nickname during the trade flow. The nickname is set during onboarding only.
+Only prompt once per wallet when rankings are not enabled yet.
 
 ## Limit Buy Flow (USDT → XAUT via UniswapX)
 

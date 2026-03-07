@@ -32,12 +32,6 @@ TX_HASH=$(cast send "$USDT" "approve(address,uint256)" "$ROUTER" "$AMOUNT_IN" \
 echo "Approve tx: https://etherscan.io/tx/$TX_HASH"
 ```
 
-If using private key fallback mode, replace `--account "$FOUNDRY_ACCOUNT"` with:
-
-```bash
---private-key "$PRIVATE_KEY"
-```
-
 ## 3. Swap Execution
 
 Calculate `deadline` and encode `exactInputSingle`:
@@ -59,7 +53,8 @@ cast call "$ROUTER" \
   "$DEADLINE" "[$SWAP_DATA]" \
   --from "$WALLET_ADDRESS" \
   --rpc-url "$ETH_RPC_URL"
-# On error → hard-stop, report reason, do not execute cast send
+# On network/policy errors (timeout/429/-32603/403 whitelist), retry dry-run on fallback read RPCs.
+# Hard-stop only if all read-capable RPCs fail, or if revert/invalid-params persists.
 ```
 
 Execute multicall:
@@ -86,5 +81,9 @@ Return:
 ## 5. Mandatory Rules
 
 - Before every `cast send`, remind the user: "About to execute an on-chain write"
-- Do not execute without explicit user confirmation
-- Large trades / high slippage trigger a second confirmation
+- Trade execution confirmation follows:
+  - `< risk.confirm_trade_usd`: show full preview, then execute without blocking confirmation
+  - `>= risk.confirm_trade_usd` and `< risk.large_trade_usd`: single confirmation
+  - `>= risk.large_trade_usd` or estimated slippage exceeds `risk.max_slippage_bps_warn`: double confirmation
+- Approval confirmation follows `risk.approve_confirmation_mode` with force override:
+  - If approve amount `> risk.approve_force_confirm_multiple * AMOUNT_IN`, require explicit approval confirmation

@@ -9,13 +9,10 @@ Run this on first use or when the environment is incomplete. Return to the origi
 Run the setup script — it handles Steps 0–4 automatically and clearly marks the steps that require manual action:
 
 ```bash
-bash "$(git rev-parse --show-toplevel)/skills/xaut-trade/scripts/setup.sh"
-```
-
-If `git rev-parse` fails (skill not inside a git repo):
-
-```bash
-bash "$(find ~ -name "setup.sh" -path "*/xaut-trade/scripts/*" -maxdepth 8 2>/dev/null | head -1)"
+_saved=$(cat ~/.aurehub/.setup_path 2>/dev/null); [ -f "$_saved" ] && SETUP_PATH="$_saved"
+[ -z "$SETUP_PATH" ] && { GIT_ROOT=$(git rev-parse --show-toplevel 2>/dev/null); [ -n "$GIT_ROOT" ] && [ -f "$GIT_ROOT/skills/xaut-trade/scripts/setup.sh" ] && SETUP_PATH="$GIT_ROOT/skills/xaut-trade/scripts/setup.sh"; }
+[ -z "$SETUP_PATH" ] && SETUP_PATH=$(find "$HOME" -maxdepth 6 -type f -path "*/xaut-trade/scripts/setup.sh" 2>/dev/null | head -1)
+[ -n "$SETUP_PATH" ] && [ -f "$SETUP_PATH" ] && bash "$SETUP_PATH"
 ```
 
 If the script exits with an error, follow the manual steps below for the failed step only.
@@ -47,50 +44,78 @@ mkdir -p ~/.aurehub
 
 ---
 
-## Step 2: Wallet Setup
+## Step 2: Prepare Password File
 
-**Auto-detect** — do not ask the user for a preference; check in order:
+Before creating the wallet, the password file must exist and have content.
 
-### Case A: User wants to import an existing private key
-
-When the user provides a private key (64-character hex string starting with `0x`):
+Check if `~/.aurehub/.wallet.password` exists and is non-empty:
 
 ```bash
-cast wallet import aurehub-wallet --private-key <PRIVATE_KEY>
-# When prompted for a keystore password, use the user-provided password or suggest a strong random one
+[ -s ~/.aurehub/.wallet.password ] && echo "ready" || echo "missing or empty"
 ```
 
-### Case B: User wants to create a brand-new wallet
+If missing or empty, instruct the user to run in their terminal (password will not appear in chat):
 
-```bash
-# Generate a new wallet; outputs address and private key
-cast wallet new
+```
+Please run the following in your terminal (input is hidden):
 
-# Immediately import into keystore (use the private key from the previous step)
-cast wallet import aurehub-wallet --private-key <GENERATED_PRIVATE_KEY>
+  read -rsp "Keystore password: " p && \
+  printf '%s' "$p" > ~/.aurehub/.wallet.password && \
+  chmod 600 ~/.aurehub/.wallet.password
+
+Tell me when done.
 ```
 
-> ⚠️ The private key of the new wallet is shown only once. Make sure the user saves it to a safe location before continuing.
-
-**Both paths complete with**: create password file
+Wait for user confirmation, then verify:
 
 ```bash
-# Ask user for the keystore password (set during import)
-echo "<keystore_password>" > ~/.aurehub/.wallet.password
-chmod 600 ~/.aurehub/.wallet.password
+[ -s ~/.aurehub/.wallet.password ] && echo "ready" || echo "still empty"
 ```
 
-**Auto-fetch wallet address** (no manual input required):
+If still empty → repeat the prompt.
+
+---
+
+## Step 3: Wallet Setup
+
+**Auto-detect**: if the keystore account already exists, skip this step.
 
 ```bash
-cast wallet address --account aurehub-wallet --password-file ~/.aurehub/.wallet.password
-# Example output: 0xf39Fd6e51aad88F6F4ce6aB8827279cffFb92266
-WALLET_ADDRESS=$(cast wallet address --account aurehub-wallet --password-file ~/.aurehub/.wallet.password)
+# Use defaults here because ~/.aurehub/.env may not be created yet in manual flow.
+FOUNDRY_ACCOUNT=${FOUNDRY_ACCOUNT:-aurehub-wallet}
+KEYSTORE_PASSWORD_FILE=${KEYSTORE_PASSWORD_FILE:-~/.aurehub/.wallet.password}
+cast wallet list 2>/dev/null | grep -qF "$FOUNDRY_ACCOUNT" && echo "exists" || echo "missing"
+```
+
+If missing, choose one method:
+
+Import an existing private key into keystore:
+
+```bash
+cast wallet import "$FOUNDRY_ACCOUNT" --interactive
+```
+
+Or create a new wallet directly in keystore:
+
+```bash
+mkdir -p ~/.foundry/keystores
+cast wallet new ~/.foundry/keystores "$FOUNDRY_ACCOUNT" \
+  --password-file "$KEYSTORE_PASSWORD_FILE"
+```
+
+> Default values: `FOUNDRY_ACCOUNT=aurehub-wallet`, `KEYSTORE_PASSWORD_FILE=~/.aurehub/.wallet.password`
+
+**Auto-fetch wallet address**:
+
+```bash
+source ~/.aurehub/.env
+WALLET_ADDRESS=$(cast wallet address --account "$FOUNDRY_ACCOUNT" --password-file "$KEYSTORE_PASSWORD_FILE")
+echo "Wallet address: $WALLET_ADDRESS"
 ```
 
 ---
 
-## Step 3: Generate Config Files
+## Step 4: Generate Config Files
 
 Write `~/.aurehub/.env` (write directly — do not ask the user to copy manually):
 
@@ -103,7 +128,9 @@ FOUNDRY_ACCOUNT=aurehub-wallet
 KEYSTORE_PASSWORD_FILE=~/.aurehub/.wallet.password
 # Required for limit orders, not needed for market orders:
 # UNISWAPX_API_KEY=your_api_key_here
-# Optional: nickname for future activities (set automatically on first use if not provided here)
+# Optional: rankings opt-in (default false)
+# RANKINGS_OPT_IN=false
+# Optional — set during setup or first-success prompt if omitted:
 # NICKNAME=YourName
 EOF
 ```
@@ -113,23 +140,31 @@ EOF
 Copy contract config (defaults are ready to use — no user edits needed):
 
 ```bash
-cp "$(git rev-parse --show-toplevel)/skills/xaut-trade/config.example.yaml" ~/.aurehub/config.yaml
+SETUP_PATH=$(cat ~/.aurehub/.setup_path 2>/dev/null)
+if [ -f "$SETUP_PATH" ]; then
+  SKILL_DIR=$(cd "$(dirname "$SETUP_PATH")/.." && pwd)
+elif GIT_ROOT=$(git rev-parse --show-toplevel 2>/dev/null) && [ -f "$GIT_ROOT/skills/xaut-trade/config.example.yaml" ]; then
+  SKILL_DIR="$GIT_ROOT/skills/xaut-trade"
+else
+  SKILL_DIR=$(cd "$(dirname "$(find "$HOME" -maxdepth 6 -type f -path "*/xaut-trade/scripts/setup.sh" 2>/dev/null | head -1)")/.." && pwd)
+fi
+cp "$SKILL_DIR/config.example.yaml" ~/.aurehub/config.yaml
 ```
 
 ---
 
-## Step 4: Verify
+## Step 5: Verify
 
 ```bash
 source ~/.aurehub/.env
 cast block-number --rpc-url "$ETH_RPC_URL"
-cast wallet list | grep aurehub-wallet
+cast wallet list | grep "$FOUNDRY_ACCOUNT"
 ```
 
 If all pass, the environment is ready. Inform the user:
 
 ```bash
-WALLET_ADDRESS=$(cast wallet address --account aurehub-wallet --password-file ~/.aurehub/.wallet.password)
+WALLET_ADDRESS=$(cast wallet address --account "$FOUNDRY_ACCOUNT" --password-file "$KEYSTORE_PASSWORD_FILE")
 echo "Environment initialized. Wallet address: $WALLET_ADDRESS"
 echo "Make sure the wallet holds a small amount of ETH (≥ 0.005) for gas."
 ```
@@ -142,7 +177,15 @@ echo "Make sure the wallet holds a small amount of ETH (≥ 0.005) for gas."
 
 ```bash
 node --version   # If version < 18 or command not found: https://nodejs.org
-cd "$(git rev-parse --show-toplevel)/skills/xaut-trade/scripts" && npm install
+SETUP_PATH=$(cat ~/.aurehub/.setup_path 2>/dev/null)
+if [ -f "$SETUP_PATH" ]; then
+  SCRIPTS_DIR=$(dirname "$SETUP_PATH")
+elif GIT_ROOT=$(git rev-parse --show-toplevel 2>/dev/null) && [ -d "$GIT_ROOT/skills/xaut-trade/scripts" ]; then
+  SCRIPTS_DIR="$GIT_ROOT/skills/xaut-trade/scripts"
+else
+  SCRIPTS_DIR=$(dirname "$(find "$HOME" -maxdepth 6 -type f -path "*/xaut-trade/scripts/setup.sh" 2>/dev/null | head -1)")
+fi
+cd "$SCRIPTS_DIR" && npm install
 ```
 
 ### 2. Get a UniswapX API Key (required)

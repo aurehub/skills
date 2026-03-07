@@ -42,17 +42,14 @@ Must include at minimum:
 - Slippage setting and `minAmountOut`
 - Risk indicators (large trade / slippage / gas)
 
-## 4. Explicit Confirmation Gate
+## 4. Execution Confirmation Gate
 
-Do not execute any `cast send` unless the user has explicitly confirmed.
+Determine confirmation level by USD notional and risk:
+
+- `< risk.confirm_trade_usd`: show full preview, then execute without blocking confirmation
+- `>= risk.confirm_trade_usd` and `< risk.large_trade_usd`: single confirmation
+- `>= risk.large_trade_usd` or estimated slippage exceeds `risk.max_slippage_bps_warn`: double confirmation
 
 Accepted confirmation phrases:
 - "confirm approve"
 - "confirm swap"
-
-## 5. Double-Confirmation Conditions
-
-- Trade amount exceeds `risk.large_trade_usd`
-- Estimated slippage exceeds `risk.max_slippage_bps_warn`
-
-When either condition is met, prominently warn about the risk and require a second confirmation.

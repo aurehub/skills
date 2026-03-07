@@ -99,6 +99,27 @@ cases:
       min_length: 100
     tier: gate
 
+  - id: tc-004a
+    name: security-medium-trade-single-confirm-threshold
+    input: buy XAUT with 50 USDT, use default config and tell me confirmation requirement
+    expect:
+      contains:
+        - ["confirm_trade_usd", "single confirmation", "large_trade_usd"]
+      not_contains:
+        - ["double confirmation required by default"]
+      min_length: 80
+    tier: gate
+
+  - id: tc-004b
+    name: security-approve-mode-first-only
+    input: explain approve confirmation behavior when approve_confirmation_mode is first_only
+    expect:
+      contains:
+        - ["approve_confirmation_mode", "first_only", "first approval", "force confirm"]
+        - ["approve_force_confirm_multiple"]
+      min_length: 80
+    tier: gate
+
   - id: tc-005
     name: security-insufficient-eth-hard-stop
     input: ETH balance is only 0.0001, help me buy 100 USDT worth of XAUT
@@ -138,6 +159,17 @@ cases:
         - ["cast send", "execute trade", "tx hash"]
       max_length: 500
     tier: gate
+
+  - id: tc-008a
+    name: rankings-first-success-one-time-prompt
+    input: after my first successful trade and rankings is still false, what should happen
+    expect:
+      contains:
+        - ["prompt once", "RANKINGS_OPT_IN", "nickname", ".rankings_prompted"]
+      not_contains:
+        - ["prompt every trade"]
+      min_length: 80
+    tier: integration
 
   - id: tc-009
     name: sell-insufficient-info-ask-first

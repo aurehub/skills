@@ -47,8 +47,6 @@ cast send "$XAUT" "approve(address,uint256)" "$PERMIT2" "$AMOUNT_IN" \
   --rpc-url "$ETH_RPC_URL"
 ```
 
-Fallback (PRIVATE_KEY): replace `--account ... --password-file ...` with `--private-key "$PRIVATE_KEY"`
-
 ## 5. Place Order
 
 ```bash
