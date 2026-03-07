@@ -13,13 +13,6 @@ bash "$(
   p=$(cat ~/.aurehub/.setup_path 2>/dev/null)
   if [ -f "$p" ]; then
     echo "$p"
-  else
-    for _p in \
-      "$HOME/.claude/skills/xaut-trade/scripts/setup.sh" \
-      "$HOME/.aurehub/.agents/skills/xaut-trade/scripts/setup.sh" \
-      "$HOME/.agents/skills/xaut-trade/scripts/setup.sh"; do
-      [ -f "$_p" ] && echo "$_p" && break
-    done
   fi
 )"
 ```
@@ -35,7 +28,8 @@ If the command above does not resolve setup.sh, use one of these fallbacks:
 - Bounded search fallback:
 
 ```bash
-bash "$(find ~/.claude ~/.aurehub ~/.agents -name "setup.sh" -path "*/xaut-trade/scripts/*" -maxdepth 6 2>/dev/null | head -1)"
+SETUP_PATH=$(find "$HOME" -maxdepth 6 -type f -path "*/xaut-trade/scripts/setup.sh" 2>/dev/null | head -1)
+[ -n "$SETUP_PATH" ] && [ -f "$SETUP_PATH" ] && bash "$SETUP_PATH"
 ```
 
 If the script exits with an error, follow the manual steps below for the failed step only.
@@ -156,7 +150,7 @@ if [ -f "$SETUP_PATH" ]; then
 elif GIT_ROOT=$(git rev-parse --show-toplevel 2>/dev/null) && [ -f "$GIT_ROOT/skills/xaut-trade/config.example.yaml" ]; then
   SKILL_DIR="$GIT_ROOT/skills/xaut-trade"
 else
-  SKILL_DIR=$(cd "$(dirname "$(find ~/.claude ~/.aurehub ~/.agents -name "setup.sh" -path "*/xaut-trade/scripts/*" -maxdepth 6 2>/dev/null | head -1)")/.." && pwd)
+  SKILL_DIR=$(cd "$(dirname "$(find "$HOME" -maxdepth 6 -type f -path "*/xaut-trade/scripts/setup.sh" 2>/dev/null | head -1)")/.." && pwd)
 fi
 cp "$SKILL_DIR/config.example.yaml" ~/.aurehub/config.yaml
 ```
@@ -193,7 +187,7 @@ if [ -f "$SETUP_PATH" ]; then
 elif GIT_ROOT=$(git rev-parse --show-toplevel 2>/dev/null) && [ -d "$GIT_ROOT/skills/xaut-trade/scripts" ]; then
   SCRIPTS_DIR="$GIT_ROOT/skills/xaut-trade/scripts"
 else
-  SCRIPTS_DIR=$(dirname "$(find ~/.claude ~/.aurehub ~/.agents -name "setup.sh" -path "*/xaut-trade/scripts/*" -maxdepth 6 2>/dev/null | head -1)")
+  SCRIPTS_DIR=$(dirname "$(find "$HOME" -maxdepth 6 -type f -path "*/xaut-trade/scripts/setup.sh" 2>/dev/null | head -1)")
 fi
 cd "$SCRIPTS_DIR" && npm install
 ```
