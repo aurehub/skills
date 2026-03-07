@@ -20,6 +20,8 @@ const { computeNonceComponents, checkPrecision } = require('./helpers');
 const { ethers } = require('ethers');
 const { execSync } = require('child_process');
 const fs = require('fs');
+const os = require('os');
+const path = require('path');
 
 // ethers v5 BigNumber (SDK uses .gte() etc — native BigInt not compatible)
 const BN = ethers.BigNumber;
@@ -132,7 +134,8 @@ async function place(args) {
 
   if (foundryAccount && passwordFile) {
     // Preferred: keystore via cast subprocess
-    const tmpFile = `/tmp/limit-order-typed-data-${Date.now()}.json`;
+    const tmpDir = fs.mkdtempSync(path.join(os.tmpdir(), 'limit-order-'));
+    const tmpFile = path.join(tmpDir, 'typed-data.json');
     fs.writeFileSync(tmpFile, typedDataJson);
     try {
       signature = execSync(
@@ -140,7 +143,7 @@ async function place(args) {
         { encoding: 'utf8' }
       ).trim();
     } finally {
-      fs.unlinkSync(tmpFile);
+      fs.rmSync(tmpDir, { recursive: true, force: true });
     }
   } else if (privateKey) {
     const signer = new ethers.Wallet(privateKey);
