@@ -56,12 +56,12 @@ Please choose:
   ```bash
   # 1. Saved path from previous run (validate it still exists)
   _saved=$(cat ~/.aurehub/.setup_path 2>/dev/null); [ -f "$_saved" ] && SETUP_PATH="$_saved"
-  # 2. Git repo
-  [ -z "$SETUP_PATH" ] && { GIT_ROOT=$(git rev-parse --show-toplevel 2>/dev/null); [ -n "$GIT_ROOT" ] && [ -f "$GIT_ROOT/skills/xaut-trade/scripts/setup.sh" ] && SETUP_PATH="$GIT_ROOT/skills/xaut-trade/scripts/setup.sh"; }
-  # 3. Known installation paths
+  # 2. Known installation paths
   for _p in "$HOME/.claude/skills/xaut-trade/scripts/setup.sh" "$HOME/.aurehub/.agents/skills/xaut-trade/scripts/setup.sh" "$HOME/.agents/skills/xaut-trade/scripts/setup.sh"; do
     [ -z "$SETUP_PATH" ] && [ -f "$_p" ] && SETUP_PATH="$_p"
   done
+  # 3. Git repo (fallback)
+  [ -z "$SETUP_PATH" ] && { GIT_ROOT=$(git rev-parse --show-toplevel 2>/dev/null); [ -n "$GIT_ROOT" ] && [ -f "$GIT_ROOT/skills/xaut-trade/scripts/setup.sh" ] && SETUP_PATH="$GIT_ROOT/skills/xaut-trade/scripts/setup.sh"; }
   # 4. Narrow find fallback (avoids scanning all of ~)
   [ -z "$SETUP_PATH" ] && SETUP_PATH=$(find ~/.claude ~/.aurehub ~/.agents -name "setup.sh" -path "*/xaut-trade/scripts/*" -maxdepth 6 2>/dev/null | head -1)
   echo "$SETUP_PATH"
@@ -87,9 +87,16 @@ Proceed to intent detection.
 
 4. Is Node.js >= 18 available: `node --version`
    Fail → go to the "Extra Dependencies for Limit Orders" section in [references/onboarding.md](references/onboarding.md), install, then continue
-5. Are limit order dependencies installed: `ls "$(git rev-parse --show-toplevel)/skills/xaut-trade/scripts/node_modules"`
-   Fail → run `cd "$(git rev-parse --show-toplevel)/skills/xaut-trade/scripts" && npm install`, then continue
-   (If `git rev-parse` fails, first run `find ~ -name "limit-order.js" -maxdepth 6` to locate the scripts directory, then cd into it and run npm install)
+5. Are limit order dependencies installed: resolve `SCRIPTS_DIR` first, then check `node_modules`
+   Resolve `SCRIPTS_DIR` in this order:
+   - `dirname "$(cat ~/.aurehub/.setup_path 2>/dev/null)"` (if file exists)
+   - `$HOME/.claude/skills/xaut-trade/scripts`
+   - `$HOME/.aurehub/.agents/skills/xaut-trade/scripts`
+   - `$HOME/.agents/skills/xaut-trade/scripts`
+   - git fallback: `$(git rev-parse --show-toplevel 2>/dev/null)/skills/xaut-trade/scripts` (if valid)
+   - bounded find fallback: `dirname "$(find ~/.claude ~/.aurehub ~/.agents -name "setup.sh" -path "*/xaut-trade/scripts/*" -maxdepth 6 2>/dev/null | head -1)"`
+   Check: `ls "$SCRIPTS_DIR/node_modules"`
+   Fail → run `cd "$SCRIPTS_DIR" && npm install`, then continue
 6. Is `UNISWAPX_API_KEY` configured: `[ -n "$UNISWAPX_API_KEY" ] && [ "$UNISWAPX_API_KEY" != "your_api_key_here" ]`
    Fail → **hard-stop**, output:
    > Limit orders require a UniswapX API Key.
