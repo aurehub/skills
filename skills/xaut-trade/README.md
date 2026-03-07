@@ -18,7 +18,18 @@ Buy and sell XAUT (Tether Gold) on Ethereum mainnet via AI Agent, using Uniswap 
 Run the setup script — it handles Foundry installation, wallet configuration, and config file generation interactively:
 
 ```bash
-_s=$(p=$(cat ~/.aurehub/.setup_path 2>/dev/null); [ -f "$p" ] && echo "$p" || for _p in "$HOME/.claude/skills/xaut-trade/scripts/setup.sh" "$HOME/.aurehub/.agents/skills/xaut-trade/scripts/setup.sh" "$HOME/.agents/skills/xaut-trade/scripts/setup.sh"; do [ -f "$_p" ] && echo "$_p" && break; done) && bash "$_s"
+_s=$(
+  p=$(cat ~/.aurehub/.setup_path 2>/dev/null)
+  if [ -f "$p" ]; then
+    echo "$p"
+  else
+    for _p in "$HOME/.claude/skills/xaut-trade/scripts/setup.sh" "$HOME/.aurehub/.agents/skills/xaut-trade/scripts/setup.sh" "$HOME/.agents/skills/xaut-trade/scripts/setup.sh"; do
+      [ -f "$_p" ] && echo "$_p" && break
+    done
+  fi
+)
+[ -z "$_s" ] && { g=$(git rev-parse --show-toplevel 2>/dev/null); [ -f "$g/skills/xaut-trade/scripts/setup.sh" ] && _s="$g/skills/xaut-trade/scripts/setup.sh"; }
+bash "$_s"
 ```
 
 If the command above cannot find setup.sh (first-time install with a non-standard agent), locate it manually:
