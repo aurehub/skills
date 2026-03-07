@@ -52,7 +52,14 @@ Environment not ready ([specific failing items]).
 
 Please choose:
 
-  **A) Recommended: run setup.sh manually**
+  **A) Recommended: let the Agent guide setup step by step**
+
+  Agent-guided mode (default behavior):
+  - The Agent runs all safe/non-sensitive checks and commands automatically
+  - The Agent pauses only when manual input is required (interactive key import / password entry / wallet funding)
+  - After each manual step, the Agent resumes automatically and continues original intent
+
+  **B) Fallback: run setup.sh manually**
 
   Before showing this option, silently resolve the setup.sh path (try in order, stop at first match):
   ```bash
@@ -69,15 +76,13 @@ Please choose:
   bash /resolved/absolute/path/to/setup.sh
   ```
 
-  **B) Let the Agent guide you through setup step by step**
-
-Once you finish option A, let me know and I'll continue your original request ([original intent]).
+Once setup is done in option B, continue original request ([original intent]).
 
 ---
 
 Wait for the user's reply:
-- User chooses **A** or completes setup.sh and reports back → re-run all environment checks (steps 0–4); if all pass, continue original intent; if any still fail, report the specific item and show the options again
-- User chooses **B** → load [references/onboarding.md](references/onboarding.md) and follow the agent-guided steps
+- User chooses **A** → load [references/onboarding.md](references/onboarding.md) and follow the agent-guided steps
+- User chooses **B** or completes setup.sh and reports back → re-run all environment checks (steps 0–4); if all pass, continue original intent; if any still fail, report the specific item and show the options again
 
 Proceed to intent detection.
 
@@ -108,6 +113,7 @@ Proceed to intent detection.
 - `.env` path: `~/.aurehub/.env`
 - `config.yaml` path: `~/.aurehub/config.yaml`
 - Contract addresses and defaults come from `skills/xaut-trade/config.example.yaml`; copy to `~/.aurehub/config.yaml` during onboarding
+- Human operator runbook: [references/live-trading-runbook.md](references/live-trading-runbook.md)
 
 ## Interaction & Execution Principles (semi-automated)
 

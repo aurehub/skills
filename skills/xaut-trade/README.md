@@ -40,6 +40,9 @@ The script walks you through each step, clearly marks actions that require manua
 
 After the script completes, follow the manual steps it prints at the end (fund wallet, get API key if needed).
 
+For a chat-first real-mainnet walkthrough (Agent-driven, minimal manual steps), see:
+- `references/live-trading-runbook.md`
+
 ### Manual (fallback)
 
 If you prefer to configure everything yourself, or if the script fails at a specific step:
