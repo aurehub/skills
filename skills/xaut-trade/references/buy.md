@@ -32,12 +32,6 @@ TX_HASH=$(cast send "$USDT" "approve(address,uint256)" "$ROUTER" "$AMOUNT_IN" \
 echo "Approve tx: https://etherscan.io/tx/$TX_HASH"
 ```
 
-If using private key fallback mode, replace `--account "$FOUNDRY_ACCOUNT"` with:
-
-```bash
---private-key "$PRIVATE_KEY"
-```
-
 ## 3. Swap Execution
 
 Calculate `deadline` and encode `exactInputSingle`:

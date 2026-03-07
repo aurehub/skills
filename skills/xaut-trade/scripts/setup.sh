@@ -109,16 +109,37 @@ step "Configure wallet keystore"
 if cast wallet list 2>/dev/null | grep -qF "$ACCOUNT_NAME"; then
   ok "Keystore account '$ACCOUNT_NAME' already exists, skipping"
 else
-  echo -e "  No keystore account '${BOLD}$ACCOUNT_NAME${NC}' found. Generating a new wallet..."
-  echo -e "  ${YELLOW}⚠ The private key will be displayed once. Save it to a secure location"
-  echo -e "  (e.g. password manager). Clear your terminal scrollback after saving.${NC}"
-  echo
+  echo -e "  No keystore account '${BOLD}$ACCOUNT_NAME${NC}' found."
+  echo -e "  Choose wallet initialization mode:"
+  echo -e "    ${BOLD}1)${NC} Import existing private key into keystore (interactive)"
+  echo -e "    ${BOLD}2)${NC} Create a brand-new keystore wallet (recommended)"
+  read -rp "  Enter 1 or 2: " WALLET_CHOICE
 
-  mkdir -p ~/.foundry/keystores
-  cast wallet new ~/.foundry/keystores "$ACCOUNT_NAME" \
-    --password-file ~/.aurehub/.wallet.password
+  case "${WALLET_CHOICE:-}" in
+    1)
+      echo
+      echo -e "  Run this in your terminal (interactive input is hidden):"
+      echo -e "    cast wallet import $ACCOUNT_NAME --interactive"
+      echo
+      while ! cast wallet list 2>/dev/null | grep -qF "$ACCOUNT_NAME"; do
+        read -rp "  Press Enter after import is complete, or type 'abort' to exit: " RETRY_INPUT
+        if [[ "${RETRY_INPUT:-}" == "abort" ]]; then
+          echo -e "  ${RED}Aborted.${NC}"; exit 1
+        fi
+      done
+      ;;
+    2)
+      mkdir -p ~/.foundry/keystores
+      cast wallet new ~/.foundry/keystores "$ACCOUNT_NAME" \
+        --password-file ~/.aurehub/.wallet.password
+      ;;
+    *)
+      echo -e "  ${RED}Invalid choice, exiting.${NC}"
+      exit 1
+      ;;
+  esac
 
-  ok "Keystore account '$ACCOUNT_NAME' created"
+  ok "Keystore account '$ACCOUNT_NAME' is ready"
 fi
 
 # ── Step 5: Read wallet address ────────────────────────────────────────────────

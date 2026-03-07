@@ -13,11 +13,17 @@ If either fails, stop and prompt:
 - Foundry not installed: install Foundry first
 - RPC unavailable: trigger RPC fallback sequence (see RPC Fallback section in SKILL.md)
 
-## 2. Signing Mode Detection
+## 2. Keystore Signing Validation
 
-Determine the signing mode for this execution and complete validation:
+Runtime signing must use keystore mode only.
 
-**If `FOUNDRY_ACCOUNT` is set (keystore mode):**
+If `PRIVATE_KEY` exists in `.env`, hard-stop immediately:
+> ❌ `PRIVATE_KEY` runtime mode is no longer supported.
+> Migrate with:
+> `cast wallet import "$FOUNDRY_ACCOUNT" --interactive`
+> Then keep only `FOUNDRY_ACCOUNT` + `KEYSTORE_PASSWORD_FILE` in `.env`.
+
+Validate keystore prerequisites:
 
 Verify the account exists:
 ```bash
@@ -40,25 +46,15 @@ If output is `FAIL`, hard-stop:
 > ```
 > Then set `KEYSTORE_PASSWORD_FILE=~/.aurehub/.wallet.password` in `.env`.
 
-**If only `PRIVATE_KEY` is set (fallback mode):**
-
-Skip keystore checks and continue.
-
-**If neither is set:**
+If either `FOUNDRY_ACCOUNT` or `KEYSTORE_PASSWORD_FILE` is missing:
 
 Hard-stop:
-> ❌ No signing method configured. Set `FOUNDRY_ACCOUNT` (recommended) or `PRIVATE_KEY` (fallback) in `.env`.
+> ❌ Missing keystore signing config. Set both `FOUNDRY_ACCOUNT` and `KEYSTORE_PASSWORD_FILE` in `.env`.
 
 After completing signing-mode validation, derive the wallet address:
 
 ```bash
 WALLET_ADDRESS=$(cast wallet address --account "$FOUNDRY_ACCOUNT" --password-file "$KEYSTORE_PASSWORD_FILE")
-```
-
-If using private key fallback mode:
-
-```bash
-WALLET_ADDRESS=$(cast wallet address "$PRIVATE_KEY")
 ```
 
 ## 3. Wallet & Gas Check

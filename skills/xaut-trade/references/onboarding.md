@@ -104,15 +104,21 @@ If still empty → repeat the prompt.
 cast wallet list 2>/dev/null | grep -qF "aurehub-wallet" && echo "exists" || echo "missing"
 ```
 
-If missing, create a new wallet using the password file:
+If missing, choose one method:
+
+Import an existing private key into keystore:
+
+```bash
+cast wallet import aurehub-wallet --interactive
+```
+
+Or create a new wallet directly in keystore:
 
 ```bash
 mkdir -p ~/.foundry/keystores
 cast wallet new ~/.foundry/keystores aurehub-wallet \
   --password-file ~/.aurehub/.wallet.password
 ```
-
-> ⚠️ The private key is shown only once. Ask the user to save it to a secure location before continuing. Remind them to clear terminal scrollback after saving.
 
 **Auto-fetch wallet address**:
 

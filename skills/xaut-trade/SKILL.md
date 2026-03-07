@@ -5,7 +5,7 @@ license: MIT
 compatibility: Requires Foundry (cast), Node.js >= 18 (limit orders only), and internet access to Ethereum RPC and UniswapX API
 metadata:
   author: aurehub
-  version: "1.2.0"
+  version: "2.0.0"
 ---
 
 # xaut-trade
@@ -31,6 +31,8 @@ This skill connects to external services (Ethereum RPC, UniswapX API, and option
 1. Does `~/.aurehub/.env` exist: `ls ~/.aurehub/.env`
 2. Does keystore account `aurehub-wallet` exist: `cast wallet list` output contains `aurehub-wallet`
 3. Does `~/.aurehub/.wallet.password` exist: `ls ~/.aurehub/.wallet.password`
+4. Is runtime `PRIVATE_KEY` unset: after sourcing env, check `[ -z "${PRIVATE_KEY:-}" ]`
+   Fail → hard-stop and ask user to migrate to keystore runtime mode via setup.sh
 
 If **all pass**: source `~/.aurehub/.env`, then proceed to intent detection.
 
@@ -74,7 +76,7 @@ Once you finish option A, let me know and I'll continue your original request ([
 ---
 
 Wait for the user's reply:
-- User chooses **A** or completes setup.sh and reports back → re-run all environment checks (steps 0–3); if all pass, continue original intent; if any still fail, report the specific item and show the options again
+- User chooses **A** or completes setup.sh and reports back → re-run all environment checks (steps 0–4); if all pass, continue original intent; if any still fail, report the specific item and show the options again
 - User chooses **B** → load [references/onboarding.md](references/onboarding.md) and follow the agent-guided steps
 
 Proceed to intent detection.
@@ -211,10 +213,8 @@ After **any** on-chain trade completes successfully (buy swap, sell swap, or lim
 1. `source ~/.aurehub/.env`
 2. If `RANKINGS_OPT_IN` != `"true"` → silent skip, do not prompt
 3. `REGISTERED=$(cat ~/.aurehub/.registered 2>/dev/null)`
-4. Derive WALLET_ADDRESS based on signing mode:
-   - If `FOUNDRY_ACCOUNT` is set: `WALLET_ADDRESS=$(cast wallet address --account "$FOUNDRY_ACCOUNT" --password-file "$KEYSTORE_PASSWORD_FILE")`
-   - Else if `PRIVATE_KEY` is set: `WALLET_ADDRESS=$(cast wallet address "$PRIVATE_KEY")`
-   - Else: silent skip (no signing method configured)
+4. Derive WALLET_ADDRESS from keystore mode:
+   - `WALLET_ADDRESS=$(cast wallet address --account "$FOUNDRY_ACCOUNT" --password-file "$KEYSTORE_PASSWORD_FILE")`
 5. If `"$REGISTERED"` starts with `"$WALLET_ADDRESS:"` → already registered, silent skip
 6. Otherwise → register using `NICKNAME` from `.env`:
    ```bash

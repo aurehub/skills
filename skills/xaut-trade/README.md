@@ -66,15 +66,21 @@ mkdir -p ~/.aurehub
 ( umask 077; read -rsp "Keystore password: " _pwd && printf '%s' "$_pwd" > ~/.aurehub/.wallet.password ); unset _pwd
 ```
 
-Generate a new wallet using the password file:
+Then choose one initialization method:
+
+Import an existing private key into keystore (interactive):
+
+```bash
+cast wallet import aurehub-wallet --interactive
+```
+
+Or create a brand-new keystore wallet:
 
 ```bash
 mkdir -p ~/.foundry/keystores
 cast wallet new ~/.foundry/keystores aurehub-wallet \
   --password-file ~/.aurehub/.wallet.password
 ```
-
-> ⚠️ The private key is shown only once. Save it to a secure location (e.g. password manager) and clear your terminal scrollback after saving.
 
 > Foundry keystores are stored in `~/.foundry/keystores/`; the password file goes in `~/.aurehub/`.
 
@@ -229,7 +235,6 @@ Thresholds can be customized in the `risk` section of `config.yaml`.
 | `FOUNDRY_ACCOUNT` | Foundry keystore account name (set by onboarding) | `aurehub-wallet` |
 | `KEYSTORE_PASSWORD_FILE` | Path to keystore password file | `~/.aurehub/.wallet.password` |
 | `UNISWAPX_API_KEY` | UniswapX API Key (**required for limit orders**, not needed for market orders) | Get at: developers.uniswap.org/dashboard |
-| `PRIVATE_KEY` | Private key (fallback, not recommended) | `0x...` |
 | `RANKINGS_OPT_IN` | Join activity rankings — opt-in only (default: `false`) | `true` or `false` |
 | `NICKNAME` | Display name for activity rankings (required if `RANKINGS_OPT_IN=true`) | `Alice` |
 
@@ -281,10 +286,14 @@ Anvil starts with 10 pre-funded accounts, each with 10,000 ETH. Default: `http:/
 ```bash
 # .env
 ETH_RPC_URL=http://127.0.0.1:8545
-PRIVATE_KEY=0xac0974bec39a17e36ba4a6b4d238ff944bacb478cbed5efcae784d7bf4f2ff80  # Anvil account #0 private key
+FOUNDRY_ACCOUNT=aurehub-wallet
+KEYSTORE_PASSWORD_FILE=~/.aurehub/.wallet.password
 ```
+If you want to use Anvil account #0, import it once into keystore:
 
-> This is Anvil's hardcoded test account with a public key — for local testing only.
+```bash
+cast wallet import aurehub-wallet --interactive
+```
 
 ### 3. Fund the Test Account with USDT
 
@@ -321,7 +330,7 @@ The Agent will run the full flow (quote → confirm → approve → swap), all o
 ### 5. Notes
 
 - Anvil fork state is **temporary** and resets on restart (unless using `anvil --state` for persistence)
-- Local testing uses `--unlocked` + `--from` instead of keystore, but the skill uses `--private-key` or `--account` in production — results are equivalent
+- Local testing may use `--unlocked` + `--from` for manual token funding, while skill runtime signing remains keystore-only (`--account` + `--password-file`)
 - If the fork runs for a long time, on-chain state may diverge from current mainnet; restart the fork to refresh
 - Whale addresses may change over time; if the transfer fails, check the latest top holders on [Etherscan](https://etherscan.io/token/0xdAC17F958D2ee523a2206206994597C13D831ec7#balances)
 

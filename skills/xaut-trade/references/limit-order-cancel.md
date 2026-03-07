@@ -30,13 +30,6 @@ TX_HASH=$(cast send "$PERMIT2" \
 echo "Cancel tx: https://etherscan.io/tx/$TX_HASH"
 ```
 
-Fallback:
-
-```bash
-# Replace --account / --password-file with:
---private-key "$PRIVATE_KEY"
-```
-
 ## 3. Output
 
 - tx hash

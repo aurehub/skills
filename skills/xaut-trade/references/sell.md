@@ -90,12 +90,6 @@ TX_HASH=$(cast send "$XAUT" "approve(address,uint256)" "$ROUTER" "$AMOUNT_IN" \
 echo "Approve tx: https://etherscan.io/tx/$TX_HASH"
 ```
 
-If using private key fallback mode, replace `--account "$FOUNDRY_ACCOUNT"` with:
-
-```bash
---private-key "$PRIVATE_KEY"
-```
-
 > ⚠️ Note: Unlike USDT, XAUT does not require `approve(0)` to reset before approving.
 
 ## 7. Swap Execution

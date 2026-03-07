@@ -24,3 +24,11 @@ When operating as an AI coding agent in this repository, follow this process:
 
 ## Security & Configuration Tips
 Do not commit secrets or wallet credentials. If a skill needs local configuration, provide an example file such as `config.example.yaml` and document required environment variables in the skill README.
+
+## Wallet Signing Policy (Repo-wide)
+- Runtime signing with `PRIVATE_KEY` is forbidden in all skills.
+- Runtime signing must use Foundry keystore only: `FOUNDRY_ACCOUNT` + `KEYSTORE_PASSWORD_FILE`.
+- `PRIVATE_KEY` may be used only as one-time onboarding input for `cast wallet import --interactive`, never as runtime signing configuration.
+- Wallet initialization flows must stay within two methods:
+  - Import existing private key into keystore (interactive)
+  - Create new wallet directly into keystore
