@@ -7,3 +7,6 @@
 # Node artifact files
 node_modules/
 dist/
+
+# Local planning docs (do not track in repo)
+docs/plans/
