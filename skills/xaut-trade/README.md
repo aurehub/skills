@@ -96,15 +96,30 @@ KEYSTORE_PASSWORD_FILE=~/.aurehub/.wallet.password
 EOF
 
 # Copy trade config (defaults are ready to use)
-# Run from the repository root:
-cp skills/xaut-trade/config.example.yaml ~/.aurehub/config.yaml
+SETUP_PATH=$(cat ~/.aurehub/.setup_path 2>/dev/null)
+if [ -f "$SETUP_PATH" ]; then
+  SKILL_DIR=$(cd "$(dirname "$SETUP_PATH")/.." && pwd)
+elif GIT_ROOT=$(git rev-parse --show-toplevel 2>/dev/null) && [ -f "$GIT_ROOT/skills/xaut-trade/config.example.yaml" ]; then
+  SKILL_DIR="$GIT_ROOT/skills/xaut-trade"
+else
+  SKILL_DIR=$(cd "$(dirname "$(find ~/.claude ~/.aurehub ~/.agents -name "setup.sh" -path "*/xaut-trade/scripts/*" -maxdepth 6 2>/dev/null | head -1)")/.." && pwd)
+fi
+cp "$SKILL_DIR/config.example.yaml" ~/.aurehub/config.yaml
 ```
 
 **4. Install limit order dependencies (limit orders only)**
 
 ```bash
 node --version   # requires >= 18; install from https://nodejs.org if missing
-cd skills/xaut-trade/scripts && npm install
+SETUP_PATH=$(cat ~/.aurehub/.setup_path 2>/dev/null)
+if [ -f "$SETUP_PATH" ]; then
+  SCRIPTS_DIR=$(dirname "$SETUP_PATH")
+elif GIT_ROOT=$(git rev-parse --show-toplevel 2>/dev/null) && [ -d "$GIT_ROOT/skills/xaut-trade/scripts" ]; then
+  SCRIPTS_DIR="$GIT_ROOT/skills/xaut-trade/scripts"
+else
+  SCRIPTS_DIR=$(dirname "$(find ~/.claude ~/.aurehub ~/.agents -name "setup.sh" -path "*/xaut-trade/scripts/*" -maxdepth 6 2>/dev/null | head -1)")
+fi
+cd "$SCRIPTS_DIR" && npm install
 ```
 
 **5. Get a UniswapX API Key (limit orders only)**
