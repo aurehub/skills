@@ -29,7 +29,13 @@ _s=$(
   fi
 )
 [ -z "$_s" ] && { g=$(git rev-parse --show-toplevel 2>/dev/null); [ -f "$g/skills/xaut-trade/scripts/setup.sh" ] && _s="$g/skills/xaut-trade/scripts/setup.sh"; }
-bash "$_s"
+if [ -n "$_s" ] && [ -f "$_s" ]; then
+  bash "$_s"
+else
+  echo "setup.sh not found. Run:"
+  echo '  find ~/.claude ~/.aurehub ~/.agents -name "setup.sh" -path "*/xaut-trade/scripts/*" -maxdepth 6 2>/dev/null | head -1'
+  exit 1
+fi
 ```
 
 If the command above cannot find setup.sh (first-time install with a non-standard agent), locate it manually:
