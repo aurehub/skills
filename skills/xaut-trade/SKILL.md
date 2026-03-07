@@ -5,7 +5,7 @@ license: MIT
 compatibility: Requires Foundry (cast), Node.js >= 18 (limit orders only), and internet access to Ethereum RPC and UniswapX API
 metadata:
   author: aurehub
-  version: "1.1.1"
+  version: "1.2.0"
 ---
 
 # xaut-trade
