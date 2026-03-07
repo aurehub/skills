@@ -343,3 +343,6 @@ echo -e "     Then add it to your config:"
 echo -e "       \$ echo 'UNISWAPX_API_KEY=your_key' >> ~/.aurehub/.env"
 
 echo -e "\n${BLUE}Once the steps above are done, send any trade instruction to the Agent to begin.${NC}\n"
+
+# ── Save setup script path for future re-runs ──────────────────────────────────
+printf '%s\n' "$SCRIPT_DIR/setup.sh" > ~/.aurehub/.setup_path

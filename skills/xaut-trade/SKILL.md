@@ -52,13 +52,21 @@ If **any fail**: do not continue with the original intent. Note which checks fai
 
   **A) 推荐：手动运行 setup.sh**
 
-  Before showing this option, silently resolve the setup.sh path by running:
+  Before showing this option, silently resolve the setup.sh path (try in order, stop at first match):
   ```bash
-  SETUP_PATH=$(git rev-parse --show-toplevel 2>/dev/null && echo "$(git rev-parse --show-toplevel)/skills/xaut-trade/scripts/setup.sh" || true)
-  [ -z "$SETUP_PATH" ] && SETUP_PATH=$([ -f "$HOME/.claude/skills/xaut-trade/scripts/setup.sh" ] && echo "$HOME/.claude/skills/xaut-trade/scripts/setup.sh" || find ~ -name "setup.sh" -path "*/xaut-trade/scripts/*" -maxdepth 8 2>/dev/null | head -1)
+  # 1. Saved path from previous run
+  SETUP_PATH=$(cat ~/.aurehub/.setup_path 2>/dev/null)
+  # 2. Git repo
+  [ -z "$SETUP_PATH" ] && { GIT_ROOT=$(git rev-parse --show-toplevel 2>/dev/null); [ -n "$GIT_ROOT" ] && [ -f "$GIT_ROOT/skills/xaut-trade/scripts/setup.sh" ] && SETUP_PATH="$GIT_ROOT/skills/xaut-trade/scripts/setup.sh"; }
+  # 3. Known installation paths
+  for _p in "$HOME/.claude/skills/xaut-trade/scripts/setup.sh" "$HOME/.aurehub/.agents/skills/xaut-trade/scripts/setup.sh" "$HOME/.agents/skills/xaut-trade/scripts/setup.sh"; do
+    [ -z "$SETUP_PATH" ] && [ -f "$_p" ] && SETUP_PATH="$_p"
+  done
+  # 4. Narrow find fallback (avoids scanning all of ~)
+  [ -z "$SETUP_PATH" ] && SETUP_PATH=$(find ~/.claude ~/.aurehub ~/.agents -name "setup.sh" -path "*/xaut-trade/scripts/*" -maxdepth 6 2>/dev/null | head -1)
   echo "$SETUP_PATH"
   ```
-  Then show the user only the resolved absolute path, e.g.:
+  Then show the user only the resolved absolute path:
   ```bash
   bash /resolved/absolute/path/to/setup.sh
   ```
