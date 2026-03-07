@@ -15,5 +15,12 @@ Add or update `SKILL.tests.yaml` when a skill has trigger logic or structured be
 ## Commit & Pull Request Guidelines
 Follow the conventional style already used in git history: `feat:`, `chore:`, `refactor:`, `i18n:`. Keep commit scopes focused on one skill or one repo-level change. Pull requests should explain what changed, list affected skills, mention any new commands or config files, and include sample prompts or terminal output when behavior changes.
 
+## Superpowers Workflow
+When operating as an AI coding agent in this repository, follow this process:
+1. Use `using-superpowers` before any action.
+2. For multi-step implementation tasks, run `writing-plans` first, then execute via `executing-plans`.
+3. Before claiming completion (or before commit/PR), run verification per `verification-before-completion`.
+4. For PR/code review requests, default to read-only analysis. Do not edit files unless the user explicitly requests changes.
+
 ## Security & Configuration Tips
 Do not commit secrets or wallet credentials. If a skill needs local configuration, provide an example file such as `config.example.yaml` and document required environment variables in the skill README.
