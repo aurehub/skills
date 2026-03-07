@@ -135,18 +135,20 @@ Proceed to intent detection.
 After sourcing `~/.aurehub/.env`, parse `ETH_RPC_URL_FALLBACK` as a comma-separated list of fallback RPC URLs.
 
 If any `cast call` or `cast send` command fails and its output contains any of the following:
-`429`, `502`, `503`, `timeout`, `connection refused`, `rate limit`, `Too Many Requests`
+`429`, `502`, `503`, `timeout`, `connection refused`, `rate limit`, `Too Many Requests`, `-32603`, `no response`, `method is not whitelisted`, `HTTP error 403`
 
 Then:
 1. Try the same command with each fallback URL in order (replace `--rpc-url "$ETH_RPC_URL"` with the fallback URL)
-2. First success → set that URL as the active RPC for all remaining commands this session; do not retry the primary
+2. First success → set that URL as the active RPC for this operation class in this session:
+   - read operations (`cast call`, quote, balance checks)
+   - write operations (`cast send`)
 3. All fallbacks exhausted → hard-stop with:
    > RPC unavailable. All configured nodes failed (primary + N fallbacks).
    > To fix: add a paid RPC (Alchemy/Infura) at the front of `ETH_RPC_URL_FALLBACK` in `~/.aurehub/.env`
 
 Do NOT trigger fallback for non-network errors: insufficient balance, contract revert, invalid parameters, nonce mismatch. Report these directly to the user.
 
-**Session stickiness:** Once a fallback is selected, use it for every subsequent `--rpc-url` in this session. Never switch back to the primary or try other fallbacks unless the current one also fails.
+**Session stickiness:** Once a fallback is selected, keep it sticky per operation class (read/write) for the rest of the session. Do not switch back to primary unless the active node fails.
 
 ## Intent Detection
 

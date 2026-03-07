@@ -40,7 +40,13 @@ echo "Skill directory: $SKILL_DIR"
 step "Check Foundry (cast)"
 
 if command -v cast &>/dev/null; then
-  ok "Foundry already installed: $(cast --version | head -1)"
+  CAST_VERSION_LINE=$(cast --version | head -1)
+  ok "Foundry already installed: $CAST_VERSION_LINE"
+  CAST_VERSION=$(echo "$CAST_VERSION_LINE" | awk '{print $3}' | sed 's/-.*$//')
+  if [ -n "$CAST_VERSION" ] && [ "$(printf '%s\n' "$CAST_VERSION" "1.6.0" | sort -V | head -1)" != "1.6.0" ]; then
+    warn "Foundry version is below recommended baseline (found: $CAST_VERSION, recommended: >= 1.6.0)."
+    echo -e "  You can upgrade with: ${BOLD}foundryup${NC}"
+  fi
 else
   # S1: disclose what is about to run before executing curl|bash
   echo -e "\n  ${YELLOW}Foundry (cast) is not installed.${NC}"
@@ -130,9 +136,20 @@ else
       ;;
     2)
       mkdir -p ~/.foundry/keystores
-      if cast wallet new --help 2>/dev/null | grep -q '\[ACCOUNT_NAME\]'; then
-        cast wallet new ~/.foundry/keystores "$ACCOUNT_NAME" \
-          --password-file ~/.aurehub/.wallet.password
+      WALLET_NEW_HELP=$(cast wallet new --help 2>/dev/null || true)
+      if echo "$WALLET_NEW_HELP" | grep -q '\[ACCOUNT_NAME\]'; then
+        if echo "$WALLET_NEW_HELP" | grep -q -- '--password-file'; then
+          cast wallet new ~/.foundry/keystores "$ACCOUNT_NAME" \
+            --password-file ~/.aurehub/.wallet.password
+        elif echo "$WALLET_NEW_HELP" | grep -q -- '--password'; then
+          echo -e "  This Foundry version does not support --password-file for wallet new."
+          echo -e "  Proceeding with interactive password prompt (input hidden)."
+          cast wallet new ~/.foundry/keystores "$ACCOUNT_NAME" --password
+        else
+          echo -e "  ${RED}❌ Unsupported 'cast wallet new' password mode in this Foundry version.${NC}"
+          echo -e "  Please upgrade Foundry: ${BOLD}foundryup${NC}"
+          exit 1
+        fi
       else
         echo -e "  ${RED}❌ Your Foundry version does not support named account creation for 'cast wallet new'.${NC}"
         echo -e "  Please upgrade Foundry and re-run setup:"
@@ -273,26 +290,53 @@ if [ "$NODE_OK" = true ]; then
   cd "$SCRIPT_DIR" && npm install --silent
   ok "npm packages installed"
 
-  # Prompt for UniswapX API Key inline (skip if already configured)
-  if grep -q '^UNISWAPX_API_KEY=.\+' ~/.aurehub/.env 2>/dev/null; then
-    ok "UNISWAPX_API_KEY already configured, skipping"
+  # Prompt for UniswapX API Key with explicit choices
+  CURRENT_UNISWAPX_KEY=$(grep '^UNISWAPX_API_KEY=' ~/.aurehub/.env 2>/dev/null | head -1 | cut -d= -f2- || true)
+  echo
+  echo -e "  ${BOLD}UniswapX API Key${NC} (required for limit orders, not needed for market orders)"
+  echo -e "  Get one free (~5 min): ${BOLD}https://developers.uniswap.org/dashboard${NC}"
+  echo -e "  Sign in with Google/GitHub → Generate Token (Free tier)"
+  echo
+  if [ -n "$CURRENT_UNISWAPX_KEY" ]; then
+    echo -e "  Existing key detected."
+    echo -e "    ${BOLD}1)${NC} Keep existing key (recommended)"
+    echo -e "    ${BOLD}2)${NC} Replace with a new key now"
+    read -rp "  Choose 1 or 2 [default: 1]: " UNISWAPX_CHOICE
+    UNISWAPX_CHOICE="${UNISWAPX_CHOICE:-1}"
   else
-    echo
-    echo -e "  ${BOLD}UniswapX API Key${NC} (required for limit orders, not needed for market orders)"
-    echo -e "  Get one free (~5 min): ${BOLD}https://developers.uniswap.org/dashboard${NC}"
-    echo -e "  Sign in with Google/GitHub → Generate Token (Free tier)"
-    echo
-    read -rp "  Enter API Key (or press Enter to skip): " UNISWAPX_KEY
-    if [ -n "$UNISWAPX_KEY" ]; then
-      ENV_TMP_FILE=$(mktemp /tmp/xaut_env.XXXXXX)
-      grep -v '^UNISWAPX_API_KEY=' ~/.aurehub/.env > "$ENV_TMP_FILE" 2>/dev/null || true
-      mv "$ENV_TMP_FILE" ~/.aurehub/.env
-      echo "UNISWAPX_API_KEY=$UNISWAPX_KEY" >> ~/.aurehub/.env
-      unset UNISWAPX_KEY
-      ok "UNISWAPX_API_KEY saved to ~/.aurehub/.env"
+    echo -e "  No key currently configured."
+    echo -e "    ${BOLD}1)${NC} Set key now"
+    echo -e "    ${BOLD}2)${NC} Skip for now (market orders still available)"
+    read -rp "  Choose 1 or 2 [default: 2]: " UNISWAPX_CHOICE
+    UNISWAPX_CHOICE="${UNISWAPX_CHOICE:-2}"
+  fi
+
+  if [ "$UNISWAPX_CHOICE" = "1" ] || { [ "$UNISWAPX_CHOICE" = "2" ] && [ -n "$CURRENT_UNISWAPX_KEY" ]; }; then
+    if [ "$UNISWAPX_CHOICE" = "1" ] && [ -n "$CURRENT_UNISWAPX_KEY" ]; then
+      ok "UNISWAPX_API_KEY unchanged"
     else
-      ok "Skipped (add UNISWAPX_API_KEY to ~/.aurehub/.env later if needed)"
+      while true; do
+        read -rp "  Enter API Key: " UNISWAPX_KEY
+        UNISWAPX_KEY=$(printf '%s' "$UNISWAPX_KEY" | xargs)
+        if [ -z "$UNISWAPX_KEY" ]; then
+          echo -e "  ${YELLOW}Key cannot be empty. Enter a key or press Ctrl+C to abort.${NC}"
+          continue
+        fi
+        if [ ${#UNISWAPX_KEY} -lt 10 ]; then
+          echo -e "  ${YELLOW}Key looks too short. Please verify and try again.${NC}"
+          continue
+        fi
+        ENV_TMP_FILE=$(mktemp /tmp/xaut_env.XXXXXX)
+        grep -v '^UNISWAPX_API_KEY=' ~/.aurehub/.env > "$ENV_TMP_FILE" 2>/dev/null || true
+        mv "$ENV_TMP_FILE" ~/.aurehub/.env
+        echo "UNISWAPX_API_KEY=$UNISWAPX_KEY" >> ~/.aurehub/.env
+        unset UNISWAPX_KEY
+        ok "UNISWAPX_API_KEY saved to ~/.aurehub/.env"
+        break
+      done
     fi
+  else
+    ok "Skipped (add UNISWAPX_API_KEY to ~/.aurehub/.env later if needed)"
   fi
 else
   warn "Limit orders unavailable (Node.js not installed). Re-run setup.sh after installing Node.js >= 18."
@@ -350,6 +394,13 @@ cast wallet list 2>/dev/null | grep -qF "$ACCOUNT_NAME" \
 # ── Completion summary ─────────────────────────────────────────────────────────
 echo -e "\n${GREEN}${BOLD}━━━ Automated setup complete ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━${NC}"
 echo -e "  Wallet address: ${BOLD}$WALLET_ADDRESS${NC}"
+if [ "$NODE_OK" = true ] && grep -q '^UNISWAPX_API_KEY=.\+' ~/.aurehub/.env 2>/dev/null; then
+  echo -e "  Market orders: ${GREEN}READY${NC}"
+  echo -e "  Limit orders:  ${GREEN}READY${NC}"
+else
+  echo -e "  Market orders: ${GREEN}READY${NC}"
+  echo -e "  Limit orders:  ${YELLOW}NOT READY${NC} (requires Node.js >= 18 and UNISWAPX_API_KEY)"
+fi
 echo -e "${GREEN}${BOLD}━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━${NC}"
 
 echo -e "\n${YELLOW}${BOLD}The following steps require manual action (the script cannot do them for you):${NC}"

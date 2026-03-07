@@ -113,7 +113,8 @@ cast call "$ROUTER" \
   "$DEADLINE" "[$SWAP_DATA]" \
   --from "$WALLET_ADDRESS" \
   --rpc-url "$ETH_RPC_URL"
-# On error → hard-stop, report reason, do not execute cast send
+# On network/policy errors (timeout/429/-32603/403 whitelist), retry dry-run on fallback read RPCs.
+# Hard-stop only if all read-capable RPCs fail, or if revert/invalid-params persists.
 ```
 
 Execute multicall:
