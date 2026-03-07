@@ -33,22 +33,22 @@ If `git rev-parse` fails, fall back to [references/onboarding.md](references/onb
 Replace the "If any fail" block (lines 46–53) with:
 
 ```markdown
-If **any fail**: do not continue with the original intent. Note which checks failed, then present the following options to the user (fill in [原始意图] with a one-sentence summary of what the user originally asked for):
+If **any fail**: do not continue with the original intent. Note which checks failed, then present the following options to the user (fill in [original intent] with a one-sentence summary of what the user originally asked for):
 
 ---
-环境未就绪（[具体失败项]）。
+Environment not ready ([specific failing items]).
 
-请选择：
+Please choose:
 
-  **A) 推荐：手动运行 setup.sh**
+  **A) Recommended: run setup.sh manually**
   ```bash
   bash "$(git rev-parse --show-toplevel)/skills/xaut-trade/scripts/setup.sh"
   ```
-  （如果 `git rev-parse` 失败，请使用：`bash "$(find ~ -name "setup.sh" -path "*/xaut-trade/scripts/*" -maxdepth 8 2>/dev/null | head -1)"`）
+  (If `git rev-parse` fails, use: `bash "$(find ~ -name "setup.sh" -path "*/xaut-trade/scripts/*" -maxdepth 8 2>/dev/null | head -1)"`)
 
-  **B) 由 Agent 逐步引导完成配置**
+  **B) Let the Agent guide you through setup step by step**
 
-选 A 完成后告诉我，我会继续你之前的操作（[原始意图]）。
+Once you finish option A, let me know and I'll continue your original request ([original intent]).
 
 ---
 

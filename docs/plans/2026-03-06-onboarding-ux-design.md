@@ -29,16 +29,16 @@ Minimal change set: no new files, no new abstractions.
 **New behavior**: present two options and wait for user choice.
 
 ```
-环境未就绪（[具体失败项]）。
+Environment not ready ([specific failing items]).
 
-请选择：
+Please choose:
 
-  A) 推荐：手动运行 setup.sh
+  A) Recommended: run setup.sh manually
      bash "$(git rev-parse --show-toplevel)/skills/xaut-trade/scripts/setup.sh"
 
-  B) 由 Agent 逐步引导完成配置
+  B) Let the Agent guide you through setup step by step
 
-选 A 完成后告诉我，我会继续你之前的操作（[原始意图摘要]）。
+Once you finish option A, let me know and I'll continue your original request ([original intent summary]).
 ```
 
 **After user completes setup.sh and replies**:
