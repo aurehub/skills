@@ -18,7 +18,7 @@ Buy and sell XAUT (Tether Gold) on Ethereum mainnet via AI Agent, using Uniswap 
 Run the setup script — it handles Foundry installation, wallet configuration, and config file generation interactively:
 
 ```bash
-bash "$(git rev-parse --show-toplevel)/skills/xaut-trade/scripts/setup.sh"
+bash "$(find ~ -name "setup.sh" -path "*/xaut-trade/scripts/*" -maxdepth 8 2>/dev/null | head -1)"
 ```
 
 The script walks you through each step, clearly marks actions that require manual intervention, and explains the reason for each one.

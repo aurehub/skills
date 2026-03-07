@@ -51,10 +51,17 @@ If **any fail**: do not continue with the original intent. Note which checks fai
 请选择：
 
   **A) 推荐：手动运行 setup.sh**
+
+  Before showing this option, silently resolve the setup.sh path by running:
   ```bash
-  bash "$(git rev-parse --show-toplevel)/skills/xaut-trade/scripts/setup.sh"
+  SETUP_PATH=$(git rev-parse --show-toplevel 2>/dev/null && echo "$(git rev-parse --show-toplevel)/skills/xaut-trade/scripts/setup.sh" || true)
+  [ -z "$SETUP_PATH" ] && SETUP_PATH=$([ -f "$HOME/.claude/skills/xaut-trade/scripts/setup.sh" ] && echo "$HOME/.claude/skills/xaut-trade/scripts/setup.sh" || find ~ -name "setup.sh" -path "*/xaut-trade/scripts/*" -maxdepth 8 2>/dev/null | head -1)
+  echo "$SETUP_PATH"
   ```
-  （如果 `git rev-parse` 失败，请使用：`bash "$(find ~ -name "setup.sh" -path "*/xaut-trade/scripts/*" -maxdepth 8 2>/dev/null | head -1)"`）
+  Then show the user only the resolved absolute path, e.g.:
+  ```bash
+  bash /resolved/absolute/path/to/setup.sh
+  ```
 
   **B) 由 Agent 逐步引导完成配置**
 
