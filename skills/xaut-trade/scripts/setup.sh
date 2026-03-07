@@ -126,14 +126,16 @@ step "Read wallet address"
 
 # U6: distinguish wrong password vs other errors
 WALLET_ADDRESS=""
+CAST_ERR_FILE=$(mktemp /tmp/xaut_cast_err.XXXXXX)
 if ! WALLET_ADDRESS=$(cast wallet address \
     --account "$ACCOUNT_NAME" \
-    --password-file ~/.aurehub/.wallet.password 2>/tmp/xaut_cast_err); then
-  CAST_ERR=$(cat /tmp/xaut_cast_err 2>/dev/null || true)
+    --password-file ~/.aurehub/.wallet.password 2>"$CAST_ERR_FILE"); then
+  CAST_ERR=$(cat "$CAST_ERR_FILE" 2>/dev/null || true)
+  rm -f "$CAST_ERR_FILE"
   echo -e "  ${RED}❌ Could not read wallet address.${NC}"
   if echo "$CAST_ERR" | grep -qiE "password|decrypt|mac mismatch|invalid|wrong"; then
     echo -e "  Likely cause: the password in ~/.aurehub/.wallet.password does not match"
-    echo -e "  the password set during 'cast wallet import'."
+    echo -e "  the password used when this keystore was created."
     echo -e "  To fix: delete the password file and re-run this script to enter the correct one."
     echo -e "    \$ rm ~/.aurehub/.wallet.password && bash \"$0\""
   elif echo "$CAST_ERR" | grep -qiE "not found|no such file|keystore"; then
@@ -145,6 +147,7 @@ if ! WALLET_ADDRESS=$(cast wallet address \
   fi
   exit 1
 fi
+rm -f "$CAST_ERR_FILE"
 ok "Wallet address: $WALLET_ADDRESS"
 
 # ── Step 6: Generate config files ─────────────────────────────────────────────
@@ -253,9 +256,9 @@ if [ "$NODE_OK" = true ]; then
     echo
     read -rp "  Enter API Key (or press Enter to skip): " UNISWAPX_KEY
     if [ -n "$UNISWAPX_KEY" ]; then
-      if grep -v '^UNISWAPX_API_KEY=' ~/.aurehub/.env > /tmp/.env.tmp 2>/dev/null && [ -s /tmp/.env.tmp ]; then
-        mv /tmp/.env.tmp ~/.aurehub/.env
-      fi
+      ENV_TMP_FILE=$(mktemp /tmp/xaut_env.XXXXXX)
+      grep -v '^UNISWAPX_API_KEY=' ~/.aurehub/.env > "$ENV_TMP_FILE" 2>/dev/null || true
+      mv "$ENV_TMP_FILE" ~/.aurehub/.env
       echo "UNISWAPX_API_KEY=$UNISWAPX_KEY" >> ~/.aurehub/.env
       unset UNISWAPX_KEY
       ok "UNISWAPX_API_KEY saved to ~/.aurehub/.env"
