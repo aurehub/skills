@@ -54,8 +54,8 @@ If **any fail**: do not continue with the original intent. Note which checks fai
 
   Before showing this option, silently resolve the setup.sh path (try in order, stop at first match):
   ```bash
-  # 1. Saved path from previous run
-  SETUP_PATH=$(cat ~/.aurehub/.setup_path 2>/dev/null)
+  # 1. Saved path from previous run (validate it still exists)
+  _saved=$(cat ~/.aurehub/.setup_path 2>/dev/null); [ -f "$_saved" ] && SETUP_PATH="$_saved"
   # 2. Git repo
   [ -z "$SETUP_PATH" ] && { GIT_ROOT=$(git rev-parse --show-toplevel 2>/dev/null); [ -n "$GIT_ROOT" ] && [ -f "$GIT_ROOT/skills/xaut-trade/scripts/setup.sh" ] && SETUP_PATH="$GIT_ROOT/skills/xaut-trade/scripts/setup.sh"; }
   # 3. Known installation paths
