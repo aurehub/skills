@@ -209,7 +209,7 @@ Before on-chain writes, the Agent always displays full commands. Confirmation le
 - Trade confirmation uses USD thresholds (`confirm_trade_usd`, `large_trade_usd`):
   - `< confirm_trade_usd`: preview shown, no blocking confirmation required
   - `>= confirm_trade_usd` and `< large_trade_usd`: single confirmation required
-  - `>= large_trade_usd` (or high slippage): double confirmation required
+  - `>= large_trade_usd` or estimated slippage exceeds `max_slippage_bps_warn`: double confirmation required
 - Approval confirmation uses `approve_confirmation_mode` with oversize safety override
 
 ## Risk Controls

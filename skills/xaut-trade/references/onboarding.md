@@ -78,10 +78,13 @@ If still empty → repeat the prompt.
 
 ## Step 3: Wallet Setup
 
-**Auto-detect**: if `aurehub-wallet` already exists in the keystore, skip this step.
+**Auto-detect**: if the keystore account already exists, skip this step.
 
 ```bash
-cast wallet list 2>/dev/null | grep -qF "aurehub-wallet" && echo "exists" || echo "missing"
+# Use defaults here because ~/.aurehub/.env may not be created yet in manual flow.
+FOUNDRY_ACCOUNT=${FOUNDRY_ACCOUNT:-aurehub-wallet}
+KEYSTORE_PASSWORD_FILE=${KEYSTORE_PASSWORD_FILE:-~/.aurehub/.wallet.password}
+cast wallet list 2>/dev/null | grep -qF "$FOUNDRY_ACCOUNT" && echo "exists" || echo "missing"
 ```
 
 If missing, choose one method:
@@ -89,22 +92,24 @@ If missing, choose one method:
 Import an existing private key into keystore:
 
 ```bash
-cast wallet import aurehub-wallet --interactive
+cast wallet import "$FOUNDRY_ACCOUNT" --interactive
 ```
 
 Or create a new wallet directly in keystore:
 
 ```bash
 mkdir -p ~/.foundry/keystores
-cast wallet new ~/.foundry/keystores aurehub-wallet \
-  --password-file ~/.aurehub/.wallet.password
+cast wallet new ~/.foundry/keystores "$FOUNDRY_ACCOUNT" \
+  --password-file "$KEYSTORE_PASSWORD_FILE"
 ```
+
+> Default values: `FOUNDRY_ACCOUNT=aurehub-wallet`, `KEYSTORE_PASSWORD_FILE=~/.aurehub/.wallet.password`
 
 **Auto-fetch wallet address**:
 
 ```bash
 source ~/.aurehub/.env
-WALLET_ADDRESS=$(cast wallet address --account aurehub-wallet --password-file ~/.aurehub/.wallet.password)
+WALLET_ADDRESS=$(cast wallet address --account "$FOUNDRY_ACCOUNT" --password-file "$KEYSTORE_PASSWORD_FILE")
 echo "Wallet address: $WALLET_ADDRESS"
 ```
 
@@ -125,7 +130,7 @@ KEYSTORE_PASSWORD_FILE=~/.aurehub/.wallet.password
 # UNISWAPX_API_KEY=your_api_key_here
 # Optional: rankings opt-in (default false)
 # RANKINGS_OPT_IN=false
-# Optional: nickname for future activities (set automatically on first use if not provided here)
+# Optional — set during setup or first-success prompt if omitted:
 # NICKNAME=YourName
 EOF
 ```
@@ -153,13 +158,13 @@ cp "$SKILL_DIR/config.example.yaml" ~/.aurehub/config.yaml
 ```bash
 source ~/.aurehub/.env
 cast block-number --rpc-url "$ETH_RPC_URL"
-cast wallet list | grep aurehub-wallet
+cast wallet list | grep "$FOUNDRY_ACCOUNT"
 ```
 
 If all pass, the environment is ready. Inform the user:
 
 ```bash
-WALLET_ADDRESS=$(cast wallet address --account aurehub-wallet --password-file ~/.aurehub/.wallet.password)
+WALLET_ADDRESS=$(cast wallet address --account "$FOUNDRY_ACCOUNT" --password-file "$KEYSTORE_PASSWORD_FILE")
 echo "Environment initialized. Wallet address: $WALLET_ADDRESS"
 echo "Make sure the wallet holds a small amount of ETH (≥ 0.005) for gas."
 ```

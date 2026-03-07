@@ -26,7 +26,9 @@ manual() {
   echo -e "  ${YELLOW}${BOLD}└─────────────────────────────────────────────────────────┘${NC}\n"
 }
 
-trap 'echo -e "\n${RED}❌ Step ${STEP} failed.${NC}\nSee references/onboarding.md for manual instructions, then re-run this script."; exit 1' ERR
+_cleanup() { rm -f "${CAST_ERR_FILE:-}" "${ENV_TMP_FILE:-}"; }
+trap '_cleanup; echo -e "\n${RED}❌ Step ${STEP} failed.${NC}\nSee references/onboarding.md for manual instructions, then re-run this script."; exit 1' ERR
+trap '_cleanup' EXIT
 
 # ── Locate skill directory from the script's own path ──────────────────────────
 SCRIPT_DIR=$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)
@@ -218,9 +220,10 @@ FOUNDRY_ACCOUNT=$ACCOUNT_NAME
 KEYSTORE_PASSWORD_FILE=~/.aurehub/.wallet.password
 # Required for limit orders only:
 # UNISWAPX_API_KEY=your_api_key_here
-# Optional — set automatically on first trade if omitted:
+# Optional — set during setup or first-success prompt if omitted:
 # NICKNAME=YourName
 EOF
+  chmod 600 ~/.aurehub/.env
   ok ".env generated (RPC: $ETH_RPC_URL)"
 fi
 

@@ -84,6 +84,6 @@ Return:
 - Trade execution confirmation follows:
   - `< risk.confirm_trade_usd`: show full preview, then execute without blocking confirmation
   - `>= risk.confirm_trade_usd` and `< risk.large_trade_usd`: single confirmation
-  - `>= risk.large_trade_usd` or high slippage: double confirmation
+  - `>= risk.large_trade_usd` or estimated slippage exceeds `risk.max_slippage_bps_warn`: double confirmation
 - Approval confirmation follows `risk.approve_confirmation_mode` with force override:
   - If approve amount `> risk.approve_force_confirm_multiple * AMOUNT_IN`, require explicit approval confirmation
