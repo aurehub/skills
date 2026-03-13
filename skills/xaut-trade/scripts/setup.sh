@@ -304,6 +304,7 @@ else
 
   if [ "$WALLET_MODE" = "wdk" ]; then
     cat > ~/.aurehub/.env << EOF
+WALLET_MODE=$WALLET_MODE
 ETH_RPC_URL=$ETH_RPC_URL
 # ETH_RPC_URL_FALLBACK=https://rpc.merkle.io,https://rpc.flashbots.net,https://eth.drpc.org
 WDK_PASSWORD_FILE=~/.aurehub/.wdk_password
@@ -314,6 +315,7 @@ WDK_PASSWORD_FILE=~/.aurehub/.wdk_password
 EOF
   else
     cat > ~/.aurehub/.env << EOF
+WALLET_MODE=$WALLET_MODE
 ETH_RPC_URL=$ETH_RPC_URL
 # Fallback RPCs tried in order when primary fails with a network error (429/502/timeout)
 # Add a paid Alchemy/Infura node at the front for higher reliability
@@ -334,14 +336,7 @@ if [ -f ~/.aurehub/config.yaml ]; then
   ok "config.yaml already exists, skipping"
 else
   cp "$SKILL_DIR/config.example.yaml" ~/.aurehub/config.yaml
-  # Prepend wallet_mode to config.yaml
-  if [ "$WALLET_MODE" = "wdk" ]; then
-    { echo "wallet_mode: $WALLET_MODE"; echo "wdk_vault_file: ~/.aurehub/.wdk_vault"; cat ~/.aurehub/config.yaml; } > ~/.aurehub/config.yaml.tmp
-  else
-    { echo "wallet_mode: $WALLET_MODE"; cat ~/.aurehub/config.yaml; } > ~/.aurehub/config.yaml.tmp
-  fi
-  mv ~/.aurehub/config.yaml.tmp ~/.aurehub/config.yaml
-  ok "config.yaml generated (wallet_mode: $WALLET_MODE)"
+  ok "config.yaml generated"
 fi
 
 # ── Step 8: Limit order dependencies (npm + UniswapX API Key) ─────────────────

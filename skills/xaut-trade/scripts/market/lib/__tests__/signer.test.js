@@ -87,16 +87,16 @@ afterEach(() => {
 // ---------------------------------------------------------------------------
 
 describe('createSigner', () => {
-  it('throws when wallet_mode is not set in config', async () => {
+  it('throws when WALLET_MODE is not set in .env', async () => {
     const cfg = { env: {}, yaml: {}, configDir: testDir };
 
     await expect(createSigner(cfg, null)).rejects.toThrow(
-      /wallet_mode not set in config\.yaml/i,
+      /WALLET_MODE not set in \.env/i,
     );
   });
 
   it('throws for unknown wallet_mode', async () => {
-    const cfg = { env: {}, yaml: { wallet_mode: 'ledger' }, configDir: testDir };
+    const cfg = { env: { WALLET_MODE: 'ledger' }, yaml: {}, configDir: testDir };
 
     await expect(createSigner(cfg, null)).rejects.toThrow(
       /unknown wallet_mode/i,
@@ -122,10 +122,11 @@ describe('createSigner', () => {
 
       const cfg = {
         env: {
+          WALLET_MODE: 'foundry',
           FOUNDRY_ACCOUNT: accountName,
           KEYSTORE_PASSWORD_FILE: passwordFile,
         },
-        yaml: { wallet_mode: 'foundry' },
+        yaml: {},
         configDir: testDir,
       };
 
@@ -141,8 +142,8 @@ describe('createSigner', () => {
 
     it('throws when FOUNDRY_ACCOUNT is missing', async () => {
       const cfg = {
-        env: {},
-        yaml: { wallet_mode: 'foundry' },
+        env: { WALLET_MODE: 'foundry' },
+        yaml: {},
         configDir: testDir,
       };
 
@@ -157,10 +158,11 @@ describe('createSigner', () => {
 
       const cfg = {
         env: {
+          WALLET_MODE: 'foundry',
           FOUNDRY_ACCOUNT: 'nonexistent-account',
           KEYSTORE_PASSWORD_FILE: passwordFile,
         },
-        yaml: { wallet_mode: 'foundry' },
+        yaml: {},
         configDir: testDir,
       };
 
@@ -187,12 +189,11 @@ describe('createSigner', () => {
 
       const cfg = {
         env: {
+          WALLET_MODE: 'wdk',
+          WDK_VAULT_FILE: vaultFile,
           WDK_PASSWORD_FILE: passwordFile,
         },
-        yaml: {
-          wallet_mode: 'wdk',
-          wdk_vault_file: vaultFile,
-        },
+        yaml: {},
         configDir: testDir,
       };
 
@@ -209,11 +210,12 @@ describe('createSigner', () => {
       writeFileSync(passwordFile, 'password');
 
       const cfg = {
-        env: { WDK_PASSWORD_FILE: passwordFile },
-        yaml: {
-          wallet_mode: 'wdk',
-          wdk_vault_file: join(testDir, 'nonexistent.vault'),
+        env: {
+          WALLET_MODE: 'wdk',
+          WDK_VAULT_FILE: join(testDir, 'nonexistent.vault'),
+          WDK_PASSWORD_FILE: passwordFile,
         },
+        yaml: {},
         configDir: testDir,
       };
 
@@ -235,8 +237,12 @@ describe('createSigner', () => {
       writeFileSync(passwordFile, 'wrong-password');
 
       const cfg = {
-        env: { WDK_PASSWORD_FILE: passwordFile },
-        yaml: { wallet_mode: 'wdk', wdk_vault_file: vaultFile },
+        env: {
+          WALLET_MODE: 'wdk',
+          WDK_VAULT_FILE: vaultFile,
+          WDK_PASSWORD_FILE: passwordFile,
+        },
+        yaml: {},
         configDir: testDir,
       };
 

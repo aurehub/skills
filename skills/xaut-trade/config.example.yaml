@@ -1,13 +1,6 @@
 # xaut-trade example config (safe to commit)
 # For local use, copy to config.yaml and modify as needed.
 
-# Wallet mode: "wdk" (recommended) or "foundry" (advanced)
-# Set during setup — do not change manually without re-running setup
-wallet_mode: wdk
-
-# WDK vault file path (WDK mode only)
-# wdk_vault_file: ~/.aurehub/.wdk_vault
-
 # Informational only — not read by scripts.
 # The active RPC endpoint comes from ETH_RPC_URL in ~/.aurehub/.env.
 # chain_id is passed explicitly when needed (e.g. --chain-id 1 for limit orders).

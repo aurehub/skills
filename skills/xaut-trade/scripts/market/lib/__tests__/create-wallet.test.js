@@ -162,8 +162,12 @@ describe('create-wallet.js', () => {
     // Now use signer.js to decrypt the vault and verify we get the same address
     const { createSigner } = await import('../signer.js');
     const cfg = {
-      env: { WDK_PASSWORD_FILE: passwordFile },
-      yaml: { wallet_mode: 'wdk', wdk_vault_file: vaultFile },
+      env: {
+        WALLET_MODE: 'wdk',
+        WDK_VAULT_FILE: vaultFile,
+        WDK_PASSWORD_FILE: passwordFile,
+      },
+      yaml: {},
       configDir: testDir,
     };
 

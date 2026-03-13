@@ -6,7 +6,7 @@
 - **Encryption**: PBKDF2 with 100k iterations, seed never stored as plaintext
 - **Dependencies**: Node.js >= 18 only — no external tools required
 - **Setup**: Choose password → encrypted vault created automatically
-- **Config**: `wallet_mode: wdk` + `WDK_PASSWORD_FILE` in `.env`
+- **Config**: `WALLET_MODE=wdk` + `WDK_PASSWORD_FILE` in `.env`
 
 ## Foundry Mode (Advanced)
 
@@ -14,7 +14,7 @@
 - **Encryption**: Scrypt-based (Foundry default)
 - **Dependencies**: Foundry (`cast`) must be installed
 - **Setup**: Install Foundry → import/create keystore → set password file
-- **Config**: `wallet_mode: foundry` + `FOUNDRY_ACCOUNT` + `KEYSTORE_PASSWORD_FILE` in `.env`
+- **Config**: `WALLET_MODE=foundry` + `FOUNDRY_ACCOUNT` + `KEYSTORE_PASSWORD_FILE` in `.env`
 
 ## Switching Modes
 

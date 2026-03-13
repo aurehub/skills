@@ -78,7 +78,7 @@ function wdkDecrypt(payload, key) {
 
 /**
  * Create an ethers.Wallet connected to `provider` from the wallet backend
- * specified by cfg.yaml.wallet_mode.
+ * specified by cfg.env.WALLET_MODE.
  *
  * Supported modes:
  *   'foundry' — decrypt a Foundry keystore JSON file with KEYSTORE_PASSWORD_FILE
@@ -93,11 +93,11 @@ function wdkDecrypt(payload, key) {
  * @returns {Promise<import('ethers').Wallet>}
  */
 export async function createSigner(cfg, provider, opts = {}) {
-  const walletMode = cfg?.yaml?.wallet_mode;
+  const walletMode = cfg?.env?.WALLET_MODE;
 
   if (!walletMode) {
     throw new Error(
-      'wallet_mode not set in config.yaml. Run setup to select a wallet mode.',
+      'WALLET_MODE not set in .env. Run setup to select a wallet mode.',
     );
   }
 
@@ -161,7 +161,7 @@ async function _createFoundrySigner(cfg, provider, opts) {
 
 async function _createWdkSigner(cfg, provider) {
   const vaultPath =
-    cfg.yaml.wdk_vault_file ??
+    cfg.env.WDK_VAULT_FILE ??
     join(homedir(), '.aurehub', '.wdk_vault');
 
   let vaultJson;

@@ -99,6 +99,7 @@ This creates `~/.aurehub/.wdk_vault` with the encrypted seed.
 
 ```bash
 cat > ~/.aurehub/.env << 'EOF'
+WALLET_MODE=wdk
 ETH_RPC_URL=https://eth.llamarpc.com
 # Fallback RPCs (tried in order on network error; add a paid node at front for reliability)
 ETH_RPC_URL_FALLBACK=https://eth.merkle.io,https://rpc.flashbots.net/fast,https://eth.drpc.org,https://ethereum.publicnode.com
@@ -195,6 +196,7 @@ cast wallet new ~/.foundry/keystores "$FOUNDRY_ACCOUNT" \
 
 ```bash
 cat > ~/.aurehub/.env << 'EOF'
+WALLET_MODE=foundry
 ETH_RPC_URL=https://eth.llamarpc.com
 # Fallback RPCs (tried in order on network error; add a paid node at front for reliability)
 ETH_RPC_URL_FALLBACK=https://eth.merkle.io,https://rpc.flashbots.net/fast,https://eth.drpc.org,https://ethereum.publicnode.com
@@ -233,19 +235,7 @@ fi
 cp "$SKILL_DIR/config.example.yaml" ~/.aurehub/config.yaml
 ```
 
-Set `wallet_mode` in config.yaml (replace `<MODE>` with `wdk` or `foundry`):
-
-```bash
-# For WDK:
-grep -q 'wallet_mode' ~/.aurehub/config.yaml && \
-  sed -i '' 's/wallet_mode:.*/wallet_mode: wdk/' ~/.aurehub/config.yaml || \
-  echo 'wallet_mode: wdk' >> ~/.aurehub/config.yaml
-
-# For Foundry:
-grep -q 'wallet_mode' ~/.aurehub/config.yaml && \
-  sed -i '' 's/wallet_mode:.*/wallet_mode: foundry/' ~/.aurehub/config.yaml || \
-  echo 'wallet_mode: foundry' >> ~/.aurehub/config.yaml
-```
+`WALLET_MODE` is already set in `~/.aurehub/.env` (written in Step W4 or F4). No config.yaml change needed.
 
 #### Step C2: Install Node.js dependencies
 

@@ -28,15 +28,15 @@ This skill connects to external services (Ethereum RPC, UniswapX API, and option
 
 1. Does `~/.aurehub/config.yaml` exist: `ls ~/.aurehub/config.yaml`
    Fail -> redirect to setup (see setup options below)
-2. Read `wallet_mode` from config.yaml: `grep wallet_mode ~/.aurehub/config.yaml`
-   Fail (missing or empty) -> "wallet_mode not set. Run setup to select a wallet mode."
+2. Read `WALLET_MODE` from .env: `source ~/.aurehub/.env && echo $WALLET_MODE`
+   Fail (missing or empty) -> "WALLET_MODE not set in .env. Run setup to select a wallet mode."
 3. Does `~/.aurehub/.env` exist: `ls ~/.aurehub/.env`
-4. **If `wallet_mode: wdk`:**
+4. **If `WALLET_MODE=wdk`:**
    - Check `~/.aurehub/.wdk_vault` exists: `ls ~/.aurehub/.wdk_vault`
    - Check `WDK_PASSWORD_FILE` in .env and file readable: `source ~/.aurehub/.env && test -r "$WDK_PASSWORD_FILE" && echo OK || echo FAIL`
    - Check Node.js >= 18: `node -v`
    - WDK mode has zero `cast` dependency
-5. **If `wallet_mode: foundry`:**
+5. **If `WALLET_MODE=foundry`:**
    - Check `cast --version` available
    - Check keystore exists: `source ~/.aurehub/.env && ls ~/.foundry/keystores/$FOUNDRY_ACCOUNT`
      (Optional: `cast wallet list` can verify the account name appears in Foundry's keystore)
@@ -213,7 +213,7 @@ ls ~/.aurehub/.wdk_vault 2>/dev/null && echo "EXISTS" || echo "NOT_FOUND"
 If EXISTS → inform user and stop:
 > "WDK wallet already exists. No action needed. To use it, run a trade command (e.g. 'buy 100 USDT of XAUT')."
 
-If the current `wallet_mode` in config.yaml is different (e.g. `foundry`), update it to `wdk` and inform:
+If the current `WALLET_MODE` in .env is different (e.g. `foundry`), update it to `wdk` and inform:
 > "WDK wallet already exists. Switched wallet mode to WDK."
 
 **If user chose Foundry:**
@@ -224,14 +224,14 @@ ls ~/.foundry/keystores/${FOUNDRY_ACCOUNT:-aurehub-wallet} 2>/dev/null && echo "
 If EXISTS → inform user and stop:
 > "Foundry keystore already exists. No action needed."
 
-If the current `wallet_mode` in config.yaml is different, update it to `foundry` and inform:
+If the current `WALLET_MODE` in .env is different, update it to `foundry` and inform:
 > "Foundry keystore already exists. Switched wallet mode to Foundry."
 
 ### Step 3: Create wallet (only if NOT_FOUND)
 
 If the wallet does not exist for the selected mode, proceed with wallet creation:
 - Load [references/onboarding.md](references/onboarding.md) and follow the setup steps for the selected mode
-- After completion, update `wallet_mode` in `~/.aurehub/config.yaml`
+- After completion, update `WALLET_MODE` in `~/.aurehub/.env`
 
 ---
 
