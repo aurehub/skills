@@ -1,7 +1,7 @@
 # Repository Guidelines
 
 ## Project Structure & Module Organization
-This repository stores reusable agent skills. Add new skills under `skills/<skill-name>/`. Each skill should include `SKILL.md`; optional files include `README.md`, `SKILL.tests.yaml`, `references/`, and `scripts/`. Use `template/SKILL.md` as the starting point for new skills. Repository-level automation lives in `scripts/`, including `scripts/publish-clawhub.sh`.
+This repository stores reusable agent skills. Add new skills under `skills/<skill-name>/`. Each skill should include `SKILL.md`; optional files include `README.md`, `SKILL.tests.yaml`, `references/`, and `scripts/`. Use `template/SKILL.md.template` as the starting point for new skills. Repository-level automation lives in `scripts/`, including `scripts/publish-clawhub.sh`.
 
 ## Build, Test, and Development Commands
 Install the skill collection locally with `npx skills add aurehub/skills`. Create a new skill from the template with `cp -r template skills/my-new-skill`. Run the existing script tests from `skills/xaut-trade/scripts/` with `npm test`. Publish one skill with `./scripts/publish-clawhub.sh skills/<skill-name> <version>`. Publish all non-example skills with `./scripts/publish-clawhub.sh --all patch`. Add `--dry-run` before publishing to preview changes.

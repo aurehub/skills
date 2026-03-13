@@ -18,10 +18,11 @@ Or manually copy the desired skill folder into your agent's skills directory.
 
 ## Creating a New Skill
 
-1. Copy the [template](template/SKILL.md) into a new directory under `skills/`:
+1. Copy the [template](template/SKILL.md.template) into a new directory under `skills/`:
 
 ```bash
-cp -r template skills/my-new-skill
+mkdir skills/my-new-skill
+cp template/SKILL.md.template skills/my-new-skill/SKILL.md
 ```
 
 2. Edit `skills/my-new-skill/SKILL.md`:
