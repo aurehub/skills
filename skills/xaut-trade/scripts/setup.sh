@@ -14,6 +14,7 @@ RED='\033[0;31m'; YELLOW='\033[1;33m'; GREEN='\033[0;32m'
 BLUE='\033[0;34m'; BOLD='\033[1m'; NC='\033[0m'
 
 STEP=0
+NPM_DEPS_INSTALLED=false
 
 step()   { STEP=$((STEP+1)); echo -e "\n${BLUE}${BOLD}[${STEP}] $1${NC}"; }
 ok()     { echo -e "  ${GREEN}✓ $1${NC}"; }
@@ -29,6 +30,16 @@ manual() {
 _cleanup() { rm -f "${CAST_ERR_FILE:-}" "${ENV_TMP_FILE:-}"; }
 trap '_cleanup; echo -e "\n${RED}❌ Step ${STEP} failed.${NC}\nSee references/onboarding.md for manual instructions, then re-run this script."; exit 1' ERR
 trap '_cleanup' EXIT
+
+_ensure_scripts_deps() {
+  if [ "$NPM_DEPS_INSTALLED" = true ]; then
+    return 0
+  fi
+  echo "  Installing npm packages..."
+  (cd "$SCRIPT_DIR" && npm install --silent)
+  NPM_DEPS_INSTALLED=true
+  ok "npm packages installed"
+}
 
 # ── Locate skill directory from the script's own path ──────────────────────────
 SCRIPT_DIR=$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)
@@ -78,6 +89,7 @@ if [ "$WALLET_MODE" = "wdk" ]; then
     exit 1
   fi
   ok "Node.js $(node -v)"
+  _ensure_scripts_deps
 
   # ── Step 4: Prompt for wallet password ─────────────────────────────────────
   step "WDK wallet password"
@@ -406,13 +418,13 @@ _install_nodejs() {
     return 1
   fi
 
-  echo -e "  Node.js >= 18 is required for limit orders."
+  echo -e "  Node.js >= 18 is required for market and limit orders."
   echo -e "  Suggested install command:"
   echo -e "    ${BOLD}$(echo -e "$suggestion")${NC}"
   echo
   read -rp "  Run it now? [Y/n]: " RUN_NODE_INSTALL
   if [[ "${RUN_NODE_INSTALL:-}" =~ ^[Nn]$ ]]; then
-    echo -e "  ${YELLOW}Skipped. Limit orders will not be available until Node.js >= 18 is installed.${NC}"
+    echo -e "  ${YELLOW}Skipped. Market and limit orders will not be available until Node.js >= 18 is installed.${NC}"
     return 1
   fi
   case "$install_mode" in
@@ -460,9 +472,7 @@ else
 fi
 
 if [ "$NODE_OK" = true ]; then
-  echo "  Installing npm packages..."
-  cd "$SCRIPT_DIR" && npm install --silent
-  ok "npm packages installed"
+  _ensure_scripts_deps
 
   # Prompt for UniswapX API Key with explicit choices
   CURRENT_UNISWAPX_KEY=$(grep '^UNISWAPX_API_KEY=' ~/.aurehub/.env 2>/dev/null | head -1 | cut -d= -f2- || true)
@@ -514,7 +524,7 @@ if [ "$NODE_OK" = true ]; then
     ok "Skipped (add UNISWAPX_API_KEY to ~/.aurehub/.env later if needed)"
   fi
 else
-  warn "Limit orders unavailable (Node.js not installed). Re-run setup.sh after installing Node.js >= 18."
+  warn "Market and limit orders unavailable (Node.js not installed). Re-run setup.sh after installing Node.js >= 18."
 fi
 
 # ── Step 9: Activity rankings (optional) ─────────────────────────────────────
@@ -614,8 +624,11 @@ echo -e "  Wallet address: ${BOLD}$WALLET_ADDRESS${NC}"
 if [ "$NODE_OK" = true ] && grep -q '^UNISWAPX_API_KEY=.\+' ~/.aurehub/.env 2>/dev/null; then
   echo -e "  Market orders: ${GREEN}READY${NC}"
   echo -e "  Limit orders:  ${GREEN}READY${NC}"
-else
+elif [ "$NODE_OK" = true ]; then
   echo -e "  Market orders: ${GREEN}READY${NC}"
+  echo -e "  Limit orders:  ${YELLOW}NOT READY${NC} (requires UNISWAPX_API_KEY)"
+else
+  echo -e "  Market orders: ${YELLOW}NOT READY${NC} (requires Node.js >= 18)"
   echo -e "  Limit orders:  ${YELLOW}NOT READY${NC} (requires Node.js >= 18 and UNISWAPX_API_KEY)"
 fi
 echo -e "${GREEN}${BOLD}━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━${NC}"

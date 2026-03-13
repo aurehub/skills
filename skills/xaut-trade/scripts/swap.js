@@ -323,10 +323,22 @@ if (isDirectRun) {
   }
 
   const cfg = loadConfig(parsed.configDir);
-  const provider = createProvider(cfg.env);
+  const COMMANDS_NEEDING_PROVIDER = new Set([
+    'address',
+    'balance',
+    'allowance',
+    'quote',
+    'approve',
+    'swap',
+    'cancel-nonce',
+  ]);
 
   (async () => {
     try {
+      const provider = COMMANDS_NEEDING_PROVIDER.has(parsed.command)
+        ? createProvider(cfg.env)
+        : null;
+
       switch (parsed.command) {
         case 'address':
           await runAddress(cfg, provider);
