@@ -9,7 +9,7 @@
 ## 1. Pre-flight Checks
 
 ```bash
-node --version     # If not found, hard-stop and prompt to install https://nodejs.org (market orders unaffected)
+node --version     # If not found, hard-stop and prompt to install https://nodejs.org (Node is required for all script commands)
 node swap.js balance   # ETH balance check + XAUT balance check (hard-stop if insufficient)
 ```
 
@@ -77,7 +77,7 @@ Return to user:
 
 | Error | Action |
 |-------|--------|
-| `node` not found | Hard-stop, prompt to install, note market orders are unaffected |
+| `node` not found | Hard-stop, prompt to install Node.js >= 18 (required for all script commands) |
 | XAUT precision > 6 decimals | Script-level hard-stop (exit 1), report minimum precision of 0.000001 |
 | XAUT balance insufficient | Hard-stop, report shortfall |
 | Limit price deviates > 50% from current market | Warn + double confirmation (prevent price typos) |

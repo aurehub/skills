@@ -324,9 +324,9 @@ Make sure the wallet holds a small amount of ETH (>= 0.005) for gas.
 
 ---
 
-## Extra Dependencies for Limit Orders (limit orders only)
+## Runtime Dependencies (required for market and limit orders)
 
-### 1. Install Node.js (>= 18)
+### 1. Install Node.js and scripts dependencies (>= 18)
 
 ```bash
 node --version   # If version < 18 or command not found: https://nodejs.org
@@ -341,7 +341,7 @@ fi
 cd "$SCRIPTS_DIR" && npm install
 ```
 
-### 2. Get a UniswapX API Key (required)
+### 2. Get a UniswapX API Key (required for limit orders only)
 
 Limit orders require a UniswapX API Key to submit and query orders.
 
@@ -356,7 +356,8 @@ Add the key to `~/.aurehub/.env`:
 echo 'UNISWAPX_API_KEY=your_key_here' >> ~/.aurehub/.env
 ```
 
-Neither of the above steps is needed for market orders (Uniswap V3).
+Node.js and npm dependencies are required for both market and limit orders.
+Only `UNISWAPX_API_KEY` is limit-order specific.
 
 ---
 

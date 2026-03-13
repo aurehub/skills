@@ -9,7 +9,7 @@
 ## 1. Pre-flight Checks
 
 ```bash
-node --version     # If not found, hard-stop and prompt to install https://nodejs.org (market orders unaffected)
+node --version     # If not found, hard-stop and prompt to install https://nodejs.org (Node is required for all script commands)
 node swap.js balance   # ETH balance check + tokenIn (USDT) balance check
 ```
 
@@ -77,7 +77,7 @@ Return to user:
 
 | Error | Action |
 |-------|--------|
-| `node` not found | Hard-stop, prompt to install, note market orders are unaffected |
+| `node` not found | Hard-stop, prompt to install Node.js >= 18 (required for all script commands) |
 | UniswapX API returns 4xx | Hard-stop, note XAUT may not be in the supported list, suggest market order |
 | Limit price deviates > 50% from current market | Warn + double confirmation (prevent price typos) |
 | Approve failed | Return failure reason, suggest retry |

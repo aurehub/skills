@@ -111,7 +111,7 @@ fi
 cp "$SKILL_DIR/config.example.yaml" ~/.aurehub/config.yaml
 ```
 
-**4. Install limit order dependencies (limit orders only)**
+**4. Install runtime dependencies (required for market and limit orders)**
 
 ```bash
 node --version   # requires >= 18; install from https://nodejs.org if missing
