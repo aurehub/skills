@@ -1,4 +1,5 @@
 import { JsonRpcProvider } from 'ethers';
+import { loadConfig } from './config.js';
 
 /**
  * Error codes and patterns that indicate a transient failure worth retrying
@@ -167,15 +168,26 @@ export class FallbackProvider {
  * @returns {FallbackProvider}
  */
 export function createProvider(env) {
-  const primaryUrl = env.ETH_RPC_URL;
+  let effectiveEnv = env;
+  if (!effectiveEnv?.ETH_RPC_URL) {
+    // Fallback: load from ~/.aurehub/.env when env vars are not exported
+    try {
+      const cfg = loadConfig();
+      effectiveEnv = { ...cfg.env, ...effectiveEnv };
+    } catch (_) {
+      // ignore — will throw below if still missing
+    }
+  }
+
+  const primaryUrl = effectiveEnv.ETH_RPC_URL;
   if (!primaryUrl) {
     throw new Error(
       'ETH_RPC_URL is required in env to create a provider'
     );
   }
 
-  const fallbackUrls = env.ETH_RPC_URL_FALLBACK
-    ? env.ETH_RPC_URL_FALLBACK.split(',').map((u) => u.trim()).filter(Boolean)
+  const fallbackUrls = effectiveEnv.ETH_RPC_URL_FALLBACK
+    ? effectiveEnv.ETH_RPC_URL_FALLBACK.split(',').map((u) => u.trim()).filter(Boolean)
     : [];
 
   return new FallbackProvider(primaryUrl, fallbackUrls);
