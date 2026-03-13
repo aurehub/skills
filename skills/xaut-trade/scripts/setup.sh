@@ -119,7 +119,7 @@ if [ "$WALLET_MODE" = "wdk" ]; then
   VAULT_FILE="$HOME/.aurehub/.wdk_vault"
   if [ -f "$VAULT_FILE" ]; then
     ok "Vault file already exists, reading address..."
-    WALLET_ADDRESS=$(node "$MARKET_DIR/lib/create-wallet.js" --password-file "$WDK_PASSWORD_FILE" --vault-file "$VAULT_FILE" 2>/dev/null \
+    WALLET_ADDRESS=$(node "$MARKET_DIR/swap.js" address --config-dir "$HOME/.aurehub" 2>/dev/null \
       | node -e "let d='';process.stdin.on('data',c=>d+=c);process.stdin.on('end',()=>console.log(JSON.parse(d).address))")
   else
     RESULT=$(node "$MARKET_DIR/lib/create-wallet.js" --password-file "$WDK_PASSWORD_FILE" --vault-file "$VAULT_FILE")
