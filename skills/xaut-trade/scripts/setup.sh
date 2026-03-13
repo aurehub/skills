@@ -127,6 +127,26 @@ if [ "$WALLET_MODE" = "wdk" ]; then
   fi
   ok "Wallet address: $WALLET_ADDRESS"
 
+  # ── Security notice: seed phrase backup ──────────────────────────────────────
+  echo ""
+  echo -e "  ${YELLOW}${BOLD}┌─ IMPORTANT: Back up your seed phrase ─────────────────────┐${NC}"
+  echo -e "  ${YELLOW}│${NC}"
+  echo -e "  ${YELLOW}│${NC} Your wallet is protected by an encrypted vault, but if"
+  echo -e "  ${YELLOW}│${NC} the vault file or password is lost, ${BOLD}your funds are gone${NC}."
+  echo -e "  ${YELLOW}│${NC}"
+  echo -e "  ${YELLOW}│${NC} Export your 12-word seed phrase ${BOLD}now${NC} and store it safely"
+  echo -e "  ${YELLOW}│${NC} (paper, hardware backup — never in cloud or chat)."
+  echo -e "  ${YELLOW}│${NC}"
+  echo -e "  ${YELLOW}│${NC} Run this command in a private terminal:"
+  echo -e "  ${YELLOW}│${NC}"
+  echo -e "  ${YELLOW}│${NC}   ${BOLD}node $MARKET_DIR/lib/export-seed.js${NC}"
+  echo -e "  ${YELLOW}│${NC}"
+  echo -e "  ${YELLOW}│${NC} Write down the 12 words and store offline."
+  echo -e "  ${YELLOW}│${NC} ${RED}Never share your seed phrase with anyone.${NC}"
+  echo -e "  ${YELLOW}│${NC}"
+  echo -e "  ${YELLOW}${BOLD}└───────────────────────────────────────────────────────────┘${NC}"
+  echo ""
+
 fi
 
 # ── Foundry wallet setup ─────────────────────────────────────────────────────

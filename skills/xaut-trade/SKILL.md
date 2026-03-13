@@ -234,6 +234,25 @@ If the wallet does not exist for the selected mode, proceed with wallet creation
 - Load [references/onboarding.md](references/onboarding.md) and follow the setup steps for the selected mode
 - After completion, update `WALLET_MODE` in `~/.aurehub/.env`
 
+### Step 4: Security reminder (WDK mode only)
+
+After WDK wallet creation succeeds, **always** display this security notice:
+
+> **IMPORTANT: Back up your seed phrase**
+>
+> Your wallet is protected by an encrypted vault, but if the vault file or password is lost, **your funds cannot be recovered**.
+>
+> Export your 12-word seed phrase now and store it safely (paper or hardware backup — never in cloud storage or chat).
+>
+> Run this command in a **private** terminal:
+> ```
+> node <scripts_dir>/market/lib/export-seed.js
+> ```
+>
+> Write down the 12 words and keep them offline. **Never share your seed phrase with anyone.**
+
+Do NOT skip this step. Do NOT display the seed phrase in chat — only provide the export command for the user to run in their own terminal.
+
 ---
 
 ## Buy Flow (USDT -> XAUT)

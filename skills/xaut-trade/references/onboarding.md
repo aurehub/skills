@@ -105,6 +105,26 @@ node "$SCRIPTS_DIR/market/lib/create-wallet.js" --password-file ~/.aurehub/.wdk_
 
 This creates `~/.aurehub/.wdk_vault` with the encrypted seed.
 
+#### Step W3b: Security reminder — back up your seed phrase
+
+**IMPORTANT**: After wallet creation, always present this security notice to the user:
+
+> **Back up your seed phrase now.**
+>
+> Your wallet is protected by an encrypted vault. If the vault file (`~/.aurehub/.wdk_vault`) or password file (`~/.aurehub/.wdk_password`) is lost or corrupted, **your funds cannot be recovered** without the seed phrase.
+>
+> Run this command in a **private** terminal to display your 12-word mnemonic:
+>
+> ```bash
+> node <scripts_dir>/market/lib/export-seed.js
+> ```
+>
+> - Write the 12 words on paper and store offline (safe, lockbox).
+> - **Never** save the seed phrase in cloud storage, screenshots, or chat.
+> - **Never** share it with anyone — no legitimate service will ask for it.
+
+Do NOT print the seed phrase in the chat. Only provide the export command.
+
 #### Step W4: Write .env for WDK
 
 If `~/.aurehub/.env` does not exist, create it:
