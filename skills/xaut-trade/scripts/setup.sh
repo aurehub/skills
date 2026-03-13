@@ -466,6 +466,9 @@ fi
 if [ "$NODE_OK" = true ]; then
   echo "  Installing npm packages..."
   cd "$SCRIPT_DIR" && npm install --silent
+  if [ -f "$SCRIPT_DIR/market/package.json" ]; then
+    (cd "$SCRIPT_DIR/market" && npm install --silent)
+  fi
   ok "npm packages installed"
 
   # Prompt for UniswapX API Key with explicit choices

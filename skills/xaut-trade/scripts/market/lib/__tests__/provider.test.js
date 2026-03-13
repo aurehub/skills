@@ -1,4 +1,7 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
+import { mkdtempSync } from 'node:fs';
+import { tmpdir } from 'node:os';
+import { join } from 'node:path';
 import { FallbackProvider, createProvider } from '../provider.js';
 
 describe('FallbackProvider', () => {
@@ -206,6 +209,12 @@ describe('createProvider', () => {
   });
 
   it('throws when ETH_RPC_URL is missing from env', () => {
-    expect(() => createProvider({})).toThrow(/ETH_RPC_URL/i);
+    const originalHome = process.env.HOME;
+    process.env.HOME = mkdtempSync(join(tmpdir(), 'xaut-provider-test-'));
+    try {
+      expect(() => createProvider({})).toThrow(/ETH_RPC_URL/i);
+    } finally {
+      process.env.HOME = originalHome;
+    }
   });
 });

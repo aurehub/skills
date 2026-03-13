@@ -72,6 +72,16 @@ describe('parseCliArgs', () => {
     expect(() => parseCliArgs(['unknown-cmd'])).toThrow(/unknown command/i);
   });
 
+  it('normalizes --side for quote/swap', () => {
+    expect(parseCliArgs(['quote', '--side', 'BUY', '--amount', '1']).side).toBe('buy');
+    expect(parseCliArgs(['swap', '--side', ' Sell ', '--amount', '1', '--min-out', '1']).side).toBe('sell');
+  });
+
+  it('errors when --side is not buy/sell for quote/swap', () => {
+    expect(() => parseCliArgs(['quote', '--side', 'long', '--amount', '1'])).toThrow(/invalid --side/i);
+    expect(() => parseCliArgs(['swap', '--side', 'short', '--amount', '1', '--min-out', '1'])).toThrow(/invalid --side/i);
+  });
+
   it('parses --config-dir override', () => {
     const result = parseCliArgs(['balance', '--config-dir', '/tmp/myconfig']);
     expect(result.command).toBe('balance');

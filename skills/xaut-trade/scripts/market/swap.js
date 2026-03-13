@@ -94,6 +94,14 @@ export function parseCliArgs(argv) {
     }
   }
 
+  if ((command === 'quote' || command === 'swap') && parsed.side) {
+    const normalized = String(parsed.side).trim().toLowerCase();
+    if (normalized !== 'buy' && normalized !== 'sell') {
+      throw new Error(`Invalid --side value "${parsed.side}". Expected "buy" or "sell".`);
+    }
+    parsed.side = normalized;
+  }
+
   return parsed;
 }
 
@@ -145,6 +153,7 @@ async function runAllowance(cfg, provider, args) {
 async function runQuote(cfg, provider, args) {
   if (!args.side) throw new Error('--side is required for quote');
   if (!args.amount) throw new Error('--amount is required for quote');
+  if (args.side !== 'buy' && args.side !== 'sell') throw new Error('--side must be "buy" or "sell"');
 
   // Resolve pair: buy = USDT→XAUT, sell = XAUT→USDT
   const isBuy = args.side === 'buy';
@@ -199,6 +208,7 @@ async function runSwap(cfg, provider, args) {
   if (!args.side) throw new Error('--side is required for swap');
   if (!args.amount) throw new Error('--amount is required for swap');
   if (!args.minOut) throw new Error('--min-out is required for swap');
+  if (args.side !== 'buy' && args.side !== 'sell') throw new Error('--side must be "buy" or "sell"');
 
   const signer = await createSigner(cfg, provider ? provider.getEthersProvider() : null);
   const address = signer.address;
