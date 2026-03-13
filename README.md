@@ -14,7 +14,7 @@ Or manually copy the desired skill folder into your agent's skills directory.
 
 | Skill | Description |
 |-------|-------------|
-| [xaut-trade](skills/xaut-trade/) | Buy or sell XAUT (Tether Gold) on Ethereum using Foundry cast and Uniswap |
+| [xaut-trade](skills/xaut-trade/) | Buy or sell XAUT (Tether Gold) on Ethereum via Uniswap V3 (market) and UniswapX (limit orders) |
 
 ## Creating a New Skill
 

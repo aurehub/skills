@@ -234,11 +234,13 @@ Thresholds can be customized in the `risk` section of `config.yaml`.
 
 | Variable | Description | Example |
 |----------|-------------|---------|
+| `WALLET_MODE` | Wallet backend: `wdk` (recommended) or `foundry` | `wdk` |
 | `ETH_RPC_URL` | Ethereum RPC URL | `https://eth.llamarpc.com` |
 | `ETH_RPC_URL_FALLBACK` | Comma-separated fallback RPCs tried in order on network error (429/502/timeout) | `https://eth.merkle.io,...` |
-| `FOUNDRY_ACCOUNT` | Foundry keystore account name (set by onboarding) | `aurehub-wallet` |
-| `KEYSTORE_PASSWORD_FILE` | Path to keystore password file | `~/.aurehub/.wallet.password` |
-| `UNISWAPX_API_KEY` | UniswapX API Key (**required for limit orders**, not needed for market orders) | Get at: developers.uniswap.org/dashboard |
+| `WDK_PASSWORD_FILE` | Path to WDK vault password file (**WDK mode**) | `~/.aurehub/.wdk_password` |
+| `FOUNDRY_ACCOUNT` | Foundry keystore account name (**Foundry mode**) | `aurehub-wallet` |
+| `KEYSTORE_PASSWORD_FILE` | Path to keystore password file (**Foundry mode**) | `~/.aurehub/.wallet.password` |
+| `UNISWAPX_API_KEY` | UniswapX API Key (**limit orders only**, not needed for market orders) | Get at: developers.uniswap.org/dashboard |
 | `RANKINGS_OPT_IN` | Join activity rankings — opt-in only (default: `false`) | `true` or `false` |
 | `NICKNAME` | Display name for activity rankings (required if `RANKINGS_OPT_IN=true`) | `Alice` |
 
