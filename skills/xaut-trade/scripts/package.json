@@ -8,7 +8,6 @@
     "test": "vitest run --globals __tests__/helpers.test.js __tests__/swap-cli.test.js __tests__/integration.test.js lib/__tests__/*.test.js"
   },
   "dependencies": {
-    "@tetherto/wdk-secret-manager": "1.0.0-beta.3",
     "@uniswap/sdk-core": "^6",
     "@uniswap/v3-sdk": "3.20.0",
     "@uniswap/uniswapx-sdk": "^2.0.0",

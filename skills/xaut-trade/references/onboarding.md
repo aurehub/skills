@@ -100,7 +100,6 @@ elif GIT_ROOT=$(git rev-parse --show-toplevel 2>/dev/null) && [ -d "$GIT_ROOT/sk
 else
   SCRIPTS_DIR=$(dirname "$(find "$HOME" -maxdepth 6 -type f -path "*/xaut-trade/scripts/setup.sh" 2>/dev/null | head -1)")
 fi
-cd "$SCRIPTS_DIR/market" && npm install
 cd "$SCRIPTS_DIR" && npm install
 node "$SCRIPTS_DIR/lib/create-wallet.js" --password-file ~/.aurehub/.wdk_password
 ```
@@ -295,7 +294,6 @@ else
   SCRIPTS_DIR=$(dirname "$(find "$HOME" -maxdepth 6 -type f -path "*/xaut-trade/scripts/setup.sh" 2>/dev/null | head -1)")
 fi
 cd "$SCRIPTS_DIR" && npm install
-cd "$SCRIPTS_DIR/market" && npm install
 ```
 
 #### Step C3: Verify
