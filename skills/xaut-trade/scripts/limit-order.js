@@ -21,11 +21,25 @@ const { execSync } = require('child_process');
 const fs = require('fs');
 const os = require('os');
 const path = require('path');
+const yaml = require('js-yaml');
 
 // ethers v5 BigNumber (SDK uses .gte() etc — native BigInt not compatible)
 const BN = ethers.BigNumber;
 
 const [,, subcommand, ...argv] = process.argv;
+
+// Load defaults from ~/.aurehub/config.yaml
+function loadDefaults() {
+  try {
+    const configDir = path.join(os.homedir(), '.aurehub');
+    const raw = fs.readFileSync(path.join(configDir, 'config.yaml'), 'utf8');
+    const cfg = yaml.load(raw) ?? {};
+    return {
+      apiUrl: cfg.limit_order?.uniswapx_api || null,
+      chainId: String(cfg.networks?.ethereum_mainnet?.chain_id || '1'),
+    };
+  } catch { return { apiUrl: null, chainId: '1' }; }
+}
 
 function parseArgs(args) {
   const result = {};
@@ -38,6 +52,10 @@ function parseArgs(args) {
 
 async function main() {
   const args = parseArgs(argv);
+  // Apply config.yaml defaults for apiUrl and chainId when not provided via CLI
+  const defaults = loadDefaults();
+  if (!args.apiUrl && defaults.apiUrl) args.apiUrl = defaults.apiUrl;
+  if (!args.chainId && defaults.chainId) args.chainId = defaults.chainId;
   switch (subcommand) {
     case 'place':  return await place(args);
     case 'status': return await status(args);
