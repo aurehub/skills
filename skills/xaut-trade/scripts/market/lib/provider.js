@@ -1,0 +1,182 @@
+import { JsonRpcProvider } from 'ethers';
+
+/**
+ * Error codes and patterns that indicate a transient failure worth retrying
+ * on another RPC endpoint.
+ */
+const RETRIABLE_HTTP_STATUSES = new Set([429, 502, 503]);
+const RETRIABLE_NODE_CODES = new Set(['ECONNREFUSED', 'ETIMEDOUT', 'ENOTFOUND', 'ECONNRESET']);
+const RETRIABLE_MSG_PATTERNS = [
+  /rate.?limit/i,
+  /too many requests/i,
+  /timeout/i,
+  /service unavailable/i,
+  /bad gateway/i,
+  /connection refused/i,
+];
+
+function isRetriable(err) {
+  if (err.status && RETRIABLE_HTTP_STATUSES.has(err.status)) return true;
+  if (err.code && RETRIABLE_NODE_CODES.has(err.code)) return true;
+  if (err.message) {
+    for (const pattern of RETRIABLE_MSG_PATTERNS) {
+      if (pattern.test(err.message)) return true;
+    }
+  }
+  return false;
+}
+
+export class FallbackProvider {
+  /**
+   * @param {string} primaryUrl  - Primary RPC URL (required)
+   * @param {string[]} fallbackUrls - Ordered list of fallback URLs
+   */
+  constructor(primaryUrl, fallbackUrls = []) {
+    if (!primaryUrl) {
+      throw new Error('FallbackProvider requires a primary RPC URL');
+    }
+    this._primaryUrl = primaryUrl;
+    this._fallbackUrls = fallbackUrls;
+    // Underlying ethers provider always points at the current primary
+    this._ethersProvider = new JsonRpcProvider(primaryUrl);
+  }
+
+  /**
+   * Send a single JSON-RPC request to `url`. Override in tests to avoid
+   * real network calls.
+   *
+   * @param {string} url
+   * @param {string} method
+   * @param {any[]} params
+   * @returns {Promise<any>}
+   */
+  async _rawSend(url, method, params) {
+    const body = JSON.stringify({
+      jsonrpc: '2.0',
+      id: 1,
+      method,
+      params,
+    });
+
+    const response = await fetch(url, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body,
+    });
+
+    if (!response.ok) {
+      const err = new Error(`HTTP ${response.status}: ${response.statusText}`);
+      err.status = response.status;
+      throw err;
+    }
+
+    const json = await response.json();
+    if (json.error) {
+      const err = new Error(json.error.message ?? 'RPC error');
+      err.code = json.error.code;
+      throw err;
+    }
+
+    return json.result;
+  }
+
+  /**
+   * Try the primary URL first; on retriable errors try each fallback in order.
+   * Session-sticky: the first URL that succeeds becomes the new primary.
+   *
+   * @param {string} method
+   * @param {any[]} params
+   * @returns {Promise<any>}
+   */
+  async _sendWithFallback(method, params) {
+    const urls = [this._primaryUrl, ...this._fallbackUrls];
+    const errors = [];
+
+    for (let i = 0; i < urls.length; i++) {
+      const url = urls[i];
+      try {
+        const result = await this._rawSend(url, method, params);
+
+        // Session-sticky: promote successful fallback to primary
+        if (i > 0) {
+          this._primaryUrl = url;
+          this._fallbackUrls = [
+            ...urls.slice(1, i),
+            ...urls.slice(i + 1),
+          ];
+          this._ethersProvider = new JsonRpcProvider(this._primaryUrl);
+        }
+
+        return result;
+      } catch (err) {
+        if (!isRetriable(err) || i === urls.length - 1) {
+          // Non-retriable: throw immediately without trying fallbacks
+          if (!isRetriable(err)) throw err;
+        }
+        errors.push({ url, error: err });
+      }
+    }
+
+    // All URLs failed
+    const summary = errors
+      .map(({ url, error }) => `${url}: ${error.message}`)
+      .join('; ');
+    throw new Error(`All RPC endpoints failed — ${summary}`);
+  }
+
+  /**
+   * Generic JSON-RPC send.
+   */
+  async send(method, params) {
+    return this._sendWithFallback(method, params);
+  }
+
+  /**
+   * eth_call — routes through fallback path.
+   */
+  async call(tx) {
+    return this._sendWithFallback('eth_call', [tx, 'latest']);
+  }
+
+  /**
+   * eth_blockNumber — routes through fallback path.
+   */
+  async getBlockNumber() {
+    return this._sendWithFallback('eth_blockNumber', []);
+  }
+
+  /**
+   * eth_getBalance — routes through fallback path.
+   */
+  async getBalance(address) {
+    return this._sendWithFallback('eth_getBalance', [address, 'latest']);
+  }
+
+  /**
+   * Return the underlying ethers JsonRpcProvider (e.g. for Wallet.connect()).
+   */
+  getEthersProvider() {
+    return this._ethersProvider;
+  }
+}
+
+/**
+ * Build a FallbackProvider from an env object.
+ *
+ * @param {Record<string, string>} env
+ * @returns {FallbackProvider}
+ */
+export function createProvider(env) {
+  const primaryUrl = env.ETH_RPC_URL;
+  if (!primaryUrl) {
+    throw new Error(
+      'ETH_RPC_URL is required in env to create a provider'
+    );
+  }
+
+  const fallbackUrls = env.ETH_RPC_URL_FALLBACK
+    ? env.ETH_RPC_URL_FALLBACK.split(',').map((u) => u.trim()).filter(Boolean)
+    : [];
+
+  return new FallbackProvider(primaryUrl, fallbackUrls);
+}
