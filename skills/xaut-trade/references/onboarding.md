@@ -6,7 +6,7 @@ Run this on first use or when the environment is incomplete. Return to the origi
 
 ## Automated Setup (recommended)
 
-Run the setup script — it handles Steps 0–4 automatically and clearly marks the steps that require manual action:
+Run the setup script — it handles all steps automatically and clearly marks the steps that require manual action:
 
 ```bash
 _saved=$(cat ~/.aurehub/.setup_path 2>/dev/null); [ -f "$_saved" ] && SETUP_PATH="$_saved"
@@ -21,7 +21,106 @@ If the script exits with an error, follow the manual steps below for the failed 
 
 ## Manual Steps (fallback)
 
-### Step 0: Install Foundry (if `cast` is unavailable)
+### Step 0: Choose Wallet Mode
+
+Two wallet modes are available. Choose one:
+
+**WDK (recommended)** — lightweight, no external tools:
+- Encrypted vault stored at `~/.aurehub/.wdk_vault`
+- Requires only Node.js >= 18
+- See [wallet-modes.md](wallet-modes.md) for details
+
+**Foundry (advanced)** — uses Foundry keystore:
+- Requires Foundry (`cast`) to be installed
+- Standard Web3 keystore at `~/.foundry/keystores/`
+- See [wallet-modes.md](wallet-modes.md) for details
+
+Ask the user which mode they prefer. Default to WDK if they have no preference.
+
+---
+
+### WDK Branch (if user chose WDK)
+
+#### Step W1: Check Node.js
+
+```bash
+node -v
+# Must be >= 18. If not found or < 18: https://nodejs.org
+```
+
+#### Step W2: Prepare Password File
+
+Check if `~/.aurehub/.wdk_password` exists and is non-empty:
+
+```bash
+mkdir -p ~/.aurehub
+[ -s ~/.aurehub/.wdk_password ] && echo "ready" || echo "missing or empty"
+```
+
+If missing or empty, instruct the user to run in their terminal (password will not appear in chat):
+
+```
+Please run the following in your terminal (input is hidden):
+
+  read -rsp "WDK password: " p && \
+  printf '%s' "$p" > ~/.aurehub/.wdk_password && \
+  chmod 600 ~/.aurehub/.wdk_password
+
+Tell me when done.
+```
+
+Wait for user confirmation, then verify:
+
+```bash
+[ -s ~/.aurehub/.wdk_password ] && echo "ready" || echo "still empty"
+```
+
+If still empty, repeat the prompt.
+
+#### Step W3: Create WDK Wallet
+
+Resolve scripts directory and create the wallet:
+
+```bash
+SETUP_PATH=$(cat ~/.aurehub/.setup_path 2>/dev/null)
+if [ -f "$SETUP_PATH" ]; then
+  SCRIPTS_DIR=$(dirname "$SETUP_PATH")
+elif GIT_ROOT=$(git rev-parse --show-toplevel 2>/dev/null) && [ -d "$GIT_ROOT/skills/xaut-trade/scripts" ]; then
+  SCRIPTS_DIR="$GIT_ROOT/skills/xaut-trade/scripts"
+else
+  SCRIPTS_DIR=$(dirname "$(find "$HOME" -maxdepth 6 -type f -path "*/xaut-trade/scripts/setup.sh" 2>/dev/null | head -1)")
+fi
+cd "$SCRIPTS_DIR" && npm install && node market/lib/create-wallet.js
+```
+
+This creates `~/.aurehub/.wdk_vault` with the encrypted seed.
+
+#### Step W4: Write .env for WDK
+
+```bash
+cat > ~/.aurehub/.env << 'EOF'
+ETH_RPC_URL=https://eth.llamarpc.com
+# Fallback RPCs (tried in order on network error; add a paid node at front for reliability)
+ETH_RPC_URL_FALLBACK=https://eth.merkle.io,https://rpc.flashbots.net/fast,https://eth.drpc.org,https://ethereum.publicnode.com
+WDK_PASSWORD_FILE=~/.aurehub/.wdk_password
+# Required for limit orders, not needed for market orders:
+# UNISWAPX_API_KEY=your_api_key_here
+# Optional: rankings opt-in (default false)
+# RANKINGS_OPT_IN=false
+# Optional — set during setup or first-success prompt if omitted:
+# NICKNAME=YourName
+EOF
+```
+
+> If the user has a paid RPC (e.g. Alchemy/Infura), replace `ETH_RPC_URL` or prepend it to `ETH_RPC_URL_FALLBACK` for automatic failover.
+
+Now skip to **Step C1: Write config.yaml** below.
+
+---
+
+### Foundry Branch (if user chose Foundry)
+
+#### Step F1: Install Foundry (if `cast` is unavailable)
 
 ```bash
 curl -L https://foundry.paradigm.xyz | bash && \
@@ -34,23 +133,12 @@ cast --version   # Expected output: cast Version: x.y.z
 
 Skip this step if `cast --version` succeeds.
 
----
-
-## Step 1: Create Global Config Directory
-
-```bash
-mkdir -p ~/.aurehub
-```
-
----
-
-## Step 2: Prepare Password File
-
-Before creating the wallet, the password file must exist and have content.
+#### Step F2: Prepare Password File
 
 Check if `~/.aurehub/.wallet.password` exists and is non-empty:
 
 ```bash
+mkdir -p ~/.aurehub
 [ -s ~/.aurehub/.wallet.password ] && echo "ready" || echo "missing or empty"
 ```
 
@@ -72,11 +160,9 @@ Wait for user confirmation, then verify:
 [ -s ~/.aurehub/.wallet.password ] && echo "ready" || echo "still empty"
 ```
 
-If still empty → repeat the prompt.
+If still empty, repeat the prompt.
 
----
-
-## Step 3: Wallet Setup
+#### Step F3: Wallet Setup
 
 **Auto-detect**: if the keystore account already exists, skip this step.
 
@@ -105,19 +191,7 @@ cast wallet new ~/.foundry/keystores "$FOUNDRY_ACCOUNT" \
 
 > Default values: `FOUNDRY_ACCOUNT=aurehub-wallet`, `KEYSTORE_PASSWORD_FILE=~/.aurehub/.wallet.password`
 
-**Auto-fetch wallet address**:
-
-```bash
-source ~/.aurehub/.env
-WALLET_ADDRESS=$(cast wallet address --account "$FOUNDRY_ACCOUNT" --password-file "$KEYSTORE_PASSWORD_FILE")
-echo "Wallet address: $WALLET_ADDRESS"
-```
-
----
-
-## Step 4: Generate Config Files
-
-Write `~/.aurehub/.env` (write directly — do not ask the user to copy manually):
+#### Step F4: Write .env for Foundry
 
 ```bash
 cat > ~/.aurehub/.env << 'EOF'
@@ -137,6 +211,14 @@ EOF
 
 > If the user has a paid RPC (e.g. Alchemy/Infura), replace `ETH_RPC_URL` or prepend it to `ETH_RPC_URL_FALLBACK` for automatic failover.
 
+Now continue to **Step C1: Write config.yaml** below.
+
+---
+
+### Common Steps (both modes converge here)
+
+#### Step C1: Write config.yaml
+
 Copy contract config (defaults are ready to use — no user edits needed):
 
 ```bash
@@ -151,22 +233,56 @@ fi
 cp "$SKILL_DIR/config.example.yaml" ~/.aurehub/config.yaml
 ```
 
----
+Set `wallet_mode` in config.yaml (replace `<MODE>` with `wdk` or `foundry`):
 
-## Step 5: Verify
+```bash
+# For WDK:
+grep -q 'wallet_mode' ~/.aurehub/config.yaml && \
+  sed -i '' 's/wallet_mode:.*/wallet_mode: wdk/' ~/.aurehub/config.yaml || \
+  echo 'wallet_mode: wdk' >> ~/.aurehub/config.yaml
+
+# For Foundry:
+grep -q 'wallet_mode' ~/.aurehub/config.yaml && \
+  sed -i '' 's/wallet_mode:.*/wallet_mode: foundry/' ~/.aurehub/config.yaml || \
+  echo 'wallet_mode: foundry' >> ~/.aurehub/config.yaml
+```
+
+#### Step C2: Install Node.js dependencies
+
+```bash
+SETUP_PATH=$(cat ~/.aurehub/.setup_path 2>/dev/null)
+if [ -f "$SETUP_PATH" ]; then
+  SCRIPTS_DIR=$(dirname "$SETUP_PATH")
+elif GIT_ROOT=$(git rev-parse --show-toplevel 2>/dev/null) && [ -d "$GIT_ROOT/skills/xaut-trade/scripts" ]; then
+  SCRIPTS_DIR="$GIT_ROOT/skills/xaut-trade/scripts"
+else
+  SCRIPTS_DIR=$(dirname "$(find "$HOME" -maxdepth 6 -type f -path "*/xaut-trade/scripts/setup.sh" 2>/dev/null | head -1)")
+fi
+cd "$SCRIPTS_DIR" && npm install
+```
+
+#### Step C3: Verify
 
 ```bash
 source ~/.aurehub/.env
-cast block-number --rpc-url "$ETH_RPC_URL"
-cast wallet list | grep "$FOUNDRY_ACCOUNT"
+SETUP_PATH=$(cat ~/.aurehub/.setup_path 2>/dev/null)
+if [ -f "$SETUP_PATH" ]; then
+  SCRIPTS_DIR=$(dirname "$SETUP_PATH")
+elif GIT_ROOT=$(git rev-parse --show-toplevel 2>/dev/null) && [ -d "$GIT_ROOT/skills/xaut-trade/scripts" ]; then
+  SCRIPTS_DIR="$GIT_ROOT/skills/xaut-trade/scripts"
+else
+  SCRIPTS_DIR=$(dirname "$(find "$HOME" -maxdepth 6 -type f -path "*/xaut-trade/scripts/setup.sh" 2>/dev/null | head -1)")
+fi
+cd "$SCRIPTS_DIR" && node market/swap.js address
 ```
 
-If all pass, the environment is ready. Inform the user:
+Expected output: `{ "address": "0x..." }`
 
-```bash
-WALLET_ADDRESS=$(cast wallet address --account "$FOUNDRY_ACCOUNT" --password-file "$KEYSTORE_PASSWORD_FILE")
-echo "Environment initialized. Wallet address: $WALLET_ADDRESS"
-echo "Make sure the wallet holds a small amount of ETH (≥ 0.005) for gas."
+If successful, inform the user:
+
+```
+Environment initialized. Wallet address: <address from output>
+Make sure the wallet holds a small amount of ETH (>= 0.005) for gas.
 ```
 
 ---
