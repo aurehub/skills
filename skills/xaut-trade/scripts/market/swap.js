@@ -233,7 +233,7 @@ function _resolveFee(cfg, symbolIn, symbolOut) {
       (pair.token_in === symbolIn && pair.token_out === symbolOut) ||
       (pair.token_in === symbolOut && pair.token_out === symbolIn)
     ) {
-      return pair.fee;
+      return pair.fee_tier;
     }
   }
   // Default to 3000 (0.3%) if no matching pair found
