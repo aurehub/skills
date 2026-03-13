@@ -78,7 +78,16 @@ If still empty, repeat the prompt.
 
 #### Step W3: Create WDK Wallet
 
-Resolve scripts directory and create the wallet:
+First check if a WDK vault already exists:
+
+```bash
+[ -f ~/.aurehub/.wdk_vault ] && echo "EXISTS" || echo "NOT_FOUND"
+```
+
+If `EXISTS`: the wallet is already created. Skip to Step W4. Inform the user:
+> "WDK wallet already exists at ~/.aurehub/.wdk_vault. Skipping creation."
+
+If `NOT_FOUND`: resolve scripts directory and create the wallet:
 
 ```bash
 SETUP_PATH=$(cat ~/.aurehub/.setup_path 2>/dev/null)
@@ -98,20 +107,28 @@ This creates `~/.aurehub/.wdk_vault` with the encrypted seed.
 
 #### Step W4: Write .env for WDK
 
+If `~/.aurehub/.env` does not exist, create it:
+
 ```bash
 cat > ~/.aurehub/.env << 'EOF'
 WALLET_MODE=wdk
 ETH_RPC_URL=https://eth.llamarpc.com
-# Fallback RPCs (tried in order on network error; add a paid node at front for reliability)
 ETH_RPC_URL_FALLBACK=https://eth.merkle.io,https://rpc.flashbots.net/fast,https://eth.drpc.org,https://ethereum.publicnode.com
 WDK_PASSWORD_FILE=~/.aurehub/.wdk_password
-# Required for limit orders, not needed for market orders:
-# UNISWAPX_API_KEY=your_api_key_here
-# Optional: rankings opt-in (default false)
-# RANKINGS_OPT_IN=false
-# Optional — set during setup or first-success prompt if omitted:
-# NICKNAME=YourName
 EOF
+chmod 600 ~/.aurehub/.env
+```
+
+If `~/.aurehub/.env` already exists (e.g. switching from Foundry), only update the wallet-related fields — do NOT overwrite the entire file (to preserve UNISWAPX_API_KEY, RANKINGS, etc.):
+
+```bash
+# Update or add each key, preserving other settings
+for kv in "WALLET_MODE=wdk" "WDK_PASSWORD_FILE=~/.aurehub/.wdk_password"; do
+  key="${kv%%=*}"
+  grep -q "^${key}=" ~/.aurehub/.env && sed -i.bak "s|^${key}=.*|${kv}|" ~/.aurehub/.env || echo "$kv" >> ~/.aurehub/.env
+done
+rm -f ~/.aurehub/.env.bak
+grep -q "^ETH_RPC_URL=" ~/.aurehub/.env || echo "ETH_RPC_URL=https://eth.llamarpc.com" >> ~/.aurehub/.env
 ```
 
 > If the user has a paid RPC (e.g. Alchemy/Infura), replace `ETH_RPC_URL` or prepend it to `ETH_RPC_URL_FALLBACK` for automatic failover.
@@ -194,21 +211,28 @@ cast wallet new ~/.foundry/keystores "$FOUNDRY_ACCOUNT" \
 
 #### Step F4: Write .env for Foundry
 
+If `~/.aurehub/.env` does not exist, create it:
+
 ```bash
 cat > ~/.aurehub/.env << 'EOF'
 WALLET_MODE=foundry
 ETH_RPC_URL=https://eth.llamarpc.com
-# Fallback RPCs (tried in order on network error; add a paid node at front for reliability)
 ETH_RPC_URL_FALLBACK=https://eth.merkle.io,https://rpc.flashbots.net/fast,https://eth.drpc.org,https://ethereum.publicnode.com
 FOUNDRY_ACCOUNT=aurehub-wallet
 KEYSTORE_PASSWORD_FILE=~/.aurehub/.wallet.password
-# Required for limit orders, not needed for market orders:
-# UNISWAPX_API_KEY=your_api_key_here
-# Optional: rankings opt-in (default false)
-# RANKINGS_OPT_IN=false
-# Optional — set during setup or first-success prompt if omitted:
-# NICKNAME=YourName
 EOF
+chmod 600 ~/.aurehub/.env
+```
+
+If `~/.aurehub/.env` already exists (e.g. switching from WDK), only update the wallet-related fields:
+
+```bash
+for kv in "WALLET_MODE=foundry" "FOUNDRY_ACCOUNT=aurehub-wallet" "KEYSTORE_PASSWORD_FILE=~/.aurehub/.wallet.password"; do
+  key="${kv%%=*}"
+  grep -q "^${key}=" ~/.aurehub/.env && sed -i.bak "s|^${key}=.*|${kv}|" ~/.aurehub/.env || echo "$kv" >> ~/.aurehub/.env
+done
+rm -f ~/.aurehub/.env.bak
+grep -q "^ETH_RPC_URL=" ~/.aurehub/.env || echo "ETH_RPC_URL=https://eth.llamarpc.com" >> ~/.aurehub/.env
 ```
 
 > If the user has a paid RPC (e.g. Alchemy/Infura), replace `ETH_RPC_URL` or prepend it to `ETH_RPC_URL_FALLBACK` for automatic failover.

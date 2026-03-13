@@ -291,8 +291,31 @@ fi
 # ── Step 7: Generate config files ─────────────────────────────────────────────
 step "Generate config files"
 
+# Helper: set a key in .env (update if exists, append if not)
+_env_set() {
+  local key="$1" value="$2" file="$HOME/.aurehub/.env"
+  if grep -q "^${key}=" "$file" 2>/dev/null; then
+    sed -i.bak "s|^${key}=.*|${key}=${value}|" "$file" && rm -f "$file.bak"
+  else
+    echo "${key}=${value}" >> "$file"
+  fi
+}
+
 if [ -f ~/.aurehub/.env ]; then
-  ok ".env already exists, skipping (delete it and re-run to reset)"
+  ok ".env already exists, updating wallet mode"
+  _env_set "WALLET_MODE" "$WALLET_MODE"
+  if [ "$WALLET_MODE" = "wdk" ]; then
+    _env_set "WDK_PASSWORD_FILE" "~/.aurehub/.wdk_password"
+  else
+    _env_set "FOUNDRY_ACCOUNT" "$ACCOUNT_NAME"
+    _env_set "KEYSTORE_PASSWORD_FILE" "~/.aurehub/.wallet.password"
+  fi
+  # Ensure ETH_RPC_URL exists
+  if ! grep -q "^ETH_RPC_URL=" ~/.aurehub/.env 2>/dev/null; then
+    _env_set "ETH_RPC_URL" "https://eth.llamarpc.com"
+  fi
+  chmod 600 ~/.aurehub/.env
+  ok "WALLET_MODE=$WALLET_MODE updated in .env"
 else
   DEFAULT_RPC="https://eth.llamarpc.com"
   echo -e "  Ethereum node URL (press Enter to use the free public node):"
