@@ -15,9 +15,9 @@
 ┌─────────────────┐     ┌─────────────────┐
 │  Foundry Wallet  │     │    WDK Wallet    │
 │  (advanced)      │     │  (recommended)   │
-│  create/import   │     │  seed-based      │
+│  create/import   │     │  encrypted seed  │
 └────────┬────────┘     └────────┬────────┘
-         │ decrypt keystore       │ derive from mnemonic
+         │ decrypt keystore       │ decrypt vault → derive mnemonic
          ▼                       ▼
    ┌──────────────────────────────────┐
    │     ethers.js v6 Wallet/Signer   │
@@ -85,10 +85,18 @@ async function createSigner(provider) → ethers.Wallet
 - `ethers.Wallet.fromEncryptedJson(json, password).connect(provider)`
 
 **WDK mode (`wallet_mode: wdk`):**
-- Read mnemonic from seed file path in `config.yaml` (default `~/.aurehub/.wdk_seed`)
+- Read encrypted vault from `~/.aurehub/.wdk_vault` (contains `encryptedEntropy` + `salt` as JSON)
+- Read password from `WDK_PASSWORD_FILE` (default `~/.aurehub/.wdk_password`)
+- Decrypt entropy via `@tetherto/wdk-secret-manager`:
+  ```
+  sm = new WdkSecretManager(password, salt, { iterations: 100_000 })
+  entropy = sm.decrypt(encryptedEntropy)
+  mnemonic = sm.entropyToMnemonic(entropy)
+  ```
 - `ethers.Wallet.fromPhrase(mnemonic).connect(provider)`
+- `sm.dispose()` to wipe sensitive data from memory
 
-Passwords and mnemonics are held in memory only during decryption, not cached.
+Passwords, mnemonics, and entropy are held in memory only during decryption, not cached. The seed never exists as plaintext on disk.
 
 ### `lib/provider.js` — RPC Provider with Fallback
 
@@ -135,19 +143,25 @@ Reads and merges:
 
 Token symbols (e.g., `USDT`, `XAUT`) are resolved to addresses and decimals via `config.yaml` `tokens` section. CLI subcommands accept `--token USDT` (symbol) which `config.js` resolves.
 
-### `lib/create-wallet.js` — WDK Seed Generation
+### `lib/create-wallet.js` — WDK Encrypted Wallet Creation
 
 ```javascript
-// Called by setup.sh: node market/lib/create-wallet.js [--seed-file <path>]
-// Outputs JSON to stdout: { address, seedFile }
+// Called by setup.sh: node market/lib/create-wallet.js --password-file <path> [--vault-file <path>]
+// Outputs JSON to stdout: { address, vaultFile }
 ```
 
-- Generate BIP-39 mnemonic (128-bit entropy, 12 words) using `ethers.Wallet.createRandom()`.
-- Write mnemonic to `--seed-file` path (default `~/.aurehub/.wdk_seed`), chmod 600.
-- Derive address from mnemonic (default HD path `m/44'/60'/0'/0/0`).
-- Output `{ address, seedFile }` as JSON to stdout.
-- If seed file already exists → error with message "seed file already exists, use --force to overwrite".
-- Does NOT display mnemonic in stdout (security). The user must read the seed file directly if they need backup.
+Uses `@tetherto/wdk-secret-manager` for encrypted seed management. The seed never touches disk as plaintext.
+
+- Read password from `--password-file` (must be ≥12 characters).
+- Generate random salt via `WdkSecretManager.generateSalt()`.
+- Create `WdkSecretManager(password, salt, { iterations: 100_000 })`.
+- Call `sm.generateAndEncrypt()` → `{ encryptedSeed, encryptedEntropy }`.
+- Decrypt entropy temporarily to derive address: `entropy → mnemonic → ethers.Wallet.fromPhrase() → address`.
+- Write `{ encryptedEntropy, salt }` as JSON to `--vault-file` (default `~/.aurehub/.wdk_vault`), chmod 600.
+- Call `sm.dispose()` to wipe sensitive memory.
+- Output `{ address, vaultFile }` as JSON to stdout.
+- If vault file already exists → error with message "vault file already exists, use --force to overwrite".
+- Does NOT display mnemonic or entropy in stdout (security).
 
 ## Setup Changes
 
@@ -168,11 +182,12 @@ Default: WDK (press Enter). Result written to `~/.aurehub/config.yaml` as `walle
 ### WDK Setup Flow (after selecting WDK)
 
 1. Check Node.js >= 18.
-2. Run `node market/lib/create-wallet.js` → generates BIP-39 mnemonic.
-3. Save to `~/.aurehub/.wdk_seed` (chmod 600).
-4. Display derived address.
-5. Write `ETH_RPC_URL` to `~/.aurehub/.env`.
-6. Skip all Foundry steps.
+2. Prompt user for wallet password (≥12 characters), write to `~/.aurehub/.wdk_password` (chmod 600).
+3. Run `node market/lib/create-wallet.js --password-file ~/.aurehub/.wdk_password` → generates encrypted vault.
+4. Encrypted vault saved to `~/.aurehub/.wdk_vault` (chmod 600). Seed never written as plaintext.
+5. Display derived address.
+6. Write `ETH_RPC_URL` and `WDK_PASSWORD_FILE=~/.aurehub/.wdk_password` to `~/.aurehub/.env`.
+7. Skip all Foundry steps.
 
 ### Foundry Setup Flow (after selecting Foundry)
 
@@ -187,7 +202,7 @@ Identical to current setup.sh flow (install Foundry → keystore → password fi
 ## SKILL.md Changes
 
 1. **Environment check** adds `wallet_mode` detection:
-   - WDK mode: check seed file + Node.js >= 18
+   - WDK mode: check vault file + password file + Node.js >= 18
    - Foundry mode: check keystore + password file
    - Both modes require Node.js (market module dependency)
 
@@ -221,8 +236,9 @@ Identical to current setup.sh flow (install Foundry → keystore → password fi
 - Insufficient balance / ETH for gas → hard-stop
 - XAUT precision >6 decimals → hard-stop
 - USDT approve must reset to 0 first
-- Private keys never written to disk, logs, or stdout
-- Seed file and password file: chmod 600
+- Private keys and seed phrases never written to disk as plaintext, logs, or stdout
+- WDK vault uses `@tetherto/wdk-secret-manager` (PBKDF2 encryption, 100k iterations) — only encrypted entropy + salt stored on disk
+- All sensitive files (vault, password, keystore) chmod 600
 
 ## Dependencies
 
@@ -237,6 +253,7 @@ Identical to current setup.sh flow (install Foundry → keystore → password fi
     "ethers": "^6",
     "@uniswap/v3-sdk": "^3",
     "@uniswap/sdk-core": "^6",
+    "@tetherto/wdk-secret-manager": "^1",
     "js-yaml": "^4"
   }
 }
