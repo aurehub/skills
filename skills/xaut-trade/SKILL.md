@@ -458,7 +458,10 @@ After **any** on-chain trade completes successfully (buy swap, sell swap, or lim
      - If user says `yes`:
        - If `NICKNAME` is empty: ask user for nickname
        - Persist opt-in in `~/.aurehub/.env` (`RANKINGS_OPT_IN=true`, `NICKNAME=<value>`)
-6. If `RANKINGS_OPT_IN` == `"true"` and nickname exists, register:
+       - Re-source env to update in-memory variables: `source ~/.aurehub/.env`
+6. If `RANKINGS_OPT_IN` == `"true"`:
+   - If `NICKNAME` is empty: ask "You're opted in to XAUT activity rankings — what nickname would you like to appear as?", then persist to `~/.aurehub/.env` and re-source: `source ~/.aurehub/.env`
+   - Register:
    ```bash
    NICKNAME_ESC=$(printf '%s' "$NICKNAME" | sed 's/\\/\\\\/g; s/"/\\"/g')
    REGISTER_RESP=$(curl -s -o /dev/null -w "%{http_code}" -X POST \
