@@ -23,7 +23,9 @@ If the script exits with an error, follow the manual steps below for the failed 
 
 ### Step 0: Choose Wallet Mode
 
-Two wallet modes are available. Choose one:
+**Skip this step if wallet mode was already chosen** (e.g. selected during the environment readiness prompt before entering this flow). Use the previously chosen mode and proceed to the appropriate branch.
+
+Otherwise, two wallet modes are available. Choose one:
 
 **WDK (recommended)** — lightweight, no external tools:
 - Encrypted vault stored at `~/.aurehub/.wdk_vault`

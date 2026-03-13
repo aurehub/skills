@@ -63,12 +63,28 @@ This skill connects to external services (Ethereum RPC, UniswapX API, and option
 
 If **all pass**: source `~/.aurehub/.env`, then proceed to intent detection.
 
-If **any fail**: do not continue with the original intent. Note which checks failed, then present the following options to the user (fill in [original intent] with a one-sentence summary of what the user originally asked for):
+If **any fail**: do not continue with the original intent. Note which checks failed, then present the following to the user (fill in [original intent] with a one-sentence summary of what the user originally asked for):
+
+**First, if `WALLET_MODE` is missing or empty** (check 2 failed), ask the user to choose before showing setup options:
 
 ---
 Environment not ready ([specific failing items]).
 
-Please choose:
+First, choose your wallet mode:
+
+> **[1] WDK (recommended)** — seed-phrase based, encrypted vault, no external tools needed
+> **[2] Foundry** — requires Foundry installed, keystore-based
+
+---
+
+Default to WDK if the user just presses enter or says "recommended". Remember the choice for the next step.
+
+**Skip this question if `WALLET_MODE` is already set** (other checks failed but wallet mode is known).
+
+**Then, present the setup method options:**
+
+---
+Please choose how to set up:
 
   **A) Recommended: let the Agent guide setup step by step**
 
@@ -99,7 +115,7 @@ Once setup is done in option B, continue original request ([original intent]).
 ---
 
 Wait for the user's reply:
-- User chooses **A** -> load [references/onboarding.md](references/onboarding.md) and follow the agent-guided steps
+- User chooses **A** -> load [references/onboarding.md](references/onboarding.md) and follow the agent-guided steps, passing the already-chosen wallet mode (skip Step 0 if wallet mode was selected above)
 - User chooses **B** or completes setup.sh and reports back -> re-run all environment checks; if all pass, continue original intent; if any still fail, report the specific item and show the options again
 
 Proceed to intent detection.
