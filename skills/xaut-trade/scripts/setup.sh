@@ -48,7 +48,7 @@ step "Wallet mode selection"
 echo ""
 echo -e "  ${BOLD}=== Wallet Mode ===${NC}"
 echo -e "  ${BOLD}[1]${NC} WDK (recommended) — seed-phrase based, no external tools needed"
-echo -e "  ${BOLD}[2]${NC} Foundry (advanced) — requires Foundry installed, keystore-based"
+echo -e "  ${BOLD}[2]${NC} Foundry — requires Foundry installed, keystore-based"
 echo ""
 read -rp "  Select [1]: " wallet_mode_choice
 wallet_mode_choice="${wallet_mode_choice:-1}"

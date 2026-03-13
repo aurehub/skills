@@ -30,7 +30,7 @@ Two wallet modes are available. Choose one:
 - Requires only Node.js >= 18
 - See [wallet-modes.md](wallet-modes.md) for details
 
-**Foundry (advanced)** — uses Foundry keystore:
+**Foundry** — uses Foundry keystore:
 - Requires Foundry (`cast`) to be installed
 - Standard Web3 keystore at `~/.foundry/keystores/`
 - See [wallet-modes.md](wallet-modes.md) for details

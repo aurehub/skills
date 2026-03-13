@@ -200,7 +200,7 @@ Present the choice:
 > Which wallet mode would you like?
 >
 > **[1] WDK (recommended)** — seed-phrase based, encrypted vault, no external tools needed
-> **[2] Foundry (advanced)** — requires Foundry installed, keystore-based
+> **[2] Foundry** — requires Foundry installed, keystore-based
 
 Default to WDK if user just presses enter or says "recommended".
 
