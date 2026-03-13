@@ -86,14 +86,14 @@ Default to WDK if the user just presses enter or says "recommended". Remember th
 ---
 Please choose how to set up:
 
-  **A) Recommended: let the Agent guide setup step by step**
+  **[1] Recommended: let the Agent guide setup step by step**
 
   Agent-guided mode (default behavior):
   - The Agent runs all safe/non-sensitive checks and commands automatically
   - The Agent pauses only when manual input is required (interactive key import / password entry / wallet funding)
   - After each manual step, the Agent resumes automatically and continues original intent
 
-  **B) Fallback: run setup.sh manually**
+  **[2] Fallback: run setup.sh manually**
 
   Before showing this option, silently resolve the setup.sh path (try in order, stop at first match):
   ```bash
@@ -110,13 +110,13 @@ Please choose how to set up:
   bash /resolved/absolute/path/to/setup.sh
   ```
 
-Once setup is done in option B, continue original request ([original intent]).
+Once setup is done in option 2, continue original request ([original intent]).
 
 ---
 
 Wait for the user's reply:
-- User chooses **A** -> load [references/onboarding.md](references/onboarding.md) and follow the agent-guided steps, passing the already-chosen wallet mode (skip Step 0 if wallet mode was selected above)
-- User chooses **B** or completes setup.sh and reports back -> re-run all environment checks; if all pass, continue original intent; if any still fail, report the specific item and show the options again
+- User chooses **1** -> load [references/onboarding.md](references/onboarding.md) and follow the agent-guided steps, passing the already-chosen wallet mode (skip Step 0 if wallet mode was selected above)
+- User chooses **2** or completes setup.sh and reports back -> re-run all environment checks; if all pass, continue original intent; if any still fail, report the specific item and show the options again
 
 Proceed to intent detection.
 
