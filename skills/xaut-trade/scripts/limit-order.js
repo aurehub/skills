@@ -233,14 +233,29 @@ async function list(args) {
     ...(apiKey ? { 'x-api-key': apiKey } : {}),
   };
 
-  let url = `${apiUrl}/orders?offerer=${wallet}&chainId=${chainId}`;
-  if (orderStatus) url += `&orderStatus=${orderStatus}`;
+  // The UniswapX API ignores the offerer param when orderStatus is omitted,
+  // returning unrelated orders. Work around by querying each status separately.
+  const statuses = orderStatus
+    ? [orderStatus]
+    : ['open', 'filled', 'expired', 'cancelled'];
 
-  const res = await fetch(url, { headers });
-  if (!res.ok) throw new Error(`List fetch failed: ${res.status} ${await res.text()}`);
+  const allOrders = [];
+  const walletLower = wallet.toLowerCase();
 
-  const data = await res.json();
-  const orders = (data.orders || []).map(o => ({
+  for (const s of statuses) {
+    const url = `${apiUrl}/orders?offerer=${wallet}&chainId=${chainId}&orderStatus=${s}`;
+    const res = await fetch(url, { headers });
+    if (!res.ok) throw new Error(`List fetch failed (${s}): ${res.status} ${await res.text()}`);
+    const data = await res.json();
+    for (const o of (data.orders || [])) {
+      // Double-check swapper matches our wallet
+      if ((o.swapper || '').toLowerCase() === walletLower) {
+        allOrders.push(o);
+      }
+    }
+  }
+
+  const orders = allOrders.map(o => ({
     orderHash: o.orderHash,
     status: o.orderStatus,
     inputToken: o.input?.token,
