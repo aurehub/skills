@@ -87,12 +87,13 @@ cast wallet new ~/.foundry/keystores aurehub-wallet \
 ```bash
 mkdir -p ~/.aurehub
 
-# Generate .env
+# Generate .env (WDK mode example — for Foundry mode, see .env.example)
+# WARNING: this overwrites any existing .env. If you already have one, edit it instead.
 cat > ~/.aurehub/.env << EOF
+WALLET_MODE=wdk
 ETH_RPC_URL=https://eth.llamarpc.com
 ETH_RPC_URL_FALLBACK=https://eth.merkle.io,https://rpc.flashbots.net/fast,https://eth.drpc.org,https://ethereum.publicnode.com
-FOUNDRY_ACCOUNT=aurehub-wallet
-KEYSTORE_PASSWORD_FILE=~/.aurehub/.wallet.password
+WDK_PASSWORD_FILE=~/.aurehub/.wdk_password
 # UNISWAPX_API_KEY=your_key_here   # required for limit orders only
 # RANKINGS_OPT_IN=false            # optional, opt-in only
 # NICKNAME=YourName                # required only when RANKINGS_OPT_IN=true
