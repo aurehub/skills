@@ -186,8 +186,54 @@ Determine the operation from the user's message:
 - **Limit sell**: contains "limit sell", "sell when price reaches", "XAUT rises to X sell", etc. -> run limit sell flow
 - **Query limit order**: contains "check order", "order status" -> run query flow
 - **Cancel limit order**: contains "cancel order", "cancel limit" -> run cancel flow
-- **Setup / Create wallet**: contains "setup", "create wallet", "initialize", "init wallet" -> skip environment readiness check, go directly to setup flow (option A or B above). If environment is already fully configured, inform the user and ask if they want to re-run setup.
+- **Setup / Create wallet**: contains "setup", "create wallet", "initialize", "init wallet" -> skip environment readiness check, go to Setup / Create Wallet Flow below.
 - **XAUT knowledge query**: contains "troy ounce", "grams", "conversion", "what is XAUT" -> answer directly, no on-chain operations or environment checks needed
+
+## Setup / Create Wallet Flow
+
+When the user explicitly requests setup or wallet creation:
+
+### Step 1: Ask wallet mode
+
+Present the choice:
+
+> Which wallet mode would you like?
+>
+> **[1] WDK (recommended)** — seed-phrase based, encrypted vault, no external tools needed
+> **[2] Foundry (advanced)** — requires Foundry installed, keystore-based
+
+Default to WDK if user just presses enter or says "recommended".
+
+### Step 2: Check if wallet already exists for selected mode
+
+**If user chose WDK:**
+```bash
+ls ~/.aurehub/.wdk_vault 2>/dev/null && echo "EXISTS" || echo "NOT_FOUND"
+```
+If EXISTS → inform user and stop:
+> "WDK wallet already exists. No action needed. To use it, run a trade command (e.g. 'buy 100 USDT of XAUT')."
+
+If the current `wallet_mode` in config.yaml is different (e.g. `foundry`), update it to `wdk` and inform:
+> "WDK wallet already exists. Switched wallet mode to WDK."
+
+**If user chose Foundry:**
+```bash
+source ~/.aurehub/.env 2>/dev/null
+ls ~/.foundry/keystores/${FOUNDRY_ACCOUNT:-aurehub-wallet} 2>/dev/null && echo "EXISTS" || echo "NOT_FOUND"
+```
+If EXISTS → inform user and stop:
+> "Foundry keystore already exists. No action needed."
+
+If the current `wallet_mode` in config.yaml is different, update it to `foundry` and inform:
+> "Foundry keystore already exists. Switched wallet mode to Foundry."
+
+### Step 3: Create wallet (only if NOT_FOUND)
+
+If the wallet does not exist for the selected mode, proceed with wallet creation:
+- Load [references/onboarding.md](references/onboarding.md) and follow the setup steps for the selected mode
+- After completion, update `wallet_mode` in `~/.aurehub/config.yaml`
+
+---
 
 ## Buy Flow (USDT -> XAUT)
 
