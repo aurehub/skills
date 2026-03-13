@@ -271,6 +271,7 @@ Parse the JSON to extract:
 - `gasEstimate`: estimated gas cost
 
 Display:
+- Wallet address (from balance or address output)
 - Input amount (human-readable)
 - Estimated XAUT received
 - Reference rate: `1 XAUT ~ X USDT`
@@ -372,6 +373,7 @@ echo "$QUOTE_JSON"
 Output JSON: `{ "amountIn": "...", "amountOut": "...", "minAmountOut": "...", "price": "...", "gasEstimate": "...", "slippageBps": ... }`
 
 Parse and display:
+- Wallet address (from balance or address output)
 - Input amount (user-provided form)
 - Estimated USDT received (`amountOut`)
 - Reference rate: `1 XAUT ~ X USDT`
@@ -489,6 +491,7 @@ Follow [references/limit-order-cancel.md](references/limit-order-cancel.md).
 
 Output must include:
 
+- `Wallet`: wallet address (always show early in preview)
 - `Stage`: `Preview` or `Ready to Execute`
 - `Input`: token, amount, chain
 - `Quote`: estimated XAUT amount, slippage setting, `minAmountOut`
