@@ -14,7 +14,8 @@
  */
 
 import { fileURLToPath } from 'node:url';
-import { formatUnits } from 'ethers';
+import { readFileSync } from 'node:fs';
+import { formatUnits, Interface } from 'ethers';
 import { loadConfig, resolveToken } from './lib/config.js';
 import { createProvider } from './lib/provider.js';
 import { createSigner } from './lib/signer.js';
@@ -25,7 +26,7 @@ import { quote, buildSwap } from './lib/uniswap.js';
 // Constants
 // ---------------------------------------------------------------------------
 
-const VALID_COMMANDS = new Set(['quote', 'balance', 'allowance', 'approve', 'swap', 'address']);
+const VALID_COMMANDS = new Set(['quote', 'balance', 'allowance', 'approve', 'swap', 'address', 'sign', 'cancel-nonce']);
 
 // ---------------------------------------------------------------------------
 // CLI argument parser — exported for unit-testing without RPC
@@ -69,6 +70,18 @@ export function parseCliArgs(argv) {
         break;
       case '--config-dir':
         parsed.configDir = value;
+        i++;
+        break;
+      case '--data-file':
+        parsed.dataFile = value;
+        i++;
+        break;
+      case '--word-pos':
+        parsed.wordPos = value;
+        i++;
+        break;
+      case '--mask':
+        parsed.mask = value;
         i++;
         break;
       default:
@@ -221,6 +234,41 @@ async function runSwap(cfg, provider, args) {
   }, null, 2));
 }
 
+async function runSign(cfg, args) {
+  if (!args.dataFile) throw new Error('--data-file is required for sign');
+
+  const raw = readFileSync(args.dataFile, 'utf8');
+  const { domain, types, message } = JSON.parse(raw);
+
+  // ethers v6 derives EIP712Domain automatically — strip it to avoid conflicts
+  const cleanTypes = { ...types };
+  delete cleanTypes.EIP712Domain;
+
+  const signer = await createSigner(cfg, null);
+  const signature = await signer.signTypedData(domain, cleanTypes, message);
+  // Output raw signature string (no JSON) to match cast wallet sign format
+  process.stdout.write(signature);
+}
+
+async function runCancelNonce(cfg, provider, args) {
+  if (!args.wordPos) throw new Error('--word-pos is required for cancel-nonce');
+  if (!args.mask) throw new Error('--mask is required for cancel-nonce');
+
+  const signer = await createSigner(cfg, provider ? provider.getEthersProvider() : null);
+
+  const permit2 = '0x000000000022D473030F116dDEE9F6B43aC78BA3';
+  const iface = new Interface(['function invalidateUnorderedNonces(uint256 wordPos, uint256 mask)']);
+  const data = iface.encodeFunctionData('invalidateUnorderedNonces', [args.wordPos, args.mask]);
+
+  const tx = await signer.sendTransaction({ to: permit2, data });
+  const receipt = await tx.wait();
+
+  console.log(JSON.stringify({
+    txHash: tx.hash,
+    status: receipt.status === 1 ? 'success' : 'failed',
+  }, null, 2));
+}
+
 // ---------------------------------------------------------------------------
 // Helper: resolve pool fee from config.yaml pairs
 // ---------------------------------------------------------------------------
@@ -281,6 +329,12 @@ if (isDirectRun) {
           break;
         case 'swap':
           await runSwap(cfg, provider, parsed);
+          break;
+        case 'sign':
+          await runSign(cfg, parsed);
+          break;
+        case 'cancel-nonce':
+          await runCancelNonce(cfg, provider, parsed);
           break;
       }
     } catch (err) {

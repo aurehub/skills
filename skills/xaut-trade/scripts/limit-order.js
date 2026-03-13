@@ -127,31 +127,17 @@ async function place(args) {
   const typedDataJson = JSON.stringify({ domain, types: typesWithDomain, primaryType, message: values }, bnReplacer);
   let signature;
 
-  const foundryAccount = process.env.FOUNDRY_ACCOUNT;
-  const passwordFile = process.env.KEYSTORE_PASSWORD_FILE;
-  const privateKey = process.env.PRIVATE_KEY;
-
-  if (privateKey) {
-    console.error('ERROR: PRIVATE_KEY runtime mode is deprecated. Migrate to FOUNDRY_ACCOUNT + KEYSTORE_PASSWORD_FILE.');
-    process.exit(1);
-  }
-
-  if (foundryAccount && passwordFile) {
-    // Keystore signing via cast subprocess
-    const tmpDir = fs.mkdtempSync(path.join(os.tmpdir(), 'limit-order-'));
-    const tmpFile = path.join(tmpDir, 'typed-data.json');
-    fs.writeFileSync(tmpFile, typedDataJson);
-    try {
-      signature = execSync(
-        `cast wallet sign --account "${foundryAccount}" --password-file "${passwordFile}" --data --from-file "${tmpFile}"`,
-        { encoding: 'utf8' }
-      ).trim();
-    } finally {
-      fs.rmSync(tmpDir, { recursive: true, force: true });
-    }
-  } else {
-    console.error('ERROR: Missing signing config. Set FOUNDRY_ACCOUNT + KEYSTORE_PASSWORD_FILE.');
-    process.exit(1);
+  // Sign via swap.js sign subcommand (supports both WDK and Foundry modes)
+  const tmpDir = fs.mkdtempSync(path.join(os.tmpdir(), 'limit-order-'));
+  const tmpFile = path.join(tmpDir, 'typed-data.json');
+  fs.writeFileSync(tmpFile, typedDataJson);
+  try {
+    signature = execSync(
+      `node "${path.join(__dirname, 'market', 'swap.js')}" sign --data-file "${tmpFile}"`,
+      { encoding: 'utf8' }
+    ).trim();
+  } finally {
+    fs.rmSync(tmpDir, { recursive: true, force: true });
   }
 
   // 5. Submit to UniswapX API

@@ -22,11 +22,10 @@ PERMIT2=$(echo "$CANCEL_PARAMS"  | python3 -c "import sys,json; print(json.load(
 Display the command and wait for user confirmation:
 
 ```bash
-TX_HASH=$(cast send "$PERMIT2" \
-  "invalidateUnorderedNonces(uint256,uint256)" \
-  "$WORD_POS" "$MASK" \
-  --account "$FOUNDRY_ACCOUNT" --password-file "$KEYSTORE_PASSWORD_FILE" \
-  --rpc-url "$ETH_RPC_URL" --json | python3 -c "import sys,json; print(json.load(sys.stdin)['transactionHash'])")
+source ~/.aurehub/.env
+cd "$SCRIPTS_DIR"
+CANCEL_JSON=$(node market/swap.js cancel-nonce --word-pos "$WORD_POS" --mask "$MASK")
+TX_HASH=$(echo "$CANCEL_JSON" | python3 -c "import sys,json; print(json.load(sys.stdin)['txHash'])")
 echo "Cancel tx: https://etherscan.io/tx/$TX_HASH"
 ```
 

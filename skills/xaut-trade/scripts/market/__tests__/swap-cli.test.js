@@ -40,6 +40,19 @@ describe('parseCliArgs', () => {
     expect(result.command).toBe('address');
   });
 
+  it('parses sign with --data-file', () => {
+    const result = parseCliArgs(['sign', '--data-file', '/tmp/typed-data.json']);
+    expect(result.command).toBe('sign');
+    expect(result.dataFile).toBe('/tmp/typed-data.json');
+  });
+
+  it('parses cancel-nonce with --word-pos and --mask', () => {
+    const result = parseCliArgs(['cancel-nonce', '--word-pos', '42', '--mask', '115792089237316195423570985008687907853269984665640564039457584007913129639935']);
+    expect(result.command).toBe('cancel-nonce');
+    expect(result.wordPos).toBe('42');
+    expect(result.mask).toBe('115792089237316195423570985008687907853269984665640564039457584007913129639935');
+  });
+
   it('errors on unknown subcommand', () => {
     expect(() => parseCliArgs(['unknown-cmd'])).toThrow(/unknown command/i);
   });
