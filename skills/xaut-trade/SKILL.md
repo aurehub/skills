@@ -29,7 +29,7 @@ This skill connects to external services (Ethereum RPC, UniswapX API, and option
 1. Does `~/.aurehub/config.yaml` exist: `ls ~/.aurehub/config.yaml`
    Fail -> redirect to setup (see setup options below)
 2. Read `WALLET_MODE` from .env: `source ~/.aurehub/.env && echo $WALLET_MODE`
-   Fail (missing or empty) -> "WALLET_MODE not set in .env. Run setup to select a wallet mode."
+   Fail (missing or empty) -> redirect to the **Setup / Create Wallet Flow** below. Do NOT auto-detect or infer the wallet mode from installed tools (e.g. do not assume Foundry mode just because `cast` is installed). The user must explicitly choose.
 3. Does `~/.aurehub/.env` exist: `ls ~/.aurehub/.env`
 4. **If `WALLET_MODE=wdk`:**
    - Check `~/.aurehub/.wdk_vault` exists: `ls ~/.aurehub/.wdk_vault`
