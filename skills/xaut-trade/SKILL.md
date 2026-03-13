@@ -1,6 +1,6 @@
 ---
 name: xaut-trade
-description: "Buy or sell XAUT (Tether Gold) on Ethereum. Supports market orders (Uniswap V3) and limit orders (UniswapX). Wallet modes: Foundry keystore or WDK. Triggers: buy XAUT, XAUT trade, swap USDT for XAUT, sell XAUT, swap XAUT for USDT, limit order, limit buy XAUT, limit sell XAUT, check limit order, cancel limit order, XAUT when."
+description: "Buy or sell XAUT (Tether Gold) on Ethereum. Supports market orders (Uniswap V3) and limit orders (UniswapX). Wallet modes: Foundry keystore or WDK. Triggers: buy XAUT, XAUT trade, swap USDT for XAUT, sell XAUT, swap XAUT for USDT, limit order, limit buy XAUT, limit sell XAUT, check limit order, cancel limit order, XAUT when, create wallet, setup wallet."
 license: MIT
 compatibility: Requires Node.js >= 18 and internet access to Ethereum RPC and UniswapX API. Foundry (cast) required only for foundry wallet mode.
 metadata:
@@ -186,6 +186,7 @@ Determine the operation from the user's message:
 - **Limit sell**: contains "limit sell", "sell when price reaches", "XAUT rises to X sell", etc. -> run limit sell flow
 - **Query limit order**: contains "check order", "order status" -> run query flow
 - **Cancel limit order**: contains "cancel order", "cancel limit" -> run cancel flow
+- **Setup / Create wallet**: contains "setup", "create wallet", "initialize", "init wallet" -> skip environment readiness check, go directly to setup flow (option A or B above). If environment is already fully configured, inform the user and ask if they want to re-run setup.
 - **XAUT knowledge query**: contains "troy ounce", "grams", "conversion", "what is XAUT" -> answer directly, no on-chain operations or environment checks needed
 
 ## Buy Flow (USDT -> XAUT)
