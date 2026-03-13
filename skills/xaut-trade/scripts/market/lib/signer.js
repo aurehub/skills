@@ -1,6 +1,14 @@
 import { readFileSync } from 'fs';
 import { join } from 'path';
 import { homedir } from 'os';
+
+/** Expand leading ~ to the user's home directory. */
+function expandTilde(p) {
+  if (typeof p === 'string' && p.startsWith('~/')) {
+    return join(homedir(), p.slice(2));
+  }
+  return p;
+}
 import { pbkdf2Sync } from 'crypto';
 import { Wallet } from 'ethers';
 
@@ -126,7 +134,7 @@ async function _createFoundrySigner(cfg, provider, opts) {
 
   const keystoreDir =
     opts.keystoreDir ?? join(homedir(), '.foundry', 'keystores');
-  const keystorePath = join(keystoreDir, accountName);
+  const keystorePath = join(expandTilde(keystoreDir), accountName);
 
   let keystoreJson;
   try {
@@ -137,7 +145,7 @@ async function _createFoundrySigner(cfg, provider, opts) {
     );
   }
 
-  const passwordFile = cfg.env.KEYSTORE_PASSWORD_FILE;
+  const passwordFile = expandTilde(cfg.env.KEYSTORE_PASSWORD_FILE);
   if (!passwordFile) {
     throw new Error('KEYSTORE_PASSWORD_FILE not set in .env');
   }
@@ -160,9 +168,10 @@ async function _createFoundrySigner(cfg, provider, opts) {
 // ---------------------------------------------------------------------------
 
 async function _createWdkSigner(cfg, provider) {
-  const vaultPath =
+  const vaultPath = expandTilde(
     cfg.env.WDK_VAULT_FILE ??
-    join(homedir(), '.aurehub', '.wdk_vault');
+    join(homedir(), '.aurehub', '.wdk_vault'),
+  );
 
   let vaultJson;
   try {
@@ -178,9 +187,10 @@ async function _createWdkSigner(cfg, provider) {
     );
   }
 
-  const passwordFile =
+  const passwordFile = expandTilde(
     cfg.env.WDK_PASSWORD_FILE ??
-    join(homedir(), '.aurehub', '.wdk_password');
+    join(homedir(), '.aurehub', '.wdk_password'),
+  );
 
   let password;
   try {

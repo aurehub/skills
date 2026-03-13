@@ -17,6 +17,14 @@
 import { readFileSync, writeFileSync, existsSync, chmodSync, mkdirSync } from 'fs';
 import { join, dirname } from 'path';
 import { homedir } from 'os';
+
+/** Expand leading ~ to the user's home directory. */
+function expandTilde(p) {
+  if (typeof p === 'string' && p.startsWith('~/')) {
+    return join(homedir(), p.slice(2));
+  }
+  return p;
+}
 import { randomBytes, pbkdf2Sync } from 'crypto';
 import { Wallet } from 'ethers';
 
@@ -42,9 +50,9 @@ function parseArgs(argv) {
   for (let i = 0; i < args.length; i++) {
     const arg = args[i];
     if (arg === '--password-file') {
-      opts.passwordFile = args[++i];
+      opts.passwordFile = expandTilde(args[++i]);
     } else if (arg === '--vault-file') {
-      opts.vaultFile = args[++i];
+      opts.vaultFile = expandTilde(args[++i]);
     } else if (arg === '--force') {
       opts.force = true;
     } else {
