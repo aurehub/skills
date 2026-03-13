@@ -33,7 +33,7 @@ Check `wallet_mode` in `~/.aurehub/config.yaml`:
   ```
   If `FAIL`, hard-stop:
   > Password file not readable: `$WDK_PASSWORD_FILE`
-  > Create it with: `read -rsp "WDK password: " p && printf '%s' "$p" > ~/.aurehub/.wdk_password && chmod 600 ~/.aurehub/.wdk_password`
+  > Create it with: `bash -c 'read -rsp "WDK password: " p </dev/tty; echo; printf "%s" "$p" > ~/.aurehub/.wdk_password; chmod 600 ~/.aurehub/.wdk_password; echo "Saved."'`
 
 - **If `wallet_mode: foundry`**: verify `FOUNDRY_ACCOUNT` and `KEYSTORE_PASSWORD_FILE` are set:
   ```bash

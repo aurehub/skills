@@ -60,12 +60,11 @@ mkdir -p ~/.aurehub
 If missing or empty, instruct the user to run in their terminal (password will not appear in chat):
 
 ```
-Please run the following in your terminal (input is hidden):
+Please run the following in your terminal (password input will be hidden):
 
-  read -rsp "WDK password: " p && \
-  printf '%s' "$p" > ~/.aurehub/.wdk_password && \
-  chmod 600 ~/.aurehub/.wdk_password
+bash -c 'read -rsp "WDK password (min 12 chars): " p </dev/tty; echo; printf "%s" "$p" > ~/.aurehub/.wdk_password; chmod 600 ~/.aurehub/.wdk_password; echo "✓ Password saved to ~/.aurehub/.wdk_password"'
 
+Copy the entire line above, paste into your terminal, and press Enter.
 Tell me when done.
 ```
 
@@ -146,12 +145,11 @@ mkdir -p ~/.aurehub
 If missing or empty, instruct the user to run in their terminal (password will not appear in chat):
 
 ```
-Please run the following in your terminal (input is hidden):
+Please run the following in your terminal (password input will be hidden):
 
-  read -rsp "Keystore password: " p && \
-  printf '%s' "$p" > ~/.aurehub/.wallet.password && \
-  chmod 600 ~/.aurehub/.wallet.password
+bash -c 'read -rsp "Keystore password: " p </dev/tty; echo; printf "%s" "$p" > ~/.aurehub/.wallet.password; chmod 600 ~/.aurehub/.wallet.password; echo "✓ Password saved to ~/.aurehub/.wallet.password"'
 
+Copy the entire line above, paste into your terminal, and press Enter.
 Tell me when done.
 ```
 

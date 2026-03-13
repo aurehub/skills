@@ -61,7 +61,7 @@ Create the password file first (password is hidden, file gets `600` permissions 
 
 ```bash
 mkdir -p ~/.aurehub
-( umask 077; read -rsp "Keystore password: " _pwd && printf '%s' "$_pwd" > ~/.aurehub/.wallet.password ); unset _pwd
+bash -c 'read -rsp "Keystore password: " p </dev/tty; echo; printf "%s" "$p" > ~/.aurehub/.wallet.password; chmod 600 ~/.aurehub/.wallet.password; echo "Password saved."'
 ```
 
 Then choose one initialization method:
