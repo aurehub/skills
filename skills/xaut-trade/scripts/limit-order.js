@@ -157,6 +157,7 @@ async function place(args) {
 
   // 6. Output JSON for SKILL.md to parse
   console.log(JSON.stringify({
+    address: wallet,
     orderHash,
     deadline: new Date(deadline * 1000).toISOString(),
     deadlineUnix: deadline,
@@ -232,7 +233,7 @@ async function list(args) {
     createdAt: o.createdAt ? new Date(o.createdAt * 1000).toISOString() : null,
   }));
 
-  console.log(JSON.stringify({ total: orders.length, orders }));
+  console.log(JSON.stringify({ address: wallet, total: orders.length, orders }));
 }
 
 async function cancel(args) {
