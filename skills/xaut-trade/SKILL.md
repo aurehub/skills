@@ -510,7 +510,7 @@ Output must include:
 - Minimum precision: 0.000001 XAUT (on-chain minimum unit: 1, i.e. 10^-6)
 - Conversion: X grams / 31.1035 = XAUT amount
 - Examples: 1g ~ 0.032151 XAUT; 10g ~ 0.32151 XAUT
-- Contract address (Ethereum mainnet): 0x68749665FF8D2d112Fa859AA293F07a622782F38
+- Contract address (Ethereum mainnet): 0x68749665FF8D2d112Fa859AA293F07A622782F38
 
 Answer knowledge queries directly using the data above -- no on-chain commands needed.
 
