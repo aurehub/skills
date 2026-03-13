@@ -135,7 +135,7 @@ async function runAllowance(cfg, provider, args) {
   if (!spender) throw new Error('contracts.router not set in config.yaml');
 
   const allowance = await getAllowance(token, address, spender, provider);
-  console.log(JSON.stringify({ token: args.token, allowance, spender }, null, 2));
+  console.log(JSON.stringify({ address, token: args.token, allowance, spender }, null, 2));
 }
 
 async function runQuote(cfg, provider, args) {
@@ -188,7 +188,7 @@ async function runApprove(cfg, provider, args) {
 
   const result = await approve(token, spender, args.amount, signer, { requiresResetApprove });
 
-  console.log(JSON.stringify({ token: args.token, amount: args.amount, spender, txHash: result.hash }, null, 2));
+  console.log(JSON.stringify({ address: signer.address, token: args.token, amount: args.amount, spender, txHash: result.hash }, null, 2));
 }
 
 async function runSwap(cfg, provider, args) {
@@ -225,6 +225,7 @@ async function runSwap(cfg, provider, args) {
   const receipt = await sentTx.wait();
 
   console.log(JSON.stringify({
+    address,
     side: args.side,
     amountIn: args.amount,
     minAmountOut: args.minOut,
@@ -264,6 +265,7 @@ async function runCancelNonce(cfg, provider, args) {
   const receipt = await tx.wait();
 
   console.log(JSON.stringify({
+    address: signer.address,
     txHash: tx.hash,
     status: receipt.status === 1 ? 'success' : 'failed',
   }, null, 2));
