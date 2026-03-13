@@ -10,10 +10,7 @@
 
 ```bash
 node --version     # If not found, hard-stop and prompt to install https://nodejs.org (market orders unaffected)
-cast --version
-cast block-number --rpc-url "$ETH_RPC_URL"
-# ETH balance check (same as balance.md)
-# tokenIn (USDT) balance check
+node market/swap.js balance   # ETH balance check + tokenIn (USDT) balance check
 ```
 
 ## 2. Parameter Confirmation (Preview)
@@ -34,23 +31,13 @@ If amountIn (USDT converted to USD) > `risk.large_trade_usd`, double confirmatio
 Check USDT allowance for Permit2:
 
 ```bash
-cast call "$USDT" "allowance(address,address)" \
-  "$WALLET_ADDRESS" "$PERMIT2" \
-  --rpc-url "$ETH_RPC_URL"
+node market/swap.js allowance --token USDT --spender 0x000000000022D473030F116dDEE9F6B43aC78BA3
 ```
 
-If insufficient, approve (USDT requires reset then approve):
+If insufficient, approve (USDT requires reset-to-zero; swap.js handles this automatically via token_rules):
 
 ```bash
-# Reset
-cast send "$USDT" "approve(address,uint256)" "$PERMIT2" 0 \
-  --account "$FOUNDRY_ACCOUNT" --password-file "$KEYSTORE_PASSWORD_FILE" \
-  --rpc-url "$ETH_RPC_URL"
-
-# Approve
-cast send "$USDT" "approve(address,uint256)" "$PERMIT2" "$AMOUNT_IN" \
-  --account "$FOUNDRY_ACCOUNT" --password-file "$KEYSTORE_PASSWORD_FILE" \
-  --rpc-url "$ETH_RPC_URL"
+node market/swap.js approve --token USDT --amount <AMOUNT_IN> --spender 0x000000000022D473030F116dDEE9F6B43aC78BA3
 ```
 
 ## 5. Place Order

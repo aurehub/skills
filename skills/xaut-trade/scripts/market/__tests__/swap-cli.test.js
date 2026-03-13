@@ -35,6 +35,21 @@ describe('parseCliArgs', () => {
     expect(result.token).toBe('XAUT');
   });
 
+  it('parses allowance with --token and --spender', () => {
+    const result = parseCliArgs(['allowance', '--token', 'USDT', '--spender', '0x000000000022D473030F116dDEE9F6B43aC78BA3']);
+    expect(result.command).toBe('allowance');
+    expect(result.token).toBe('USDT');
+    expect(result.spender).toBe('0x000000000022D473030F116dDEE9F6B43aC78BA3');
+  });
+
+  it('parses approve with --token, --amount, and --spender', () => {
+    const result = parseCliArgs(['approve', '--token', 'USDT', '--amount', '1000', '--spender', '0x000000000022D473030F116dDEE9F6B43aC78BA3']);
+    expect(result.command).toBe('approve');
+    expect(result.token).toBe('USDT');
+    expect(result.amount).toBe('1000');
+    expect(result.spender).toBe('0x000000000022D473030F116dDEE9F6B43aC78BA3');
+  });
+
   it('parses address', () => {
     const result = parseCliArgs(['address']);
     expect(result.command).toBe('address');

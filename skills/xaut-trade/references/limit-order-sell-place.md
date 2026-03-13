@@ -10,10 +10,7 @@
 
 ```bash
 node --version     # If not found, hard-stop and prompt to install https://nodejs.org (market orders unaffected)
-cast --version
-cast block-number --rpc-url "$ETH_RPC_URL"
-# ETH balance check (same as balance.md)
-# XAUT balance check (required): hard-stop if insufficient, report shortfall
+node market/swap.js balance   # ETH balance check + XAUT balance check (hard-stop if insufficient)
 ```
 
 ## 2. Parameter Confirmation (Preview)
@@ -31,20 +28,16 @@ If `minAmountOut` (USDT) > `risk.large_trade_usd`, double confirmation is requir
 
 ## 4. Approve Permit2 (if allowance is insufficient)
 
-XAUT is a standard ERC-20 — **approve directly, no `approve(0)` reset needed**:
+XAUT is a standard ERC-20 — **approve directly, no reset needed**:
 
 ```bash
-cast call "$XAUT" "allowance(address,address)" \
-  "$WALLET_ADDRESS" "$PERMIT2" \
-  --rpc-url "$ETH_RPC_URL"
+node market/swap.js allowance --token XAUT --spender 0x000000000022D473030F116dDEE9F6B43aC78BA3
 ```
 
 If insufficient, approve directly:
 
 ```bash
-cast send "$XAUT" "approve(address,uint256)" "$PERMIT2" "$AMOUNT_IN" \
-  --account "$FOUNDRY_ACCOUNT" --password-file "$KEYSTORE_PASSWORD_FILE" \
-  --rpc-url "$ETH_RPC_URL"
+node market/swap.js approve --token XAUT --amount <AMOUNT_IN> --spender 0x000000000022D473030F116dDEE9F6B43aC78BA3
 ```
 
 ## 5. Place Order

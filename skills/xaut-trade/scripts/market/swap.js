@@ -84,6 +84,10 @@ export function parseCliArgs(argv) {
         parsed.mask = value;
         i++;
         break;
+      case '--spender':
+        parsed.spender = value;
+        i++;
+        break;
       default:
         // Ignore unknown flags silently
         break;
@@ -131,8 +135,8 @@ async function runAllowance(cfg, provider, args) {
 
   const token = resolveToken(cfg, args.token);
   const contracts = cfg.yaml?.contracts ?? {};
-  const spender = contracts.router;
-  if (!spender) throw new Error('contracts.router not set in config.yaml');
+  const spender = args.spender || contracts.router;
+  if (!spender) throw new Error('--spender or contracts.router must be set');
 
   const allowance = await getAllowance(token, address, spender, provider);
   console.log(JSON.stringify({ address, token: args.token, allowance, spender }, null, 2));
@@ -178,8 +182,8 @@ async function runApprove(cfg, provider, args) {
   const signer = await createSigner(cfg, provider ? provider.getEthersProvider() : null);
   const token = resolveToken(cfg, args.token);
   const contracts = cfg.yaml?.contracts ?? {};
-  const spender = contracts.router;
-  if (!spender) throw new Error('contracts.router not set in config.yaml');
+  const spender = args.spender || contracts.router;
+  if (!spender) throw new Error('--spender or contracts.router must be set');
 
   // Check token_rules for requiresResetApprove
   const tokenRules = cfg.yaml?.token_rules ?? {};
