@@ -58,12 +58,14 @@ skills/xaut-trade/scripts/
 
 Subcommands and their module mappings:
 
-| Subcommand | Calls | Requires Signer |
-|------------|-------|-----------------|
-| `quote`    | `uniswap.quote()` | No (provider only) |
-| `balance`  | `erc20.getBalance()` | No |
-| `approve`  | `erc20.approve()` | Yes |
-| `swap`     | `uniswap.buildSwap()` → `signer.sendTransaction()` | Yes |
+| Subcommand  | Calls | Requires Signer |
+|-------------|-------|-----------------|
+| `quote`     | `uniswap.quote()` | No (provider only) |
+| `balance`   | `erc20.getBalance()` | No |
+| `allowance` | `erc20.getAllowance()` | No |
+| `approve`   | `erc20.approve()` | Yes |
+| `swap`      | `uniswap.buildSwap()` → `signer.sendTransaction()` | Yes |
+| `address`   | `signer.address` | Yes (loads wallet to derive address) |
 
 All subcommands output JSON to stdout for agent parsing.
 
@@ -91,13 +93,17 @@ Passwords and mnemonics are held in memory only during decryption, not cached.
 ### `lib/provider.js` — RPC Provider with Fallback
 
 ```javascript
-async function createProvider() → ethers.JsonRpcProvider
+async function createProvider() → FallbackProvider (custom wrapper)
 ```
+
+Returns a custom `FallbackProvider` that wraps `ethers.JsonRpcProvider` with automatic retry logic:
 
 - Primary: `ETH_RPC_URL` from `~/.aurehub/.env`
 - Fallback list: `ETH_RPC_URL_FALLBACK` (comma-separated)
-- Auto-switch on: 429, 502, 503, timeout, rate limit
-- Session-sticky: successful fallback becomes active for remainder of process
+- On RPC error (429, 502, 503, timeout, rate limit), catches the error and retries with the next URL in the fallback list
+- Session-sticky: once a fallback URL succeeds, it becomes the primary for all subsequent calls within the process
+- Exposes the same interface as `ethers.JsonRpcProvider` (proxies `send`, `call`, `getBlock`, etc.) so callers are unaware of fallback logic
+- If all URLs exhausted → throw with list of attempted URLs and their errors
 
 ### `lib/uniswap.js` — Quote & Swap
 
@@ -124,8 +130,24 @@ async function approve(token, spender, amount, signer) → txHash
 ### `lib/config.js` — Configuration
 
 Reads and merges:
-- `~/.aurehub/.env` (environment variables)
+- `~/.aurehub/.env` (environment variables, parsed manually — split on `=`, ignore comments/blanks)
 - `~/.aurehub/config.yaml` (structured config: wallet_mode, tokens, contracts, risk params)
+
+Token symbols (e.g., `USDT`, `XAUT`) are resolved to addresses and decimals via `config.yaml` `tokens` section. CLI subcommands accept `--token USDT` (symbol) which `config.js` resolves.
+
+### `lib/create-wallet.js` — WDK Seed Generation
+
+```javascript
+// Called by setup.sh: node market/lib/create-wallet.js [--seed-file <path>]
+// Outputs JSON to stdout: { address, seedFile }
+```
+
+- Generate BIP-39 mnemonic (128-bit entropy, 12 words) using `ethers.Wallet.createRandom()`.
+- Write mnemonic to `--seed-file` path (default `~/.aurehub/.wdk_seed`), chmod 600.
+- Derive address from mnemonic (default HD path `m/44'/60'/0'/0/0`).
+- Output `{ address, seedFile }` as JSON to stdout.
+- If seed file already exists → error with message "seed file already exists, use --force to overwrite".
+- Does NOT display mnemonic in stdout (security). The user must read the seed file directly if they need backup.
 
 ## Setup Changes
 
@@ -175,7 +197,9 @@ Identical to current setup.sh flow (install Foundry → keystore → password fi
    - Approve: `cast send token approve...` → `node market/swap.js approve --token USDT --amount 1000`
    - Swap: `cast send router multicall...` → `node market/swap.js swap --side buy --amount 100 --min-out 0.03`
 
-3. **`cast` residual uses**: Only in Foundry mode for `cast wallet list` (view wallets) and `cast --version` (env check). WDK mode has zero `cast` dependency.
+3. **Wallet address derivation**: `cast wallet address ...` → `node market/swap.js address`. Used for balance checks, post-trade registration, and display. Works in both wallet modes.
+
+4. **`cast` residual uses**: Only in Foundry mode for `cast wallet list` (view wallets) and `cast --version` (env check). WDK mode has zero `cast` dependency.
 
 ## Reference File Changes
 
@@ -185,7 +209,7 @@ Identical to current setup.sh flow (install Foundry → keystore → password fi
 | `balance.md` | `cast call` → `node swap.js balance` |
 | `quote.md` | `cast call QuoterV2` → `node swap.js quote` |
 | `buy.md` | Full rewrite: `cast send` → `node swap.js approve` + `node swap.js swap` |
-| `sell.md` | Full rewrite: same as buy.md |
+| `sell.md` | Full rewrite: same pattern as buy.md with direction-specific adjustments (XAUT→USDT, precision check, no approve reset) |
 | `limit-order-*.md` | No change |
 | `live-trading-runbook.md` | Update tool descriptions |
 | `wallet-modes.md` (NEW) | Comparison of WDK vs Foundry for agent reference |
