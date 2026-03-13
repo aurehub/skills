@@ -1,5 +1,5 @@
 import { describe, it, expect, vi } from 'vitest';
-import { AbiCoder } from 'ethers';
+import { AbiCoder } from 'ethers6';
 import { quote, buildSwap } from '../uniswap.js';
 
 // QuoterV2 returns (uint256 amountOut, uint160 sqrtPriceX96After, uint32 initializedTicksCrossed, uint256 gasEstimate)

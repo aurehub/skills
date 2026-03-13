@@ -74,7 +74,7 @@ cases:
     expect:
       contains:
         - ["Preview", "quote", "amountOut", "minAmountOut", "slippage"]
-        - ["node market/swap.js quote", "confirm"]
+        - ["node swap.js quote", "confirm"]
       min_length: 120
     tier: benchmark
 
@@ -84,7 +84,7 @@ cases:
     expect:
       contains:
         - ["USDT", "approve(0)", "approve(amount)"]
-        - ["node market/swap.js approve", "explicit confirmation", "on-chain write"]
+        - ["node swap.js approve", "explicit confirmation", "on-chain write"]
       min_length: 120
     tier: benchmark
 
@@ -137,7 +137,7 @@ cases:
       contains:
         - ["only supports", "USDT", "USDC not supported"]
       not_contains:
-        - ["node market/swap.js", "approve", "allowance"]
+        - ["node swap.js", "approve", "allowance"]
     tier: gate
 
   - id: tc-007
@@ -156,7 +156,7 @@ cases:
       contains:
         - ["if you want to buy", "let me know", "USDT"]
       not_contains:
-        - ["node market/swap.js", "execute trade", "tx hash"]
+        - ["node swap.js", "execute trade", "tx hash"]
       max_length: 500
     tier: gate
 
@@ -178,7 +178,7 @@ cases:
       contains:
         - ["amount", "how much", "XAUT", "sell"]
       not_contains:
-        - ["executed", "tx hash", "node market/swap.js"]
+        - ["executed", "tx hash", "node swap.js"]
       max_length: 900
     tier: gate
 
@@ -200,7 +200,7 @@ cases:
       contains:
         - ["precision", "decimal", "minimum"]
       not_contains:
-        - ["node market/swap.js", "executed", "tx hash"]
+        - ["node swap.js", "executed", "tx hash"]
     tier: gate
 
   - id: tc-012
@@ -210,7 +210,7 @@ cases:
       contains:
         - ["insufficient balance", "XAUT", "stop"]
       not_contains:
-        - ["node market/swap.js", "tx hash"]
+        - ["node swap.js", "tx hash"]
     tier: gate
 
   - id: tc-013
@@ -229,7 +229,7 @@ cases:
     input: I confirm selling 0.01 XAUT, give me the steps
     expect:
       contains:
-        - ["approve", "XAUT", "ROUTER", "node market/swap.js approve"]
+        - ["approve", "XAUT", "ROUTER", "node swap.js approve"]
       not_contains:
         - ["approve(0)", "reset first", "reset"]
       min_length: 100
@@ -291,7 +291,7 @@ cases:
         - ["orderHash", "status", "0xabc123"]
         - ["limit-order.js", "status", "UNISWAPX_API"]
       not_contains:
-        - ["node market/swap.js swap", "approve"]
+        - ["node swap.js swap", "approve"]
       min_length: 80
     tier: benchmark
 
@@ -301,7 +301,7 @@ cases:
     expect:
       contains:
         - ["cancel", "confirm", "on-chain", "gas"]
-        - ["invalidateUnorderedNonces", "node market/swap.js"]
+        - ["invalidateUnorderedNonces", "node swap.js"]
       not_contains:
         - ["cancelled", "executed"]
       min_length: 80
@@ -337,7 +337,7 @@ cases:
       contains:
         - ["precision", "decimal", "minimum"]
       not_contains:
-        - ["node scripts", "submitted", "node market/swap.js"]
+        - ["node scripts", "submitted", "node swap.js"]
     tier: gate
 
   - id: tc-024
@@ -345,7 +345,7 @@ cases:
     input: I confirm limit selling 0.01 XAUT at target price 4000 USDT, give me the steps
     expect:
       contains:
-        - ["approve", "XAUT", "PERMIT2", "node market/swap.js approve"]
+        - ["approve", "XAUT", "PERMIT2", "node swap.js approve"]
       not_contains:
         - ["approve(0)", "reset first", "reset"]
       min_length: 100

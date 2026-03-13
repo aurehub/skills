@@ -110,11 +110,7 @@ if [ "$WALLET_MODE" = "wdk" ]; then
 
   # ── Step 5: Create encrypted wallet ────────────────────────────────────────
   step "Create WDK encrypted wallet"
-  MARKET_DIR="$SCRIPT_DIR/market"
-  if [ -f "$MARKET_DIR/package.json" ] && [ ! -d "$MARKET_DIR/node_modules" ]; then
-    echo "  Installing market module dependencies..."
-    (cd "$MARKET_DIR" && npm install --silent)
-  fi
+  MARKET_DIR="$SCRIPT_DIR"
 
   VAULT_FILE="$HOME/.aurehub/.wdk_vault"
   if [ -f "$VAULT_FILE" ]; then
@@ -466,9 +462,6 @@ fi
 if [ "$NODE_OK" = true ]; then
   echo "  Installing npm packages..."
   cd "$SCRIPT_DIR" && npm install --silent
-  if [ -f "$SCRIPT_DIR/market/package.json" ]; then
-    (cd "$SCRIPT_DIR/market" && npm install --silent)
-  fi
   ok "npm packages installed"
 
   # Prompt for UniswapX API Key with explicit choices
@@ -555,7 +548,7 @@ source ~/.aurehub/.env
 
 if [ "$WALLET_MODE" = "wdk" ]; then
   # Verify RPC connectivity using node
-  if BLOCK=$(node "$SCRIPT_DIR/market/swap.js" address 2>/dev/null | head -1); then
+  if BLOCK=$(node "$SCRIPT_DIR/swap.js" address 2>/dev/null | head -1); then
     ok "WDK wallet accessible"
   else
     warn "Could not verify WDK wallet (market module may not be fully set up yet)"

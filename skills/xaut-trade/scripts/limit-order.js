@@ -13,15 +13,20 @@
 // Signing mode (same as SKILL.md):
 //   FOUNDRY_ACCOUNT + KEYSTORE_PASSWORD_FILE only.
 //   PRIVATE_KEY runtime signing is intentionally not supported.
-'use strict';
+import { execSync } from 'node:child_process';
+import fs from 'node:fs';
+import os from 'node:os';
+import path from 'node:path';
+import { fileURLToPath } from 'node:url';
+import { createRequire } from 'node:module';
+import yaml from 'js-yaml';
+import { computeNonceComponents, checkPrecision } from './helpers.js';
 
-const { computeNonceComponents, checkPrecision } = require('./helpers');
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
+const require = createRequire(import.meta.url);
 const { ethers } = require('ethers');
-const { execSync } = require('child_process');
-const fs = require('fs');
-const os = require('os');
-const path = require('path');
-const yaml = require('js-yaml');
+const { DutchOrderBuilder } = require('@uniswap/uniswapx-sdk');
 
 // ethers v5 BigNumber (SDK uses .gte() etc — native BigInt not compatible)
 const BN = ethers.BigNumber;
@@ -107,7 +112,6 @@ async function place(args) {
   // 3. Build order using DutchOrderBuilder (no LimitOrderBuilder in SDK v2)
   //    Set decayStartTime === decayEndTime === deadline → zero decay = limit order
   //    SDK uses ethers v5 BigNumber (not native BigInt) — .gte() etc required
-  const { DutchOrderBuilder } = require('@uniswap/uniswapx-sdk');
   const amountInBN = BN.from(amountIn);
   const minAmountOutBN = BN.from(minAmountOut);
 
@@ -151,7 +155,7 @@ async function place(args) {
   fs.writeFileSync(tmpFile, typedDataJson);
   try {
     signature = execSync(
-      `node "${path.join(__dirname, 'market', 'swap.js')}" sign --data-file "${tmpFile}"`,
+      `node "${path.join(__dirname, 'swap.js')}" sign --data-file "${tmpFile}"`,
       { encoding: 'utf8' }
     ).trim();
   } finally {

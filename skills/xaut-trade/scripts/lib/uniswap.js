@@ -6,7 +6,7 @@
  * @uniswap/v3-sdk@3.20 that causes Trade.minimumAmountOut to throw.
  */
 
-import { Interface, AbiCoder, parseUnits } from 'ethers';
+import { Interface, AbiCoder, parseUnits } from 'ethers6';
 
 // ---------------------------------------------------------------------------
 // ABIs

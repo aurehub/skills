@@ -1,4 +1,4 @@
-import { Interface, formatUnits, parseUnits } from 'ethers';
+import { Interface, formatUnits, parseUnits } from 'ethers6';
 
 const ERC20_ABI = [
   'function balanceOf(address) view returns (uint256)',

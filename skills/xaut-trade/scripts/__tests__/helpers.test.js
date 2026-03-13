@@ -1,6 +1,5 @@
-'use strict';
-
-const { computeNonceComponents, resolveExpiry, checkPrecision } = require('../helpers');
+import { describe, it, expect } from 'vitest';
+import { computeNonceComponents, resolveExpiry, checkPrecision } from '../helpers.js';
 
 // --- computeNonceComponents ---
 // Permit2 invalidateUnorderedNonces(wordPos, mask):

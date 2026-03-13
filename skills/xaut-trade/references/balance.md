@@ -14,7 +14,7 @@ cd "$SCRIPTS_DIR"
 ```bash
 source ~/.aurehub/.env
 cd "$SCRIPTS_DIR"
-node market/swap.js address
+node swap.js address
 ```
 
 If the command fails, stop and prompt:
@@ -60,7 +60,7 @@ If `PRIVATE_KEY` exists in `.env`, hard-stop immediately:
 ```bash
 source ~/.aurehub/.env
 cd "$SCRIPTS_DIR"
-WALLET_ADDRESS=$(node market/swap.js address | python3 -c "import sys,json; print(json.load(sys.stdin)['address'])")
+WALLET_ADDRESS=$(node swap.js address | python3 -c "import sys,json; print(json.load(sys.stdin)['address'])")
 echo "$WALLET_ADDRESS"
 ```
 
@@ -69,7 +69,7 @@ echo "$WALLET_ADDRESS"
 ```bash
 source ~/.aurehub/.env
 cd "$SCRIPTS_DIR"
-node market/swap.js balance
+node swap.js balance
 ```
 
 Output is JSON with all balances pre-formatted (human-readable):

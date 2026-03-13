@@ -9,7 +9,7 @@ Example: buy with 100 USDT
 ```bash
 source ~/.aurehub/.env
 cd "$SCRIPTS_DIR"
-RESULT=$(node market/swap.js quote --side buy --amount 100)
+RESULT=$(node swap.js quote --side buy --amount 100)
 echo "$RESULT"
 ```
 

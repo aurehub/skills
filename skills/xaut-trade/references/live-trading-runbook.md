@@ -11,13 +11,13 @@ Core principle:
 ## 1) What You Need to Do vs What the Agent Does
 
 Agent (automatic):
-- Environment checks (wallet mode, `.env`, password file, RPC reachability via `node market/swap.js address`)
-- Balance check via `node market/swap.js balance`
-- Quote via `node market/swap.js quote --side <buy|sell> --amount <N>`
+- Environment checks (wallet mode, `.env`, password file, RPC reachability via `node swap.js address`)
+- Balance check via `node swap.js balance`
+- Quote via `node swap.js quote --side <buy|sell> --amount <N>`
 - Risk preview and command preparation
-- Approve via `node market/swap.js approve --token <TOKEN> --amount <N>`
-- Swap via `node market/swap.js swap --side <buy|sell> --amount <N> --min-out <M>`
-- Post-trade result summary via `node market/swap.js balance`
+- Approve via `node swap.js approve --token <TOKEN> --amount <N>`
+- Swap via `node swap.js swap --side <buy|sell> --amount <N> --min-out <M>`
+- Post-trade result summary via `node swap.js balance`
 
 User (manual checkpoints only):
 1. Sensitive wallet input (interactive key import / password input during setup)
@@ -59,7 +59,7 @@ If wallet is missing or locked, the Agent will pause and ask you to complete int
 
 Typical examples:
 - Setting a password for WDK or Foundry wallet
-- Running `node market/lib/create-wallet.js` (WDK mode)
+- Running `node lib/create-wallet.js` (WDK mode)
 - `cast wallet import <account> --interactive` (Foundry mode)
 
 After you finish, tell the Agent to continue.

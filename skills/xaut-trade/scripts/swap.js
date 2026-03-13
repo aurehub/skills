@@ -2,7 +2,7 @@
  * swap.js — CLI entry point for market operations.
  *
  * Usage:
- *   node market/swap.js <command> [options]
+ *   node swap.js <command> [options]
  *
  * Commands:
  *   address    — output wallet address
@@ -15,7 +15,7 @@
 
 import { fileURLToPath } from 'node:url';
 import { readFileSync } from 'node:fs';
-import { formatUnits, Interface } from 'ethers';
+import { formatUnits, Interface } from 'ethers6';
 import { loadConfig, resolveToken } from './lib/config.js';
 import { createProvider } from './lib/provider.js';
 import { createSigner } from './lib/signer.js';

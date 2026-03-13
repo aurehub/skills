@@ -3,7 +3,7 @@ import { mkdirSync, rmSync, writeFileSync } from 'fs';
 import { join } from 'path';
 import { tmpdir } from 'os';
 import { pbkdf2Sync } from 'crypto';
-import { BaseWallet, HDNodeWallet, Wallet } from 'ethers';
+import { BaseWallet, HDNodeWallet, Wallet } from 'ethers6';
 
 import { createSigner } from '../signer.js';
 

@@ -1,4 +1,4 @@
-import { JsonRpcProvider } from 'ethers';
+import { JsonRpcProvider } from 'ethers6';
 import { loadConfig } from './config.js';
 
 /**

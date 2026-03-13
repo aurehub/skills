@@ -10,7 +10,7 @@
 
 ```bash
 node --version     # If not found, hard-stop and prompt to install https://nodejs.org (market orders unaffected)
-node market/swap.js balance   # ETH balance check + tokenIn (USDT) balance check
+node swap.js balance   # ETH balance check + tokenIn (USDT) balance check
 ```
 
 ## 2. Parameter Confirmation (Preview)
@@ -31,13 +31,13 @@ If amountIn (USDT converted to USD) > `risk.large_trade_usd`, double confirmatio
 Check USDT allowance for Permit2:
 
 ```bash
-node market/swap.js allowance --token USDT --spender 0x000000000022D473030F116dDEE9F6B43aC78BA3
+node swap.js allowance --token USDT --spender 0x000000000022D473030F116dDEE9F6B43aC78BA3
 ```
 
 If insufficient, approve (USDT requires reset-to-zero; swap.js handles this automatically via token_rules):
 
 ```bash
-node market/swap.js approve --token USDT --amount <AMOUNT_IN> --spender 0x000000000022D473030F116dDEE9F6B43aC78BA3
+node swap.js approve --token USDT --amount <AMOUNT_IN> --spender 0x000000000022D473030F116dDEE9F6B43aC78BA3
 ```
 
 ## 5. Place Order

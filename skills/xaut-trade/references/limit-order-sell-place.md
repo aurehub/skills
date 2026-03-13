@@ -10,7 +10,7 @@
 
 ```bash
 node --version     # If not found, hard-stop and prompt to install https://nodejs.org (market orders unaffected)
-node market/swap.js balance   # ETH balance check + XAUT balance check (hard-stop if insufficient)
+node swap.js balance   # ETH balance check + XAUT balance check (hard-stop if insufficient)
 ```
 
 ## 2. Parameter Confirmation (Preview)
@@ -31,13 +31,13 @@ If `minAmountOut` (USDT) > `risk.large_trade_usd`, double confirmation is requir
 XAUT is a standard ERC-20 — **approve directly, no reset needed**:
 
 ```bash
-node market/swap.js allowance --token XAUT --spender 0x000000000022D473030F116dDEE9F6B43aC78BA3
+node swap.js allowance --token XAUT --spender 0x000000000022D473030F116dDEE9F6B43aC78BA3
 ```
 
 If insufficient, approve directly:
 
 ```bash
-node market/swap.js approve --token XAUT --amount <AMOUNT_IN> --spender 0x000000000022D473030F116dDEE9F6B43aC78BA3
+node swap.js approve --token XAUT --amount <AMOUNT_IN> --spender 0x000000000022D473030F116dDEE9F6B43aC78BA3
 ```
 
 ## 5. Place Order

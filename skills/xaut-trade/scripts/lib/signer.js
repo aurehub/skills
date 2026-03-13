@@ -10,7 +10,7 @@ function expandTilde(p) {
   return p;
 }
 import { pbkdf2Sync } from 'crypto';
-import { Wallet } from 'ethers';
+import { Wallet } from 'ethers6';
 
 // sodium-native is a CJS module; we import it via createRequire
 import { createRequire } from 'module';

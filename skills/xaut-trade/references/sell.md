@@ -21,7 +21,7 @@ User provides XAUT amount (e.g. `0.01`).
 ```bash
 source ~/.aurehub/.env
 cd "$SCRIPTS_DIR"
-RESULT=$(node market/swap.js quote --side sell --amount <XAUT_AMOUNT>)
+RESULT=$(node swap.js quote --side sell --amount <XAUT_AMOUNT>)
 echo "$RESULT"
 ```
 
@@ -83,7 +83,7 @@ Accepted confirmation phrases:
 ```bash
 source ~/.aurehub/.env
 cd "$SCRIPTS_DIR"
-node market/swap.js allowance --token XAUT
+node swap.js allowance --token XAUT
 ```
 
 If allowance < `AMOUNT_IN`, approve first.
@@ -95,7 +95,7 @@ If allowance < `AMOUNT_IN`, approve first.
 ```bash
 source ~/.aurehub/.env
 cd "$SCRIPTS_DIR"
-APPROVE_RESULT=$(node market/swap.js approve --token XAUT --amount <XAUT_AMOUNT>)
+APPROVE_RESULT=$(node swap.js approve --token XAUT --amount <XAUT_AMOUNT>)
 echo "$APPROVE_RESULT"
 ```
 
@@ -119,7 +119,7 @@ Report: `Approve tx: https://etherscan.io/tx/<txHash>`
 ```bash
 source ~/.aurehub/.env
 cd "$SCRIPTS_DIR"
-SWAP_RESULT=$(node market/swap.js swap --side sell --amount <XAUT_AMOUNT> --min-out <MIN_AMOUNT_OUT>)
+SWAP_RESULT=$(node swap.js swap --side sell --amount <XAUT_AMOUNT> --min-out <MIN_AMOUNT_OUT>)
 echo "$SWAP_RESULT"
 ```
 
@@ -147,7 +147,7 @@ Pre-swap snapshot (fetch before executing swap):
 ```bash
 source ~/.aurehub/.env
 cd "$SCRIPTS_DIR"
-node market/swap.js balance
+node swap.js balance
 ```
 
 Post-swap balance:
@@ -155,7 +155,7 @@ Post-swap balance:
 ```bash
 source ~/.aurehub/.env
 cd "$SCRIPTS_DIR"
-node market/swap.js balance
+node swap.js balance
 ```
 
 Return:

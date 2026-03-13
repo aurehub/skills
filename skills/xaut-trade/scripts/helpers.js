@@ -1,5 +1,3 @@
-'use strict';
-
 /**
  * Compute Permit2 invalidateUnorderedNonces arguments from a UniswapX nonce.
  * @param {bigint} nonce
@@ -35,4 +33,4 @@ function checkPrecision(amount, maxDecimals) {
   return s.length - dotIndex - 1 <= maxDecimals;
 }
 
-module.exports = { computeNonceComponents, resolveExpiry, checkPrecision };
+export { computeNonceComponents, resolveExpiry, checkPrecision };

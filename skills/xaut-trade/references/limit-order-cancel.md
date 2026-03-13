@@ -24,7 +24,7 @@ Display the command and wait for user confirmation:
 ```bash
 source ~/.aurehub/.env
 cd "$SCRIPTS_DIR"
-CANCEL_JSON=$(node market/swap.js cancel-nonce --word-pos "$WORD_POS" --mask "$MASK")
+CANCEL_JSON=$(node swap.js cancel-nonce --word-pos "$WORD_POS" --mask "$MASK")
 TX_HASH=$(echo "$CANCEL_JSON" | python3 -c "import sys,json; print(json.load(sys.stdin)['txHash'])")
 echo "Cancel tx: https://etherscan.io/tx/$TX_HASH"
 ```

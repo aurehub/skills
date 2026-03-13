@@ -3,7 +3,7 @@
  * create-wallet.js — CLI script to create an encrypted WDK vault file.
  *
  * Usage:
- *   node market/lib/create-wallet.js --password-file <path> [--vault-file <path>] [--force]
+ *   node lib/create-wallet.js --password-file <path> [--vault-file <path>] [--force]
  *
  * Outputs JSON to stdout: { address, vaultFile }
  *
@@ -26,7 +26,7 @@ function expandTilde(p) {
   return p;
 }
 import { randomBytes, pbkdf2Sync } from 'crypto';
-import { Wallet } from 'ethers';
+import { Wallet } from 'ethers6';
 
 // sodium-native and bip39-mnemonic are CJS; load via createRequire
 import { createRequire } from 'module';

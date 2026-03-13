@@ -102,7 +102,7 @@ else
 fi
 cd "$SCRIPTS_DIR/market" && npm install
 cd "$SCRIPTS_DIR" && npm install
-node "$SCRIPTS_DIR/market/lib/create-wallet.js" --password-file ~/.aurehub/.wdk_password
+node "$SCRIPTS_DIR/lib/create-wallet.js" --password-file ~/.aurehub/.wdk_password
 ```
 
 This creates `~/.aurehub/.wdk_vault` with the encrypted seed.
@@ -118,7 +118,7 @@ This creates `~/.aurehub/.wdk_vault` with the encrypted seed.
 > Run this command in a **private** terminal to display your 12-word mnemonic:
 >
 > ```bash
-> node <scripts_dir>/market/lib/export-seed.js
+> node <scripts_dir>/lib/export-seed.js
 > ```
 >
 > - Write the 12 words on paper and store offline (safe, lockbox).
@@ -310,7 +310,7 @@ elif GIT_ROOT=$(git rev-parse --show-toplevel 2>/dev/null) && [ -d "$GIT_ROOT/sk
 else
   SCRIPTS_DIR=$(dirname "$(find "$HOME" -maxdepth 6 -type f -path "*/xaut-trade/scripts/setup.sh" 2>/dev/null | head -1)")
 fi
-cd "$SCRIPTS_DIR" && node market/swap.js address
+cd "$SCRIPTS_DIR" && node swap.js address
 ```
 
 Expected output: `{ "address": "0x..." }`

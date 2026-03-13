@@ -3,7 +3,7 @@
  * export-seed.js — Decrypt a WDK vault and print the BIP-39 mnemonic.
  *
  * Usage:
- *   node market/lib/export-seed.js [--password-file <path>] [--vault-file <path>]
+ *   node lib/export-seed.js [--password-file <path>] [--vault-file <path>]
  *
  * Defaults:
  *   --password-file  ~/.aurehub/.wdk_password

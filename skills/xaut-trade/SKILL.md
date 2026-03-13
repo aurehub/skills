@@ -47,19 +47,19 @@ This skill connects to external services (Ethereum RPC, UniswapX API, and option
    ```bash
    source ~/.aurehub/.env
    cd "$SCRIPTS_DIR"
-   node market/swap.js address
+   node swap.js address
    ```
    This outputs JSON: `{ "address": "0x..." }`. If it fails, the wallet is not configured correctly.
 
 > **Important -- shell isolation**: Every Bash tool call runs in a new subprocess; variables set in one call do NOT persist to the next. Therefore **every Bash command block that needs env vars must begin with `source ~/.aurehub/.env`** (or `set -a; source ~/.aurehub/.env; set +a` to auto-export all variables).
 >
-> **WALLET_ADDRESS**: derive it from `node market/swap.js address` (works for both wallet modes):
+> **WALLET_ADDRESS**: derive it from `node swap.js address` (works for both wallet modes):
 > ```bash
 > source ~/.aurehub/.env
 > cd "$SCRIPTS_DIR"
-> WALLET_ADDRESS=$(node market/swap.js address | python3 -c "import sys,json; print(json.load(sys.stdin)['address'])")
+> WALLET_ADDRESS=$(node swap.js address | python3 -c "import sys,json; print(json.load(sys.stdin)['address'])")
 > ```
-> Alternatively, `node market/swap.js balance` also includes the address in its output.
+> Alternatively, `node swap.js balance` also includes the address in its output.
 
 If **all pass**: source `~/.aurehub/.env`, then proceed to intent detection.
 
@@ -127,7 +127,7 @@ Resolve `SCRIPTS_DIR` in this order:
 - git fallback: `$(git rev-parse --show-toplevel 2>/dev/null)/skills/xaut-trade/scripts` (if valid)
 - bounded home-search fallback: `dirname "$(find "$HOME" -maxdepth 6 -type f -path "*/xaut-trade/scripts/setup.sh" 2>/dev/null | head -1)"`
 
-All `node market/swap.js` commands assume CWD is `$SCRIPTS_DIR`.
+All `node swap.js` commands assume CWD is `$SCRIPTS_DIR`.
 
 **Extra checks for limit orders** (only when the intent is limit buy / sell / query / cancel):
 
@@ -176,7 +176,7 @@ All `node market/swap.js` commands assume CWD is `$SCRIPTS_DIR`.
 
 After sourcing `~/.aurehub/.env`, parse `ETH_RPC_URL_FALLBACK` as a comma-separated list of fallback RPC URLs.
 
-If any `node market/swap.js` command fails and its output contains any of the following:
+If any `node swap.js` command fails and its output contains any of the following:
 `429`, `502`, `503`, `timeout`, `connection refused`, `rate limit`, `Too Many Requests`, `-32603`, `no response`, `method is not whitelisted`, `HTTP error 403`
 
 Then:
@@ -262,7 +262,7 @@ After WDK wallet creation succeeds, **always** display this security notice:
 >
 > Run this command in a **private** terminal:
 > ```
-> node <scripts_dir>/market/lib/export-seed.js
+> node <scripts_dir>/lib/export-seed.js
 > ```
 >
 > Write down the 12 words and keep them offline. **Never share your seed phrase with anyone.**
@@ -278,7 +278,7 @@ Do NOT skip this step. Do NOT display the seed phrase in chat — only provide t
 ```bash
 source ~/.aurehub/.env
 cd "$SCRIPTS_DIR"
-BALANCE_JSON=$(node market/swap.js balance)
+BALANCE_JSON=$(node swap.js balance)
 echo "$BALANCE_JSON"
 ```
 
@@ -293,7 +293,7 @@ Parse and check:
 ```bash
 source ~/.aurehub/.env
 cd "$SCRIPTS_DIR"
-QUOTE_JSON=$(node market/swap.js quote --side buy --amount <USDT_AMOUNT>)
+QUOTE_JSON=$(node swap.js quote --side buy --amount <USDT_AMOUNT>)
 echo "$QUOTE_JSON"
 ```
 
@@ -327,7 +327,7 @@ Follow [references/buy.md](references/buy.md):
 ```bash
 source ~/.aurehub/.env
 cd "$SCRIPTS_DIR"
-ALLOWANCE_JSON=$(node market/swap.js allowance --token USDT)
+ALLOWANCE_JSON=$(node swap.js allowance --token USDT)
 echo "$ALLOWANCE_JSON"
 ```
 
@@ -342,7 +342,7 @@ USDT requires reset-to-zero before approving (non-standard). The swap.js approve
 ```bash
 source ~/.aurehub/.env
 cd "$SCRIPTS_DIR"
-APPROVE_JSON=$(node market/swap.js approve --token USDT --amount <AMOUNT>)
+APPROVE_JSON=$(node swap.js approve --token USDT --amount <AMOUNT>)
 echo "$APPROVE_JSON"
 ```
 
@@ -353,7 +353,7 @@ Output: `{ "txHash": "0x...", ... }`
 ```bash
 source ~/.aurehub/.env
 cd "$SCRIPTS_DIR"
-SWAP_JSON=$(node market/swap.js swap --side buy --amount <USDT_AMOUNT> --min-out <MIN_XAUT>)
+SWAP_JSON=$(node swap.js swap --side buy --amount <USDT_AMOUNT> --min-out <MIN_XAUT>)
 echo "$SWAP_JSON"
 ```
 
@@ -368,7 +368,7 @@ Output: `{ "txHash": "0x...", "status": "success", "gasUsed": "..." }`
 ```bash
 source ~/.aurehub/.env
 cd "$SCRIPTS_DIR"
-node market/swap.js balance
+node swap.js balance
 ```
 
 Return:
@@ -383,7 +383,7 @@ Return:
 ```bash
 source ~/.aurehub/.env
 cd "$SCRIPTS_DIR"
-BALANCE_JSON=$(node market/swap.js balance)
+BALANCE_JSON=$(node swap.js balance)
 echo "$BALANCE_JSON"
 ```
 
@@ -401,7 +401,7 @@ Follow [references/sell.md](references/sell.md):
 ```bash
 source ~/.aurehub/.env
 cd "$SCRIPTS_DIR"
-QUOTE_JSON=$(node market/swap.js quote --side sell --amount <XAUT_AMOUNT>)
+QUOTE_JSON=$(node swap.js quote --side sell --amount <XAUT_AMOUNT>)
 echo "$QUOTE_JSON"
 ```
 
@@ -426,7 +426,7 @@ Follow [references/sell.md](references/sell.md):
 ```bash
 source ~/.aurehub/.env
 cd "$SCRIPTS_DIR"
-ALLOWANCE_JSON=$(node market/swap.js allowance --token XAUT)
+ALLOWANCE_JSON=$(node swap.js allowance --token XAUT)
 echo "$ALLOWANCE_JSON"
 ```
 
@@ -439,7 +439,7 @@ XAUT is standard ERC-20 -- **no prior reset needed**, approve directly:
 ```bash
 source ~/.aurehub/.env
 cd "$SCRIPTS_DIR"
-APPROVE_JSON=$(node market/swap.js approve --token XAUT --amount <AMOUNT>)
+APPROVE_JSON=$(node swap.js approve --token XAUT --amount <AMOUNT>)
 echo "$APPROVE_JSON"
 ```
 
@@ -450,7 +450,7 @@ Output: `{ "txHash": "0x...", ... }`
 ```bash
 source ~/.aurehub/.env
 cd "$SCRIPTS_DIR"
-SWAP_JSON=$(node market/swap.js swap --side sell --amount <XAUT_AMOUNT> --min-out <MIN_USDT>)
+SWAP_JSON=$(node swap.js swap --side sell --amount <XAUT_AMOUNT> --min-out <MIN_USDT>)
 echo "$SWAP_JSON"
 ```
 
@@ -465,7 +465,7 @@ Output: `{ "txHash": "0x...", "status": "success", "gasUsed": "..." }`
 ```bash
 source ~/.aurehub/.env
 cd "$SCRIPTS_DIR"
-node market/swap.js balance
+node swap.js balance
 ```
 
 Return:
@@ -481,7 +481,7 @@ After **any** on-chain trade completes successfully (buy swap, sell swap, or lim
 2. Derive WALLET_ADDRESS:
    ```bash
    cd "$SCRIPTS_DIR"
-   WALLET_ADDRESS=$(node market/swap.js address | python3 -c "import sys,json; print(json.load(sys.stdin)['address'])")
+   WALLET_ADDRESS=$(node swap.js address | python3 -c "import sys,json; print(json.load(sys.stdin)['address'])")
    ```
 3. `REGISTERED=$(cat ~/.aurehub/.registered 2>/dev/null)`
 4. If `"$REGISTERED"` starts with `"$WALLET_ADDRESS:"` -> already registered, silent skip
@@ -535,7 +535,7 @@ Output must include:
 - `Quote`: estimated XAUT amount, slippage setting, `minAmountOut`
 - `Reference rate`: `1 XAUT ~ X USDT` (for comparison with spot price; shown for both buy and sell)
 - `Risk warnings`: large trade / slippage / gas
-- `Command`: the `node market/swap.js` command to be executed
+- `Command`: the `node swap.js` command to be executed
 - `Result`: tx hash, post-trade balance (after execution)
 
 ## Error Handling

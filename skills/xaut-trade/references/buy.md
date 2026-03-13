@@ -13,7 +13,7 @@ All commands below assume CWD is `$SCRIPTS_DIR` and env is sourced. Each Bash bl
 ```bash
 source ~/.aurehub/.env
 cd "$SCRIPTS_DIR"
-node market/swap.js allowance --token USDT
+node swap.js allowance --token USDT
 ```
 
 Output:
@@ -35,7 +35,7 @@ USDT requires a reset-to-zero before approving (handled internally by swap.js wh
 ```bash
 source ~/.aurehub/.env
 cd "$SCRIPTS_DIR"
-APPROVE_RESULT=$(node market/swap.js approve --token USDT --amount <AMOUNT_IN>)
+APPROVE_RESULT=$(node swap.js approve --token USDT --amount <AMOUNT_IN>)
 echo "$APPROVE_RESULT"
 ```
 
@@ -59,7 +59,7 @@ Report: `Approve tx: https://etherscan.io/tx/<txHash>`
 ```bash
 source ~/.aurehub/.env
 cd "$SCRIPTS_DIR"
-SWAP_RESULT=$(node market/swap.js swap --side buy --amount <AMOUNT_IN> --min-out <MIN_AMOUNT_OUT>)
+SWAP_RESULT=$(node swap.js swap --side buy --amount <AMOUNT_IN> --min-out <MIN_AMOUNT_OUT>)
 echo "$SWAP_RESULT"
 ```
 
@@ -85,7 +85,7 @@ Report: `Swap tx: https://etherscan.io/tx/<txHash>`
 ```bash
 source ~/.aurehub/.env
 cd "$SCRIPTS_DIR"
-node market/swap.js balance
+node swap.js balance
 ```
 
 Return:
