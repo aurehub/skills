@@ -27,8 +27,11 @@ Do not commit secrets or wallet credentials. If a skill needs local configuratio
 
 ## Wallet Signing Policy (Repo-wide)
 - Runtime signing with `PRIVATE_KEY` is forbidden in all skills.
-- Runtime signing must use Foundry keystore only: `FOUNDRY_ACCOUNT` + `KEYSTORE_PASSWORD_FILE`.
-- `PRIVATE_KEY` may be used only as one-time onboarding input for `cast wallet import --interactive`, never as runtime signing configuration.
-- Wallet initialization flows must stay within two methods:
-  - Import existing private key into keystore (interactive)
-  - Create new wallet directly into keystore
+- Runtime signing must use one of the approved wallet backends:
+  - Foundry keystore: `FOUNDRY_ACCOUNT` + `KEYSTORE_PASSWORD_FILE`
+  - WDK encrypted vault: `WDK_PASSWORD_FILE` (+ `WDK_VAULT_FILE` when explicitly configured)
+- `PRIVATE_KEY` may be used only as one-time onboarding input for keystore import (e.g. `cast wallet import --interactive`), never as runtime signing configuration.
+- Wallet initialization flows must stay within approved methods:
+  - Import existing private key into Foundry keystore (interactive)
+  - Create new wallet directly into Foundry keystore
+  - Create new encrypted WDK vault wallet
