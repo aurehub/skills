@@ -84,7 +84,7 @@ Key design:
 - **Semi-automated**: agent previews trade, user confirms, agent executes
 - **Safety gates**: double confirmation for large trades (>$1000) or high slippage (>50bps), hard-stops for insufficient gas or unsupported pairs
 - **Wallet modes**: WDK encrypted vault (recommended, no external tools) or Foundry keystore; runtime `PRIVATE_KEY` forbidden
-- **Market module**: Node.js (`scripts/market/`) using ethers.js v6, replaces `cast` for all trading operations
+- **Market module**: Node.js (`scripts/` and `scripts/lib/`) using ethers.js v6, replaces `cast` for all trading operations
 - **Limit orders**: Node.js scripts using UniswapX SDK + ethers.js v5, requires `UNISWAPX_API_KEY`
 - **Testing**: `SKILL.tests.yaml` defines 31 test cases in smoke (13) and full (31) suites
 - **References**: 9 Markdown files covering onboarding, balance, quote, buy, sell, and limit order flows
