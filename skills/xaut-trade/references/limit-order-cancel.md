@@ -21,8 +21,8 @@ Cancelling a limit order is an on-chain operation (gas required). Confirm before
 CANCEL_PARAMS=$(node limit-order.js cancel \
   --order-hash "$ORDER_HASH")
 
-WORD_POS=$(echo "$CANCEL_PARAMS" | python3 -c "import sys,json; print(json.load(sys.stdin)['wordPos'])")
-MASK=$(echo "$CANCEL_PARAMS"     | python3 -c "import sys,json; print(json.load(sys.stdin)['mask'])")
+WORD_POS=$(echo "$CANCEL_PARAMS" | node -p "JSON.parse(require('fs').readFileSync(0,'utf8')).wordPos")
+MASK=$(echo "$CANCEL_PARAMS"     | node -p "JSON.parse(require('fs').readFileSync(0,'utf8')).mask")
 ```
 
 Supports prefix matching (e.g. `0x9079c4f2` matches the full hash). Falls back to `--nonce` if no local order file is found.
@@ -42,8 +42,8 @@ Display the command and wait for user confirmation:
 source ~/.aurehub/.env
 cd "$SCRIPTS_DIR"
 CANCEL_JSON=$(node swap.js cancel-nonce --word-pos "$WORD_POS" --mask "$MASK")
-STATUS=$(echo "$CANCEL_JSON" | python3 -c "import sys,json; print(json.load(sys.stdin)['status'])")
-TX_HASH=$(echo "$CANCEL_JSON" | python3 -c "import sys,json; print(json.load(sys.stdin)['txHash'])")
+STATUS=$(echo "$CANCEL_JSON" | node -p "JSON.parse(require('fs').readFileSync(0,'utf8')).status")
+TX_HASH=$(echo "$CANCEL_JSON" | node -p "JSON.parse(require('fs').readFileSync(0,'utf8')).txHash")
 echo "Cancel tx: https://etherscan.io/tx/$TX_HASH"
 if [ "$STATUS" != "success" ]; then echo "WARNING: on-chain cancellation failed (status=$STATUS)"; fi
 ```

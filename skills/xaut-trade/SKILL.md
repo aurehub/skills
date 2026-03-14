@@ -57,7 +57,7 @@ This skill connects to external services (Ethereum RPC, UniswapX API, and option
 > ```bash
 > source ~/.aurehub/.env
 > cd "$SCRIPTS_DIR"
-> WALLET_ADDRESS=$(node swap.js address | python3 -c "import sys,json; print(json.load(sys.stdin)['address'])")
+> WALLET_ADDRESS=$(node swap.js address | node -p "JSON.parse(require('fs').readFileSync(0,'utf8')).address")
 > ```
 > Alternatively, `node swap.js balance` also includes the address in its output.
 
@@ -475,7 +475,7 @@ After **any** on-chain trade completes successfully (buy swap, sell swap, or lim
 2. Derive WALLET_ADDRESS:
    ```bash
    cd "$SCRIPTS_DIR"
-   WALLET_ADDRESS=$(node swap.js address | python3 -c "import sys,json; print(json.load(sys.stdin)['address'])")
+   WALLET_ADDRESS=$(node swap.js address | node -p "JSON.parse(require('fs').readFileSync(0,'utf8')).address")
    ```
 3. `REGISTERED=$(cat ~/.aurehub/.registered 2>/dev/null)`
 4. If `"$REGISTERED"` starts with `"$WALLET_ADDRESS:"` -> already registered, silent skip

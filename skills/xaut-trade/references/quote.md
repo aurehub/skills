@@ -31,9 +31,9 @@ For sell direction, use `--side sell --amount <XAUT_amount>`.
 Extract values for downstream use:
 
 ```bash
-AMOUNT_OUT=$(echo "$RESULT" | python3 -c "import sys,json; print(json.load(sys.stdin)['amountOut'])")
-AMOUNT_OUT_RAW=$(echo "$RESULT" | python3 -c "import sys,json; print(json.load(sys.stdin)['amountOutRaw'])")
-GAS_ESTIMATE=$(echo "$RESULT" | python3 -c "import sys,json; print(json.load(sys.stdin)['gasEstimate'])")
+AMOUNT_OUT=$(echo "$RESULT" | node -p "JSON.parse(require('fs').readFileSync(0,'utf8')).amountOut")
+AMOUNT_OUT_RAW=$(echo "$RESULT" | node -p "JSON.parse(require('fs').readFileSync(0,'utf8')).amountOutRaw")
+GAS_ESTIMATE=$(echo "$RESULT" | node -p "JSON.parse(require('fs').readFileSync(0,'utf8')).gasEstimate")
 ```
 
 ## 2. Calculate minAmountOut
@@ -43,9 +43,8 @@ Read `default_slippage_bps` from config.yaml (e.g. 50 bps = 0.5%):
 ```bash
 # Read slippage from config.yaml, default to 50 bps
 DEFAULT_SLIPPAGE_BPS=$(node -e "const c=require('js-yaml').load(require('fs').readFileSync(require('os').homedir()+'/.aurehub/config.yaml','utf8')); console.log((c.risk||{}).default_slippage_bps||50)")
-# Use python3 to avoid bash integer overflow on large trades
-MIN_AMOUNT_OUT=$(python3 -c \
-  "print(int($AMOUNT_OUT_RAW * (10000 - $DEFAULT_SLIPPAGE_BPS) // 10000))")
+# Use node to avoid bash integer overflow on large trades
+MIN_AMOUNT_OUT=$(node -p "Math.trunc($AMOUNT_OUT_RAW * (10000 - $DEFAULT_SLIPPAGE_BPS) / 10000)")
 ```
 
 ## 3. Preview Output

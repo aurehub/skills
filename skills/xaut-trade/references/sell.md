@@ -41,16 +41,15 @@ Output:
 Extract values:
 
 ```bash
-AMOUNT_OUT=$(echo "$RESULT" | python3 -c "import sys,json; print(json.load(sys.stdin)['amountOut'])")
-AMOUNT_OUT_RAW=$(echo "$RESULT" | python3 -c "import sys,json; print(json.load(sys.stdin)['amountOutRaw'])")
+AMOUNT_OUT=$(echo "$RESULT" | node -p "JSON.parse(require('fs').readFileSync(0,'utf8')).amountOut")
+AMOUNT_OUT_RAW=$(echo "$RESULT" | node -p "JSON.parse(require('fs').readFileSync(0,'utf8')).amountOutRaw")
 ```
 
 Calculate `minAmountOut` using `risk.default_slippage_bps` from config.yaml:
 
 ```bash
 DEFAULT_SLIPPAGE_BPS=$(node -e "const c=require('js-yaml').load(require('fs').readFileSync(require('os').homedir()+'/.aurehub/config.yaml','utf8')); console.log((c.risk||{}).default_slippage_bps||50)")
-MIN_AMOUNT_OUT=$(python3 -c \
-  "print(int($AMOUNT_OUT_RAW * (10000 - $DEFAULT_SLIPPAGE_BPS) // 10000))")
+MIN_AMOUNT_OUT=$(node -p "Math.trunc($AMOUNT_OUT_RAW * (10000 - $DEFAULT_SLIPPAGE_BPS) / 10000)")
 ```
 
 Reference rate (for Preview display; both tokens have 6 decimals so divide directly):

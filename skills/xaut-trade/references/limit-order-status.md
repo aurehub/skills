@@ -15,13 +15,13 @@ cd "$SCRIPTS_DIR"
 RESULT=$(node limit-order.js status \
   --order-hash "$ORDER_HASH")
 
-STATUS=$(echo "$RESULT" | python3 -c "import sys,json; print(json.load(sys.stdin)['status'])")
+STATUS=$(echo "$RESULT" | node -p "JSON.parse(require('fs').readFileSync(0,'utf8')).status")
 ```
 
 ## 2. List All Open Orders (by wallet address)
 
 ```bash
-WALLET_ADDRESS=$(node swap.js address | python3 -c "import sys,json; print(json.load(sys.stdin)['address'])")
+WALLET_ADDRESS=$(node swap.js address | node -p "JSON.parse(require('fs').readFileSync(0,'utf8')).address")
 RESULT=$(node limit-order.js list \
   --wallet       "$WALLET_ADDRESS" \
   --order-status open)   # Optional: open / filled / expired / cancelled — omit to return all

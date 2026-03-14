@@ -60,7 +60,7 @@ If `PRIVATE_KEY` exists in `.env`, hard-stop immediately:
 ```bash
 source ~/.aurehub/.env
 cd "$SCRIPTS_DIR"
-WALLET_ADDRESS=$(node swap.js address | python3 -c "import sys,json; print(json.load(sys.stdin)['address'])")
+WALLET_ADDRESS=$(node swap.js address | node -p "JSON.parse(require('fs').readFileSync(0,'utf8')).address")
 echo "$WALLET_ADDRESS"
 ```
 

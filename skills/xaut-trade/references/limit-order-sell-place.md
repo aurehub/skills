@@ -64,7 +64,7 @@ source ~/.aurehub/.env
 cd "$SCRIPTS_DIR"
 XAUT=$(node -e "const c=require('js-yaml').load(require('fs').readFileSync(require('os').homedir()+'/.aurehub/config.yaml','utf8')); console.log(c.tokens.XAUT.address)")
 USDT=$(node -e "const c=require('js-yaml').load(require('fs').readFileSync(require('os').homedir()+'/.aurehub/config.yaml','utf8')); console.log(c.tokens.USDT.address)")
-WALLET_ADDRESS=$(node swap.js address | python3 -c "import sys,json; print(json.load(sys.stdin)['address'])")
+WALLET_ADDRESS=$(node swap.js address | node -p "JSON.parse(require('fs').readFileSync(0,'utf8')).address")
 # Convert human-readable amounts to raw integers (6 decimals): raw = human_amount * 1000000
 # AMOUNT_IN: user's XAUT sell amount; MIN_AMOUNT_OUT: minimum USDT to receive (from limit price)
 AMOUNT_IN=$(node -e "console.log(Math.trunc(parseFloat('<XAUT_AMOUNT>') * 1e6))")
@@ -85,9 +85,9 @@ RESULT=$(node limit-order.js place \
 Parse result:
 
 ```bash
-ORDER_HASH=$(echo "$RESULT" | python3 -c "import sys,json; print(json.load(sys.stdin)['orderHash'])")
-DEADLINE=$(echo "$RESULT"   | python3 -c "import sys,json; print(json.load(sys.stdin)['deadline'])")
-NONCE=$(echo "$RESULT"      | python3 -c "import sys,json; print(json.load(sys.stdin)['nonce'])")
+ORDER_HASH=$(echo "$RESULT" | node -p "JSON.parse(require('fs').readFileSync(0,'utf8')).orderHash")
+DEADLINE=$(echo "$RESULT"   | node -p "JSON.parse(require('fs').readFileSync(0,'utf8')).deadline")
+NONCE=$(echo "$RESULT"      | node -p "JSON.parse(require('fs').readFileSync(0,'utf8')).nonce")
 ```
 
 ## 6. Output
