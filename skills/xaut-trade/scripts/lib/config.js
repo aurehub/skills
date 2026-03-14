@@ -105,8 +105,8 @@ export function resolveToken(config, symbol) {
   if (typeof token.decimals !== 'number' || !Number.isInteger(token.decimals) || token.decimals < 0 || token.decimals > 18) {
     throw new Error(`Token ${symbol} has invalid decimals: ${token.decimals}`);
   }
-  // Normalize to EIP-55 checksum to tolerate old config files with lowercase addresses.
-  return { address: getAddress(token.address), decimals: token.decimals };
+  // Normalize to EIP-55 checksum to tolerate old config files with non-standard casing.
+  return { address: getAddress(token.address.toLowerCase()), decimals: token.decimals };
 }
 
 export function validateContracts(config) {
@@ -115,9 +115,9 @@ export function validateContracts(config) {
     if (contracts[name] && contracts[name].toLowerCase() !== canonical.toLowerCase()) {
       throw new Error(`Contract ${name} address mismatch: config has ${contracts[name]}, expected ${canonical}. Check config.yaml for tampering.`);
     }
-    // Normalize to EIP-55 checksum to tolerate old config files with lowercase addresses.
+    // Normalize to EIP-55 checksum to tolerate old config files with non-standard casing.
     if (contracts[name]) {
-      contracts[name] = getAddress(contracts[name]);
+      contracts[name] = getAddress(contracts[name].toLowerCase());
     }
   }
 }
