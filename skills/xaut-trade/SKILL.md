@@ -172,15 +172,13 @@ All `node swap.js` commands assume CWD is `$SCRIPTS_DIR`.
 - When the network or pair is unsupported, hard-stop
 - When the pair is not in the whitelist (currently: USDT_XAUT / XAUT_USDT), hard-stop and reply "Only USDT/XAUT pairs are supported; [user's token] is not supported"
 
-## RPC Fallback
+## RPC Error Handling
 
-After sourcing `~/.aurehub/.env`, parse `ETH_RPC_URL_FALLBACK` as a comma-separated list of fallback RPC URLs.
+All RPC operations use the single `ETH_RPC_URL` endpoint from `~/.aurehub/.env`. There is no automatic RPC fallback.
 
-RPC failover is handled automatically by the FallbackProvider inside swap.js for **read operations** (balance, quote, allowance). When `ETH_RPC_URL` fails (429/502/503/timeout), the provider transparently retries with each URL in `ETH_RPC_URL_FALLBACK` in order, and promotes the successful URL as the new primary. **Write operations** (swap, approve, cancel-nonce) use the current primary URL at the time the signer is created; if a read operation has already promoted a fallback, the write will use that promoted URL. No agent action is needed for RPC switching.
-
-If all RPCs fail, swap.js will exit with an error containing network-related messages. In that case, hard-stop with:
-> RPC unavailable. All configured nodes failed (primary + fallbacks).
-> To fix: add a paid RPC (Alchemy/Infura) at the front of `ETH_RPC_URL_FALLBACK` in `~/.aurehub/.env`
+If any `swap.js` command fails with a network-related error (timeout, connection refused, 429/502/503), hard-stop with:
+> RPC unavailable. Check your `ETH_RPC_URL` in `~/.aurehub/.env`.
+> A paid RPC (Alchemy/Infura) is recommended for reliability.
 
 Do NOT treat non-network errors (insufficient balance, contract revert, invalid parameters, nonce mismatch) as RPC failures. Report these directly to the user.
 
