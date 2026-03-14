@@ -31,12 +31,12 @@ pairs:
     enabled: true
     token_in: "USDT"
     token_out: "XAUT"
-    fee_tier: 500
+    fee_tier: 3000
   - key: "XAUT_USDT"
     enabled: true
     token_in: "XAUT"
     token_out: "USDT"
-    fee_tier: 500
+    fee_tier: 3000
 
 token_rules:
   USDT:
