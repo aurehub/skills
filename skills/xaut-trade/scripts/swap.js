@@ -15,12 +15,17 @@
 
 import { fileURLToPath } from 'node:url';
 import { readFileSync } from 'node:fs';
-import { formatUnits, Interface } from 'ethers6';
+import { formatUnits, Interface, JsonRpcProvider } from 'ethers6';
 import { loadConfig, resolveToken, validateContracts } from './lib/config.js';
-import { createProvider } from './lib/provider.js';
 import { createSigner } from './lib/signer.js';
 import { getBalance, getAllowance, approve } from './lib/erc20.js';
 import { quote, buildSwap } from './lib/uniswap.js';
+
+function createProvider(env) {
+  const url = env?.ETH_RPC_URL;
+  if (!url) throw new Error('ETH_RPC_URL is required in env to create a provider');
+  return new JsonRpcProvider(url);
+}
 
 // ---------------------------------------------------------------------------
 // Constants
@@ -110,12 +115,12 @@ export function parseCliArgs(argv) {
 // ---------------------------------------------------------------------------
 
 async function runAddress(cfg, provider) {
-  const signer = await createSigner(cfg, provider ? provider.getEthersProvider() : null);
+  const signer = await createSigner(cfg, provider);
   console.log(JSON.stringify({ address: signer.address }, null, 2));
 }
 
 async function runBalance(cfg, provider) {
-  const signer = await createSigner(cfg, provider ? provider.getEthersProvider() : null);
+  const signer = await createSigner(cfg, provider);
   const address = signer.address;
 
   const tokens = cfg.yaml?.tokens ?? {};
@@ -128,9 +133,7 @@ async function runBalance(cfg, provider) {
     provider.getBalance(address),
   ]);
 
-  // ethBalanceRaw is a hex string from the raw JSON-RPC; convert to ETH string
-  const ethBig = BigInt(ethBalanceRaw);
-  const ethBalance = formatUnits(ethBig, 18);
+  const ethBalance = formatUnits(ethBalanceRaw, 18);
 
   console.log(JSON.stringify({ address, ETH: ethBalance, USDT: usdtBalance, XAUT: xautBalance }, null, 2));
 }
@@ -138,7 +141,7 @@ async function runBalance(cfg, provider) {
 async function runAllowance(cfg, provider, args) {
   if (!args.token) throw new Error('--token is required for allowance');
 
-  const signer = await createSigner(cfg, provider ? provider.getEthersProvider() : null);
+  const signer = await createSigner(cfg, provider);
   const address = signer.address;
 
   const token = resolveToken(cfg, args.token);
@@ -188,7 +191,7 @@ async function runApprove(cfg, provider, args) {
   if (!args.token) throw new Error('--token is required for approve');
   if (!args.amount) throw new Error('--amount is required for approve');
 
-  const signer = await createSigner(cfg, provider ? provider.getEthersProvider() : null);
+  const signer = await createSigner(cfg, provider);
   const token = resolveToken(cfg, args.token);
   const contracts = cfg.yaml?.contracts ?? {};
   const spender = args.spender || contracts.router;
@@ -203,7 +206,7 @@ async function runApprove(cfg, provider, args) {
     if (parseFloat(currentAllowance) === 0) requiresResetApprove = false;
   }
 
-  const result = await approve(token, spender, args.amount, signer, { requiresResetApprove, fallbackProvider: provider });
+  const result = await approve(token, spender, args.amount, signer, { requiresResetApprove });
 
   console.log(JSON.stringify({ address: signer.address, token: args.token, amount: args.amount, spender, txHash: result.hash }, null, 2));
 }
@@ -215,7 +218,7 @@ async function runSwap(cfg, provider, args) {
   if (!args.minOut || Number.isNaN(Number(args.minOut)) || Number(args.minOut) <= 0) throw new Error('--min-out must be a positive number greater than 0');
   if (args.side !== 'buy' && args.side !== 'sell') throw new Error('--side must be "buy" or "sell"');
 
-  const signer = await createSigner(cfg, provider ? provider.getEthersProvider() : null);
+  const signer = await createSigner(cfg, provider);
   const address = signer.address;
 
   const isBuy = args.side === 'buy';
@@ -245,10 +248,7 @@ async function runSwap(cfg, provider, args) {
   // Send transaction — if this throws, the tx was never broadcast (safe to retry)
   const sentTx = await signer.sendTransaction(tx);
 
-  // Use fallback-aware receipt wait when available (RPC resilience)
-  const waitFn = provider?.waitForTransaction
-    ? provider.waitForTransaction(sentTx.hash, 1, timeoutMs)
-    : sentTx.wait();
+  const waitFn = sentTx.wait();
 
   // Wait for confirmation — if this throws, the tx WAS broadcast but confirmation
   // failed (RPC error, timeout). Output txHash so caller can verify before retrying.
@@ -331,7 +331,7 @@ async function runCancelNonce(cfg, provider, args) {
   if (wordPosBig < 0n || wordPosBig >= (1n << 248n)) throw new Error(`--word-pos out of range: ${args.wordPos}`);
   if (maskBig <= 0n || maskBig >= (1n << 256n)) throw new Error(`--mask out of range: ${args.mask}`);
 
-  const signer = await createSigner(cfg, provider ? provider.getEthersProvider() : null);
+  const signer = await createSigner(cfg, provider);
 
   const permit2 = '0x000000000022D473030F116dDEE9F6B43aC78BA3';
   const iface = new Interface(['function invalidateUnorderedNonces(uint256 wordPos, uint256 mask)']);
