@@ -42,8 +42,9 @@ function loadDefaults() {
     return {
       apiUrl: cfg.limit_order?.uniswapx_api || null,
       chainId: String(cfg.networks?.ethereum_mainnet?.chain_id || '1'),
+      limitOrderCfg: cfg.limit_order ?? {},
     };
-  } catch { return { apiUrl: null, chainId: '1' }; }
+  } catch { return { apiUrl: null, chainId: '1', limitOrderCfg: {} }; }
 }
 
 function parseArgs(args) {
@@ -65,6 +66,7 @@ async function main() {
   const defaults = loadDefaults();
   if (!args.apiUrl && defaults.apiUrl) args.apiUrl = defaults.apiUrl;
   if (!args.chainId && defaults.chainId) args.chainId = defaults.chainId;
+  args._limitOrderCfg = defaults.limitOrderCfg;
   switch (subcommand) {
     case 'place':  return await place(args);
     case 'status': return await status(args);
@@ -105,18 +107,25 @@ async function place(args) {
     console.error('ERROR: --chain-id must be a positive integer');
     process.exit(1);
   }
-  const expirySec = parseInt(expiry || '86400', 10);
-  if (Number.isNaN(expirySec) || expirySec <= 0) {
+  const limitOrderCfg = args._limitOrderCfg || {};
+  const expiryLimits = {
+    defaultSeconds: limitOrderCfg.default_expiry_seconds ?? 86400,
+    minSeconds: limitOrderCfg.min_expiry_seconds ?? 300,
+    maxSeconds: limitOrderCfg.max_expiry_seconds ?? 2592000,
+  };
+  const rawExpiry = expiry ? parseInt(expiry, 10) : null;
+  if (rawExpiry !== null && (Number.isNaN(rawExpiry) || rawExpiry <= 0)) {
     console.error('ERROR: --expiry must be a positive integer (seconds)');
     process.exit(1);
   }
+  const expirySec = resolveExpiry(rawExpiry, expiryLimits);
   const deadline = Math.floor(Date.now() / 1000) + expirySec;
 
   // 2. Validate amounts (invariant — does not depend on nonce)
   const amountInBN = BN.from(amountIn);
   const minAmountOutBN = BN.from(minAmountOut);
   if (minAmountOutBN.lte(BN.from(0))) {
-    console.error('ERROR: --min-amount-out must be greater than 0 (zero disables slippage protection)');
+    console.error('ERROR: --min-amount-out must be greater than 0');
     process.exit(1);
   }
 

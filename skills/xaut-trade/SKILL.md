@@ -176,7 +176,7 @@ All `node swap.js` commands assume CWD is `$SCRIPTS_DIR`.
 
 After sourcing `~/.aurehub/.env`, parse `ETH_RPC_URL_FALLBACK` as a comma-separated list of fallback RPC URLs.
 
-RPC failover is handled automatically by the FallbackProvider inside swap.js. When `ETH_RPC_URL` fails (429/502/503/timeout), the provider transparently retries with each URL in `ETH_RPC_URL_FALLBACK` in order. No agent action is needed for RPC switching.
+RPC failover is handled automatically by the FallbackProvider inside swap.js for **read operations** (balance, quote, allowance). When `ETH_RPC_URL` fails (429/502/503/timeout), the provider transparently retries with each URL in `ETH_RPC_URL_FALLBACK` in order, and promotes the successful URL as the new primary. **Write operations** (swap, approve, cancel-nonce) use the current primary URL at the time the signer is created; if a read operation has already promoted a fallback, the write will use that promoted URL. No agent action is needed for RPC switching.
 
 If all RPCs fail, swap.js will exit with an error containing network-related messages. In that case, hard-stop with:
 > RPC unavailable. All configured nodes failed (primary + fallbacks).

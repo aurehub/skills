@@ -208,7 +208,7 @@ async function runSwap(cfg, provider, args) {
   if (!args.side) throw new Error('--side is required for swap');
   if (!args.amount) throw new Error('--amount is required for swap');
   if (!args.minOut) throw new Error('--min-out is required for swap');
-  if (!args.minOut || Number.isNaN(Number(args.minOut)) || Number(args.minOut) <= 0) throw new Error('--min-out must be a positive number (zero disables slippage protection)');
+  if (!args.minOut || Number.isNaN(Number(args.minOut)) || Number(args.minOut) <= 0) throw new Error('--min-out must be a positive number greater than 0');
   if (args.side !== 'buy' && args.side !== 'sell') throw new Error('--side must be "buy" or "sell"');
 
   const signer = await createSigner(cfg, provider ? provider.getEthersProvider() : null);
@@ -336,6 +336,9 @@ async function runCancelNonce(cfg, provider, args) {
 // ---------------------------------------------------------------------------
 
 function _resolveFee(cfg, symbolIn, symbolOut) {
+  // Note: resolveToken() already restricts symbols to known tokens (USDT, XAUT),
+  // so this function is only called with whitelisted pairs. The default fallback
+  // exists as a safety net but should never be reached in normal operation.
   const pairs = cfg.yaml?.pairs ?? [];
   for (const pair of pairs) {
     if (!pair.enabled) continue;
