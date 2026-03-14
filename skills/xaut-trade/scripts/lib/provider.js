@@ -166,38 +166,33 @@ export class FallbackProvider {
 
   /**
    * Wait for a transaction receipt with fallback support.
-   * When the current provider's waitForTransaction fails with a retriable
-   * error, try each fallback URL's provider instead.
+   * Polls eth_getTransactionReceipt via _sendWithFallback every pollIntervalMs
+   * instead of relying on ethers' slow built-in waitForTransaction.
    *
    * @param {string} txHash
-   * @param {number} [confirmations=1]
+   * @param {number} [_confirmations=1]  unused, kept for API compat
    * @param {number} [timeoutMs=300000]
+   * @param {number} [pollIntervalMs=3000]
    * @returns {Promise<import('ethers6').TransactionReceipt|null>}
    */
-  async waitForTransaction(txHash, confirmations = 1, timeoutMs = 300000) {
-    const urls = [this._primaryUrl, ...this._fallbackUrls];
+  async waitForTransaction(txHash, _confirmations = 1, timeoutMs = 300000, pollIntervalMs = 3000) {
+    const deadline = Date.now() + timeoutMs;
 
-    for (let i = 0; i < urls.length; i++) {
-      try {
-        const provider = new JsonRpcProvider(urls[i]);
-        const receipt = await provider.waitForTransaction(txHash, confirmations, timeoutMs);
-        // Promote successful URL if it's a fallback
-        if (i > 0) {
-          const oldPrimary = this._primaryUrl;
-          this._primaryUrl = urls[i];
-          this._fallbackUrls = [
-            oldPrimary,
-            ...urls.slice(1, i),
-            ...urls.slice(i + 1),
-          ];
-          this._ethersProvider = new JsonRpcProvider(this._primaryUrl);
-        }
-        return receipt;
-      } catch (err) {
-        if (!isRetriable(err) && !/no response/i.test(err.message)) throw err;
-        if (i === urls.length - 1) throw err;
+    while (Date.now() < deadline) {
+      const raw = await this._sendWithFallback('eth_getTransactionReceipt', [txHash]);
+      if (raw) {
+        // Parse into a minimal receipt-like object with the fields callers need
+        return {
+          status: parseInt(raw.status, 16),
+          blockNumber: parseInt(raw.blockNumber, 16),
+          transactionHash: raw.transactionHash,
+          gasUsed: parseInt(raw.gasUsed, 16),
+        };
       }
+      await new Promise((r) => setTimeout(r, pollIntervalMs));
     }
+
+    return null;
   }
 }
 
