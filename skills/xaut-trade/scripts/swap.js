@@ -194,10 +194,14 @@ async function runApprove(cfg, provider, args) {
   const spender = args.spender || contracts.router;
   if (!spender) throw new Error('--spender or contracts.router must be set');
 
-  // Check token_rules for requiresResetApprove
+  // Check token_rules for requiresResetApprove; skip reset if allowance is already 0
   const tokenRules = cfg.yaml?.token_rules ?? {};
   const rules = tokenRules[args.token] ?? {};
-  const requiresResetApprove = rules.requires_reset_approve ?? false;
+  let requiresResetApprove = rules.requires_reset_approve ?? false;
+  if (requiresResetApprove && provider) {
+    const currentAllowance = await getAllowance(token, signer.address, spender, provider);
+    if (parseFloat(currentAllowance) === 0) requiresResetApprove = false;
+  }
 
   const result = await approve(token, spender, args.amount, signer, { requiresResetApprove, fallbackProvider: provider });
 
