@@ -322,11 +322,13 @@ async function runCancelNonce(cfg, provider, args) {
     process.exit(1);
   }
 
+  const failed = receipt.status !== 1;
   console.log(JSON.stringify({
     address: signer.address,
     txHash: tx.hash,
-    status: receipt.status === 1 ? 'success' : 'failed',
+    status: failed ? 'failed' : 'success',
   }, null, 2));
+  if (failed) process.exit(1);
 }
 
 // ---------------------------------------------------------------------------

@@ -21,6 +21,7 @@ STATUS=$(echo "$RESULT" | python3 -c "import sys,json; print(json.load(sys.stdin
 ## 2. List All Open Orders (by wallet address)
 
 ```bash
+WALLET_ADDRESS=$(node swap.js address | python3 -c "import sys,json; print(json.load(sys.stdin)['address'])")
 RESULT=$(node limit-order.js list \
   --wallet       "$WALLET_ADDRESS" \
   --order-status open)   # Optional: open / filled / expired / cancelled — omit to return all

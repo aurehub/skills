@@ -62,14 +62,17 @@ Resolve contract addresses and wallet before placing:
 ```bash
 source ~/.aurehub/.env
 cd "$SCRIPTS_DIR"
-XAUT=$(python3 -c "import yaml,os; c=yaml.safe_load(open(os.path.expanduser('~/.aurehub/config.yaml'))); print(c['tokens']['XAUT']['address'])")
-USDT=$(python3 -c "import yaml,os; c=yaml.safe_load(open(os.path.expanduser('~/.aurehub/config.yaml'))); print(c['tokens']['USDT']['address'])")
+XAUT=$(node -e "const c=require('js-yaml').load(require('fs').readFileSync(require('os').homedir()+'/.aurehub/config.yaml','utf8')); console.log(c.tokens.XAUT.address)")
+USDT=$(node -e "const c=require('js-yaml').load(require('fs').readFileSync(require('os').homedir()+'/.aurehub/config.yaml','utf8')); console.log(c.tokens.USDT.address)")
 WALLET_ADDRESS=$(node swap.js address | python3 -c "import sys,json; print(json.load(sys.stdin)['address'])")
+# Convert human-readable amounts to raw integers (6 decimals): raw = human_amount * 1000000
+# AMOUNT_IN: user's XAUT sell amount; MIN_AMOUNT_OUT: minimum USDT to receive (from limit price)
+AMOUNT_IN=$(node -e "console.log(Math.trunc(parseFloat('<XAUT_AMOUNT>') * 1e6))")
+MIN_AMOUNT_OUT=$(node -e "console.log(Math.trunc(parseFloat('<MIN_USDT_AMOUNT>') * 1e6))")
 ```
 
 ```bash
 # EXPIRY_SECONDS: use the user-specified expiry, or fall back to 86400 (1 day).
-# AMOUNT_IN and MIN_AMOUNT_OUT must be raw integers (smallest unit, 6 decimals).
 RESULT=$(node limit-order.js place \
   --token-in       "$XAUT" \
   --token-out      "$USDT" \
@@ -101,6 +104,7 @@ Return to user:
 |-------|--------|
 | `node` not found | Hard-stop, prompt to install Node.js >= 18 (required for all script commands) |
 | XAUT precision > 6 decimals | Script-level hard-stop (exit 1), report minimum precision of 0.000001 |
+| USDT minAmountOut precision > 6 decimals | Script-level hard-stop (exit 1), report maximum precision |
 | XAUT balance insufficient | Hard-stop, report shortfall |
 | Limit price deviates > 50% from current market | Warn + double confirmation (prevent price typos) |
 | UniswapX API returns 4xx | Hard-stop, note XAUT may not be in the supported list, suggest market order |

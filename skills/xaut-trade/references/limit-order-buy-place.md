@@ -62,14 +62,17 @@ Resolve contract addresses and wallet before placing:
 ```bash
 source ~/.aurehub/.env
 cd "$SCRIPTS_DIR"
-USDT=$(python3 -c "import yaml,os; c=yaml.safe_load(open(os.path.expanduser('~/.aurehub/config.yaml'))); print(c['tokens']['USDT']['address'])")
-XAUT=$(python3 -c "import yaml,os; c=yaml.safe_load(open(os.path.expanduser('~/.aurehub/config.yaml'))); print(c['tokens']['XAUT']['address'])")
+USDT=$(node -e "const c=require('js-yaml').load(require('fs').readFileSync(require('os').homedir()+'/.aurehub/config.yaml','utf8')); console.log(c.tokens.USDT.address)")
+XAUT=$(node -e "const c=require('js-yaml').load(require('fs').readFileSync(require('os').homedir()+'/.aurehub/config.yaml','utf8')); console.log(c.tokens.XAUT.address)")
 WALLET_ADDRESS=$(node swap.js address | python3 -c "import sys,json; print(json.load(sys.stdin)['address'])")
+# Convert human-readable amounts to raw integers (6 decimals): raw = human_amount * 1000000
+# AMOUNT_IN: user's USDT spend amount; MIN_AMOUNT_OUT: minimum XAUT to receive (from limit price)
+AMOUNT_IN=$(node -e "console.log(Math.trunc(parseFloat('<USDT_AMOUNT>') * 1e6))")
+MIN_AMOUNT_OUT=$(node -e "console.log(Math.trunc(parseFloat('<MIN_XAUT_AMOUNT>') * 1e6))")
 ```
 
 ```bash
 # EXPIRY_SECONDS: use the user-specified expiry, or fall back to 86400 (1 day).
-# AMOUNT_IN and MIN_AMOUNT_OUT must be raw integers (smallest unit, 6 decimals).
 RESULT=$(node limit-order.js place \
   --token-in       "$USDT" \
   --token-out      "$XAUT" \

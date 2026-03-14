@@ -48,7 +48,7 @@ AMOUNT_OUT_RAW=$(echo "$RESULT" | python3 -c "import sys,json; print(json.load(s
 Calculate `minAmountOut` using `risk.default_slippage_bps` from config.yaml:
 
 ```bash
-DEFAULT_SLIPPAGE_BPS=$(python3 -c "import yaml,os; c=yaml.safe_load(open(os.path.expanduser('~/.aurehub/config.yaml'))); print(c.get('risk',{}).get('default_slippage_bps', 50))")
+DEFAULT_SLIPPAGE_BPS=$(node -e "const c=require('js-yaml').load(require('fs').readFileSync(require('os').homedir()+'/.aurehub/config.yaml','utf8')); console.log((c.risk||{}).default_slippage_bps||50)")
 MIN_AMOUNT_OUT=$(python3 -c \
   "print(int($AMOUNT_OUT_RAW * (10000 - $DEFAULT_SLIPPAGE_BPS) // 10000))")
 ```
