@@ -170,10 +170,13 @@ async function main() {
   chmodSync(opts.vaultFile, 0o600);
 
   // 12. Derive wallet address: entropy → mnemonic → Wallet.fromPhrase
-  const mnemonic = bip39.entropyToMnemonic(entropy);
-  sodium.sodium_memzero(entropy);
-
-  const wallet = Wallet.fromPhrase(mnemonic);
+  let wallet;
+  try {
+    const mnemonic = bip39.entropyToMnemonic(entropy);
+    wallet = Wallet.fromPhrase(mnemonic);
+  } finally {
+    sodium.sodium_memzero(entropy);
+  }
 
   // 13. Output result as JSON to stdout
   process.stdout.write(JSON.stringify({ address: wallet.address, vaultFile: opts.vaultFile }) + '\n');

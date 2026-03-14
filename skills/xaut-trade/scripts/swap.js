@@ -236,18 +236,32 @@ async function runSwap(cfg, provider, args) {
     contracts,
   });
 
+  const timeoutMs = (risk.deadline_seconds ?? 300) * 1000;
   const sentTx = await signer.sendTransaction(tx);
-  const receipt = await sentTx.wait();
+  const receipt = await Promise.race([
+    sentTx.wait(),
+    new Promise((_, reject) =>
+      setTimeout(() => reject(new Error(
+        `Transaction not confirmed within ${timeoutMs / 1000}s (txHash: ${sentTx.hash}). It may still be pending — check on Etherscan.`
+      )), timeoutMs)
+    ),
+  ]);
 
-  console.log(JSON.stringify({
+  const failed = receipt.status !== 1;
+  const result = {
     address,
     side: args.side,
     amountIn: args.amount,
     minAmountOut: args.minOut,
     txHash: sentTx.hash,
-    status: receipt.status === 1 ? 'success' : 'failed',
+    status: failed ? 'failed' : 'success',
     gasUsed: receipt.gasUsed.toString(),
-  }, null, 2));
+  };
+  if (failed) {
+    result.warning = 'Swap failed. A token approval may still be active — revoke it if you do not intend to retry.';
+  }
+  console.log(JSON.stringify(result, null, 2));
+  if (failed) process.exit(1);
 }
 
 async function runSign(cfg, args) {

@@ -55,11 +55,20 @@ export async function getAllowance(token, owner, spender, provider) {
  */
 export async function approve(token, spender, amount, signer, opts = {}) {
   const rawAmount = parseUnits(amount, token.decimals);
+  const timeoutMs = (opts.timeoutSeconds ?? 300) * 1000;
+  const waitWithTimeout = (sentTx) => Promise.race([
+    sentTx.wait(),
+    new Promise((_, reject) =>
+      setTimeout(() => reject(new Error(
+        `Approve tx not confirmed within ${timeoutMs / 1000}s (txHash: ${sentTx.hash}). It may still be pending.`
+      )), timeoutMs)
+    ),
+  ]);
 
   if (opts.requiresResetApprove) {
     const resetData = iface.encodeFunctionData('approve', [spender, 0n]);
     const resetTx = await signer.sendTransaction({ to: token.address, data: resetData });
-    const resetReceipt = await resetTx.wait();
+    const resetReceipt = await waitWithTimeout(resetTx);
     if (resetReceipt.status !== 1) {
       throw new Error(`Allowance reset failed (txHash: ${resetTx.hash}). Approval not sent.`);
     }
@@ -67,7 +76,7 @@ export async function approve(token, spender, amount, signer, opts = {}) {
 
   const data = iface.encodeFunctionData('approve', [spender, rawAmount]);
   const tx = await signer.sendTransaction({ to: token.address, data });
-  await tx.wait();
+  await waitWithTimeout(tx);
 
   return { hash: tx.hash };
 }
