@@ -69,9 +69,8 @@ elif GIT_ROOT=$(git rev-parse --show-toplevel 2>/dev/null) && [ -d "$GIT_ROOT/sk
 else
   SCRIPTS_DIR=$(dirname "$(find "$HOME" -maxdepth 6 -type f -path "*/xaut-trade/scripts/setup.sh" 2>/dev/null | head -1)")
 fi
-cd "$SCRIPTS_DIR/market" && npm install
 cd "$SCRIPTS_DIR" && npm install
-node "$SCRIPTS_DIR/market/lib/create-wallet.js" --password-file ~/.aurehub/.wdk_password
+node "$SCRIPTS_DIR/lib/create-wallet.js" --password-file ~/.aurehub/.wdk_password
 ```
 
 **3. Create .env**
@@ -330,6 +329,7 @@ Anvil starts with 10 pre-funded accounts, each with 10,000 ETH. Default: `http:/
 
 ```bash
 # .env
+WALLET_MODE=foundry
 ETH_RPC_URL=http://127.0.0.1:8545
 FOUNDRY_ACCOUNT=aurehub-wallet
 KEYSTORE_PASSWORD_FILE=~/.aurehub/.wallet.password

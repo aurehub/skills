@@ -1,5 +1,12 @@
 # Limit Order Cancellation
 
+All commands below assume CWD is `$SCRIPTS_DIR` and env is sourced. Each Bash block must begin with:
+
+```bash
+source ~/.aurehub/.env
+cd "$SCRIPTS_DIR"
+```
+
 ## 0. Pre-confirmation
 
 Cancelling a limit order is an on-chain operation (gas required). Confirm before cancelling:

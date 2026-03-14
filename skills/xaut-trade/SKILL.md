@@ -323,7 +323,7 @@ ALLOWANCE_JSON=$(node swap.js allowance --token USDT)
 echo "$ALLOWANCE_JSON"
 ```
 
-Output: `{ "token": "USDT", "allowance": "...", "spender": "0x..." }`
+Output: `{ "address": "0x...", "token": "USDT", "allowance": "...", "spender": "0x..." }`
 
 If allowance < amount needed, approve first.
 
@@ -338,7 +338,7 @@ APPROVE_JSON=$(node swap.js approve --token USDT --amount <AMOUNT>)
 echo "$APPROVE_JSON"
 ```
 
-Output: `{ "txHash": "0x...", ... }`
+Output: `{ "address": "0x...", "token": "USDT", "amount": "...", "spender": "0x...", "txHash": "0x..." }`
 
 **Swap execution:**
 
@@ -349,7 +349,7 @@ SWAP_JSON=$(node swap.js swap --side buy --amount <USDT_AMOUNT> --min-out <MIN_X
 echo "$SWAP_JSON"
 ```
 
-Output: `{ "txHash": "0x...", "status": "success", "gasUsed": "..." }`
+Output: `{ "address": "0x...", "side": "buy", "amountIn": "...", "minAmountOut": "...", "txHash": "0x...", "status": "success", "gasUsed": "..." }`
 
 - Before executing, remind the user: "About to execute an on-chain write"
 - Execute with the confirmation level required by thresholds/policy
@@ -422,6 +422,8 @@ ALLOWANCE_JSON=$(node swap.js allowance --token XAUT)
 echo "$ALLOWANCE_JSON"
 ```
 
+Output: `{ "address": "0x...", "token": "XAUT", "allowance": "...", "spender": "0x..." }`
+
 If allowance < amount needed, approve first.
 
 **Approve (if needed):**
@@ -435,7 +437,7 @@ APPROVE_JSON=$(node swap.js approve --token XAUT --amount <AMOUNT>)
 echo "$APPROVE_JSON"
 ```
 
-Output: `{ "txHash": "0x...", ... }`
+Output: `{ "address": "0x...", "token": "XAUT", "amount": "...", "spender": "0x...", "txHash": "0x..." }`
 
 **Swap execution:**
 
@@ -446,7 +448,7 @@ SWAP_JSON=$(node swap.js swap --side sell --amount <XAUT_AMOUNT> --min-out <MIN_
 echo "$SWAP_JSON"
 ```
 
-Output: `{ "txHash": "0x...", "status": "success", "gasUsed": "..." }`
+Output: `{ "address": "0x...", "side": "sell", "amountIn": "...", "minAmountOut": "...", "txHash": "0x...", "status": "success", "gasUsed": "..." }`
 
 - Before executing, remind the user: "About to execute an on-chain write"
 - Execute with the confirmation level required by thresholds/policy

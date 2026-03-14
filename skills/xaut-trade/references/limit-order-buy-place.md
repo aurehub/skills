@@ -8,6 +8,13 @@
 
 ## 1. Pre-flight Checks
 
+All commands below assume CWD is `$SCRIPTS_DIR` and env is sourced. Each Bash block must begin with:
+
+```bash
+source ~/.aurehub/.env
+cd "$SCRIPTS_DIR"
+```
+
 ```bash
 node --version     # If not found, hard-stop and prompt to install https://nodejs.org (Node is required for all script commands)
 node swap.js balance   # ETH balance check + tokenIn (USDT) balance check
@@ -52,9 +59,7 @@ RESULT=$(node limit-order.js place \
   --amount-in      "$AMOUNT_IN" \
   --min-amount-out "$MIN_AMOUNT_OUT" \
   --expiry         "$EXPIRY_SECONDS" \
-  --wallet         "$WALLET_ADDRESS" \
-  --chain-id       1 \
-  --api-url        "$UNISWAPX_API")
+  --wallet         "$WALLET_ADDRESS")
 ```
 
 Parse result:

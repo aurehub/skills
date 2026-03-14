@@ -1,12 +1,17 @@
 # Limit Order Query
 
+All commands below assume CWD is `$SCRIPTS_DIR` and env is sourced. Each Bash block must begin with:
+
+```bash
+source ~/.aurehub/.env
+cd "$SCRIPTS_DIR"
+```
+
 ## 1. Query a Single Order (by orderHash)
 
 ```bash
 RESULT=$(node limit-order.js status \
-  --order-hash "$ORDER_HASH" \
-  --chain-id   1 \
-  --api-url    "$UNISWAPX_API")
+  --order-hash "$ORDER_HASH")
 
 STATUS=$(echo "$RESULT" | python3 -c "import sys,json; print(json.load(sys.stdin)['status'])")
 ```
@@ -16,8 +21,6 @@ STATUS=$(echo "$RESULT" | python3 -c "import sys,json; print(json.load(sys.stdin
 ```bash
 RESULT=$(node limit-order.js list \
   --wallet       "$WALLET_ADDRESS" \
-  --chain-id     1 \
-  --api-url      "$UNISWAPX_API" \
   --order-status open)   # Optional: open / filled / expired / cancelled — omit to return all
 ```
 

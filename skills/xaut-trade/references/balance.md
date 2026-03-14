@@ -26,7 +26,7 @@ If the command fails, stop and prompt:
 
 Check `WALLET_MODE` in `~/.aurehub/.env`:
 
-- **If `wallet_mode: wdk`**: verify `WDK_PASSWORD_FILE` is set and readable:
+- **If `WALLET_MODE=wdk`**: verify `WDK_PASSWORD_FILE` is set and readable:
   ```bash
   source ~/.aurehub/.env
   test -r "$WDK_PASSWORD_FILE" && echo "OK" || echo "FAIL"
@@ -35,7 +35,7 @@ Check `WALLET_MODE` in `~/.aurehub/.env`:
   > Password file not readable: `$WDK_PASSWORD_FILE`
   > Create it with: `bash -c 'read -rsp "WDK password: " p </dev/tty; echo; printf "%s" "$p" > ~/.aurehub/.wdk_password; chmod 600 ~/.aurehub/.wdk_password; echo "Saved."'`
 
-- **If `wallet_mode: foundry`**: verify `FOUNDRY_ACCOUNT` and `KEYSTORE_PASSWORD_FILE` are set:
+- **If `WALLET_MODE=foundry`**: verify `FOUNDRY_ACCOUNT` and `KEYSTORE_PASSWORD_FILE` are set:
   ```bash
   source ~/.aurehub/.env
   [ -n "$FOUNDRY_ACCOUNT" ] && [ -n "$KEYSTORE_PASSWORD_FILE" ] && echo "OK" || echo "FAIL"
