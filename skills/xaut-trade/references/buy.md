@@ -105,3 +105,4 @@ Return:
   - `>= risk.large_trade_usd` or estimated slippage exceeds `risk.max_slippage_bps_warn`: double confirmation
 - Approval confirmation follows `risk.approve_confirmation_mode` with force override:
   - If approve amount `> risk.approve_force_confirm_multiple * AMOUNT_IN`, require explicit approval confirmation
+- Accepted confirmation phrases: "confirm approve", "confirm swap"
