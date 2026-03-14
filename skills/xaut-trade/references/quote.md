@@ -1,44 +1,57 @@
 # Quote & Slippage Protection
 
-## 1. Fetch Quote (QuoterV2)
+All commands below assume CWD is `$SCRIPTS_DIR` and env is sourced.
 
-Example: 100 USDT (6 decimals)
+## 1. Fetch Quote
+
+Example: buy with 100 USDT
 
 ```bash
-AMOUNT_IN=100000000
-QUOTE_RAW=$(cast call "$QUOTER" \
-  "quoteExactInputSingle((address,address,uint256,uint24,uint160))" \
-  "($USDT,$XAUT,$AMOUNT_IN,$FEE,0)" \
-  --rpc-url "$ETH_RPC_URL")
+source ~/.aurehub/.env
+cd "$SCRIPTS_DIR"
+RESULT=$(node swap.js quote --side buy --amount 100)
+echo "$RESULT"
 ```
 
-Parse the return value (QuoterV2 returns a tuple: amountOut, sqrtPriceX96After, initializedTicksCrossed, gasEstimate):
+Output is JSON:
+
+```json
+{
+  "side": "buy",
+  "amountIn": "100",
+  "amountOut": "0.033",
+  "amountOutRaw": "33000",
+  "sqrtPriceX96": "...",
+  "gasEstimate": "150000"
+}
+```
+
+For sell direction, use `--side sell --amount <XAUT_amount>`.
+
+Extract values for downstream use:
 
 ```bash
-# Use cast abi-decode to parse — avoids fragile manual hex slicing
-AMOUNT_OUT=$(cast abi-decode \
-  "f()(uint256,uint160,uint32,uint256)" \
-  "$QUOTE_RAW" | head -1)
-
-# XAUT has 6 decimals: human-readable = AMOUNT_OUT / 1_000_000
-# USDT also has 6 decimals; sell direction works the same way
+AMOUNT_OUT=$(echo "$RESULT" | node -p "JSON.parse(require('fs').readFileSync(0,'utf8')).amountOut")
+AMOUNT_OUT_RAW=$(echo "$RESULT" | node -p "JSON.parse(require('fs').readFileSync(0,'utf8')).amountOutRaw")
+GAS_ESTIMATE=$(echo "$RESULT" | node -p "JSON.parse(require('fs').readFileSync(0,'utf8')).gasEstimate")
 ```
 
 ## 2. Calculate minAmountOut
 
-Default slippage `default_slippage_bps` (e.g. 50 bps = 0.5%):
+Read `default_slippage_bps` from config.yaml (e.g. 50 bps = 0.5%):
 
 ```bash
-# Use python3 to avoid bash integer overflow on large trades
-MIN_AMOUNT_OUT=$(python3 -c \
-  "print(int($AMOUNT_OUT * (10000 - $DEFAULT_SLIPPAGE_BPS) // 10000))")
+# Read slippage from config.yaml, default to 50 bps
+DEFAULT_SLIPPAGE_BPS=$(node -e "const c=require('js-yaml').load(require('fs').readFileSync(require('os').homedir()+'/.aurehub/config.yaml','utf8')); console.log((c.risk||{}).default_slippage_bps||50)")
+# Use node to avoid bash integer overflow on large trades
+MIN_AMOUNT_OUT=$(node -p "Math.trunc($AMOUNT_OUT_RAW * (10000 - $DEFAULT_SLIPPAGE_BPS) / 10000)")
 ```
 
 ## 3. Preview Output
 
 Must include at minimum:
-- Input amount (human-readable and raw unit)
-- Estimated XAUT received (`amountOut`)
+- Input amount (human-readable)
+- Estimated output received (`amountOut`)
 - Slippage setting and `minAmountOut`
 - Risk indicators (large trade / slippage / gas)
 

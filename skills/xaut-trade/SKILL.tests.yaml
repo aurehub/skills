@@ -74,7 +74,7 @@ cases:
     expect:
       contains:
         - ["Preview", "quote", "amountOut", "minAmountOut", "slippage"]
-        - ["cast call", "QUOTER", "confirm"]
+        - ["node swap.js quote", "confirm"]
       min_length: 120
     tier: benchmark
 
@@ -84,7 +84,7 @@ cases:
     expect:
       contains:
         - ["USDT", "approve(0)", "approve(amount)"]
-        - ["cast send", "explicit confirmation", "on-chain write"]
+        - ["node swap.js approve", "explicit confirmation", "on-chain write"]
       min_length: 120
     tier: benchmark
 
@@ -137,7 +137,7 @@ cases:
       contains:
         - ["only supports", "USDT", "USDC not supported"]
       not_contains:
-        - ["cast send", "approve", "allowance"]
+        - ["node swap.js", "approve", "allowance"]
     tier: gate
 
   - id: tc-007
@@ -156,7 +156,7 @@ cases:
       contains:
         - ["if you want to buy", "let me know", "USDT"]
       not_contains:
-        - ["cast send", "execute trade", "tx hash"]
+        - ["node swap.js", "execute trade", "tx hash"]
       max_length: 500
     tier: gate
 
@@ -178,7 +178,7 @@ cases:
       contains:
         - ["amount", "how much", "XAUT", "sell"]
       not_contains:
-        - ["executed", "tx hash", "cast send"]
+        - ["executed", "tx hash", "node swap.js"]
       max_length: 900
     tier: gate
 
@@ -200,7 +200,7 @@ cases:
       contains:
         - ["precision", "decimal", "minimum"]
       not_contains:
-        - ["cast send", "executed", "tx hash"]
+        - ["node swap.js", "executed", "tx hash"]
     tier: gate
 
   - id: tc-012
@@ -210,7 +210,7 @@ cases:
       contains:
         - ["insufficient balance", "XAUT", "stop"]
       not_contains:
-        - ["cast send", "tx hash"]
+        - ["node swap.js", "tx hash"]
     tier: gate
 
   - id: tc-013
@@ -229,7 +229,7 @@ cases:
     input: I confirm selling 0.01 XAUT, give me the steps
     expect:
       contains:
-        - ["approve", "XAUT", "ROUTER", "cast send"]
+        - ["approve", "XAUT", "ROUTER", "node swap.js approve"]
       not_contains:
         - ["approve(0)", "reset first", "reset"]
       min_length: 100
@@ -291,7 +291,7 @@ cases:
         - ["orderHash", "status", "0xabc123"]
         - ["limit-order.js", "status", "UNISWAPX_API"]
       not_contains:
-        - ["cast send", "approve"]
+        - ["node swap.js swap", "approve"]
       min_length: 80
     tier: benchmark
 
@@ -301,7 +301,7 @@ cases:
     expect:
       contains:
         - ["cancel", "confirm", "on-chain", "gas"]
-        - ["invalidateUnorderedNonces", "cast send"]
+        - ["invalidateUnorderedNonces", "node swap.js"]
       not_contains:
         - ["cancelled", "executed"]
       min_length: 80
@@ -337,7 +337,7 @@ cases:
       contains:
         - ["precision", "decimal", "minimum"]
       not_contains:
-        - ["node scripts", "submitted", "cast send"]
+        - ["node scripts", "submitted", "node swap.js"]
     tier: gate
 
   - id: tc-024
@@ -345,7 +345,7 @@ cases:
     input: I confirm limit selling 0.01 XAUT at target price 4000 USDT, give me the steps
     expect:
       contains:
-        - ["approve", "XAUT", "PERMIT2", "cast send"]
+        - ["approve", "XAUT", "PERMIT2", "node swap.js approve"]
       not_contains:
         - ["approve(0)", "reset first", "reset"]
       min_length: 100
@@ -393,6 +393,38 @@ cases:
       not_contains:
         - ["cast block-number", "quote", "amountOut"]
 
+  - id: tc-029
+    name: wdk-mode-env-check
+    input: "buy 100 USDT of XAUT"
+    env_override:
+      wallet_mode: wdk
+      wdk_vault_exists: false
+    expect:
+      contains:
+        - ["vault", "setup"]
+    tier: gate
+
+  - id: tc-030
+    name: missing-wallet-mode-redirects-to-setup
+    input: "buy 100 USDT of XAUT"
+    env_override:
+      wallet_mode: null
+    expect:
+      contains:
+        - ["wallet_mode", "setup"]
+    tier: gate
+
+  - id: tc-031
+    name: foundry-mode-env-check
+    input: "buy 100 USDT of XAUT"
+    env_override:
+      wallet_mode: foundry
+      foundry_installed: false
+    expect:
+      contains:
+        - ["Foundry", "cast"]
+    tier: gate
+
 suites:
   smoke:
     - tc-001
@@ -437,3 +469,6 @@ suites:
     - tc-026
     - tc-027
     - tc-028
+    - tc-029
+    - tc-030
+    - tc-031

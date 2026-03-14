@@ -11,13 +11,16 @@ Core principle:
 ## 1) What You Need to Do vs What the Agent Does
 
 Agent (automatic):
-- Environment checks (`cast`, `.env`, keystore account, password file, RPC reachability)
-- Quote and risk preview
-- Command preparation and execution steps
-- Post-trade result summary
+- Environment checks (wallet mode, `.env`, password file, RPC reachability via `node swap.js address`)
+- Balance check via `node swap.js balance`
+- Quote via `node swap.js quote --side <buy|sell> --amount <N>`
+- Risk preview and command preparation
+- Approve via `node swap.js approve --token <TOKEN> --amount <N>`
+- Swap via `node swap.js swap --side <buy|sell> --amount <N> --min-out <M>`
+- Post-trade result summary via `node swap.js balance`
 
 User (manual checkpoints only):
-1. Sensitive wallet input (interactive key import / password input)
+1. Sensitive wallet input (interactive key import / password input during setup)
 2. Wallet funding (ETH for gas, USDT/XAUT as needed)
 3. Confirmation when required by thresholds/policy
 
@@ -52,11 +55,12 @@ The Agent will:
 
 ### Checkpoint A: Wallet Sensitive Input
 
-If keystore is missing or locked, the Agent will pause and ask you to complete interactive wallet steps.
+If wallet is missing or locked, the Agent will pause and ask you to complete interactive wallet steps.
 
 Typical examples:
-- `cast wallet import <account> --interactive`
-- entering keystore password when prompted
+- Setting a password for WDK or Foundry wallet
+- Running `node lib/create-wallet.js` (WDK mode)
+- `cast wallet import <account> --interactive` (Foundry mode)
 
 After you finish, tell the Agent to continue.
 
@@ -105,14 +109,14 @@ Then ask in chat to:
 1. RPC/network instability (`429/502/timeout`)
 - Add a paid node to `ETH_RPC_URL` or put it first in `ETH_RPC_URL_FALLBACK`.
 
-2. Keystore password mismatch
-- Recreate `~/.aurehub/.wallet.password` with correct password (`chmod 600`).
+2. Password file mismatch
+- Recreate the password file with correct password (`chmod 600`).
 
 3. Insufficient balances
 - Top up ETH/USDT/XAUT, then retry.
 
 4. Runtime `PRIVATE_KEY` detected
-- Remove `PRIVATE_KEY` from `.env`; runtime is keystore-only.
+- Remove `PRIVATE_KEY` from `.env`; runtime uses wallet mode (WDK or Foundry).
 
 ---
 

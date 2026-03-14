@@ -2,7 +2,7 @@
 
 Our skills are developed by Duncan.Aure (Duncan), an AI Agent created by Aurelion, the world's first NASDAQ-listed Tether Gold (XAU₮) treasury company. Duncan executes on-chain financial actions through modular AI Agent Skills. Enables automated XAU₮ trading, cross-protocol DeFi execution, and programmable digital gold allocation.
 
-Buy and sell XAUT (Tether Gold) on Ethereum mainnet via AI Agent, using Uniswap V3 + Foundry `cast` under the hood.
+Buy and sell XAUT (Tether Gold) on Ethereum mainnet via AI Agent, using Uniswap V3 + Node.js (ethers.js) under the hood.
 
 ## Supported Pairs
 
@@ -15,7 +15,7 @@ Buy and sell XAUT (Tether Gold) on Ethereum mainnet via AI Agent, using Uniswap 
 
 ### Automated (recommended)
 
-Run the setup script — it handles Foundry installation, wallet configuration, and config file generation interactively:
+Run the setup script — it handles wallet creation, config file generation, and optional Foundry installation interactively:
 
 ```bash
 _saved=$(cat ~/.aurehub/.setup_path 2>/dev/null); [ -f "$_saved" ] && SETUP_PATH="$_saved"
@@ -47,6 +47,47 @@ For a chat-first real-mainnet walkthrough (Agent-driven, minimal manual steps), 
 
 If you prefer to configure everything yourself, or if the script fails at a specific step:
 
+First choose a wallet mode: **WDK (recommended)** or **Foundry**.
+
+#### Option A: WDK mode (recommended)
+
+**1. Create password file**
+
+```bash
+mkdir -p ~/.aurehub
+bash -c 'read -rsp "WDK password (min 12 chars): " p </dev/tty; echo; printf "%s" "$p" > ~/.aurehub/.wdk_password; chmod 600 ~/.aurehub/.wdk_password; echo "Password saved."'
+```
+
+**2. Create WDK wallet** (requires Node.js >= 18)
+
+```bash
+SETUP_PATH=$(cat ~/.aurehub/.setup_path 2>/dev/null)
+if [ -f "$SETUP_PATH" ]; then
+  SCRIPTS_DIR=$(dirname "$SETUP_PATH")
+elif GIT_ROOT=$(git rev-parse --show-toplevel 2>/dev/null) && [ -d "$GIT_ROOT/skills/xaut-trade/scripts" ]; then
+  SCRIPTS_DIR="$GIT_ROOT/skills/xaut-trade/scripts"
+else
+  SCRIPTS_DIR=$(dirname "$(find "$HOME" -maxdepth 6 -type f -path "*/xaut-trade/scripts/setup.sh" 2>/dev/null | head -1)")
+fi
+cd "$SCRIPTS_DIR" && npm install
+node "$SCRIPTS_DIR/lib/create-wallet.js" --password-file ~/.aurehub/.wdk_password
+```
+
+**3. Create .env**
+
+```bash
+cat > ~/.aurehub/.env << EOF
+WALLET_MODE=wdk
+ETH_RPC_URL=https://eth.llamarpc.com
+ETH_RPC_URL_FALLBACK=https://eth.merkle.io,https://rpc.flashbots.net/fast,https://eth.drpc.org,https://ethereum.publicnode.com
+WDK_PASSWORD_FILE=~/.aurehub/.wdk_password
+# UNISWAPX_API_KEY=your_key_here   # required for limit orders only
+EOF
+chmod 600 ~/.aurehub/.env
+```
+
+#### Option B: Foundry mode
+
 **1. Install Foundry**
 
 ```bash
@@ -57,48 +98,42 @@ source ~/.zshrc   # or ~/.bashrc
 
 **2. Create password file and configure wallet**
 
-Create the password file first (password is hidden, file gets `600` permissions atomically):
-
 ```bash
 mkdir -p ~/.aurehub
-( umask 077; read -rsp "Keystore password: " _pwd && printf '%s' "$_pwd" > ~/.aurehub/.wallet.password ); unset _pwd
+bash -c 'read -rsp "Keystore password: " p </dev/tty; echo; printf "%s" "$p" > ~/.aurehub/.wallet.password; chmod 600 ~/.aurehub/.wallet.password; echo "Password saved."'
 ```
 
 Then choose one initialization method:
 
-Import an existing private key into keystore (interactive):
-
 ```bash
+# Import existing private key (interactive)
 cast wallet import aurehub-wallet --interactive
-```
 
-Or create a brand-new keystore wallet:
-
-```bash
+# Or create a new wallet
 mkdir -p ~/.foundry/keystores
 cast wallet new ~/.foundry/keystores aurehub-wallet \
   --password-file ~/.aurehub/.wallet.password
 ```
 
-> Foundry keystores are stored in `~/.foundry/keystores/`; the password file goes in `~/.aurehub/`.
-
-**3. Create config files**
+**3. Create .env**
 
 ```bash
-mkdir -p ~/.aurehub
-
-# Generate .env
 cat > ~/.aurehub/.env << EOF
+WALLET_MODE=foundry
 ETH_RPC_URL=https://eth.llamarpc.com
 ETH_RPC_URL_FALLBACK=https://eth.merkle.io,https://rpc.flashbots.net/fast,https://eth.drpc.org,https://ethereum.publicnode.com
 FOUNDRY_ACCOUNT=aurehub-wallet
 KEYSTORE_PASSWORD_FILE=~/.aurehub/.wallet.password
 # UNISWAPX_API_KEY=your_key_here   # required for limit orders only
-# RANKINGS_OPT_IN=false            # optional, opt-in only
-# NICKNAME=YourName                # required only when RANKINGS_OPT_IN=true
 EOF
+chmod 600 ~/.aurehub/.env
+```
 
-# Copy trade config (defaults are ready to use)
+#### Common steps (both modes)
+
+**4. Copy config and install dependencies**
+
+```bash
 SETUP_PATH=$(cat ~/.aurehub/.setup_path 2>/dev/null)
 if [ -f "$SETUP_PATH" ]; then
   SKILL_DIR=$(cd "$(dirname "$SETUP_PATH")/.." && pwd)
@@ -110,7 +145,7 @@ fi
 cp "$SKILL_DIR/config.example.yaml" ~/.aurehub/config.yaml
 ```
 
-**4. Install limit order dependencies (limit orders only)**
+**5. Install runtime dependencies (required for market and limit orders)**
 
 ```bash
 node --version   # requires >= 18; install from https://nodejs.org if missing
@@ -125,7 +160,7 @@ fi
 cd "$SCRIPTS_DIR" && npm install
 ```
 
-**5. Get a UniswapX API Key (limit orders only)**
+**6. Get a UniswapX API Key (limit orders only)**
 
 How to obtain (about 5 minutes, free):
 1. Visit [developers.uniswap.org/dashboard](https://developers.uniswap.org/dashboard)
@@ -138,7 +173,7 @@ echo 'UNISWAPX_API_KEY=your_key_here' >> ~/.aurehub/.env
 
 Market orders do not require an API Key.
 
-**6. Fund the wallet**
+**7. Fund the wallet**
 
 - A small amount of ETH (≥ 0.005) for gas
 - USDT (for buying XAUT)
@@ -217,7 +252,7 @@ Before on-chain writes, the Agent always displays full commands. Confirmation le
 | Rule | Default Threshold | Behavior |
 |------|-------------------|----------|
 | Trade confirm threshold | `confirm_trade_usd = $10` | Above threshold requires confirmation |
-| Large trade | > $1,000 USD | Double confirmation required |
+| Large trade | >= $1,000 USD | Double confirmation required |
 | High slippage | > 50 bps (0.5%) | Warning + double confirmation |
 | Oversized approval | `approve > 10x amount_in` | Force approval confirmation |
 | Insufficient gas | ETH < 0.005 | Hard-stop |
@@ -233,11 +268,14 @@ Thresholds can be customized in the `risk` section of `config.yaml`.
 
 | Variable | Description | Example |
 |----------|-------------|---------|
+| `WALLET_MODE` | Wallet backend: `wdk` (recommended) or `foundry` | `wdk` |
 | `ETH_RPC_URL` | Ethereum RPC URL | `https://eth.llamarpc.com` |
 | `ETH_RPC_URL_FALLBACK` | Comma-separated fallback RPCs tried in order on network error (429/502/timeout) | `https://eth.merkle.io,...` |
-| `FOUNDRY_ACCOUNT` | Foundry keystore account name (set by onboarding) | `aurehub-wallet` |
-| `KEYSTORE_PASSWORD_FILE` | Path to keystore password file | `~/.aurehub/.wallet.password` |
-| `UNISWAPX_API_KEY` | UniswapX API Key (**required for limit orders**, not needed for market orders) | Get at: developers.uniswap.org/dashboard |
+| `WDK_PASSWORD_FILE` | Path to WDK vault password file (**WDK mode**) | `~/.aurehub/.wdk_password` |
+| `WDK_VAULT_FILE` | Override default vault path (**WDK mode**, optional) | `~/.aurehub/.wdk_vault` |
+| `FOUNDRY_ACCOUNT` | Foundry keystore account name (**Foundry mode**) | `aurehub-wallet` |
+| `KEYSTORE_PASSWORD_FILE` | Path to keystore password file (**Foundry mode**) | `~/.aurehub/.wallet.password` |
+| `UNISWAPX_API_KEY` | UniswapX API Key (**limit orders only**, not needed for market orders) | Get at: developers.uniswap.org/dashboard |
 | `RANKINGS_OPT_IN` | Join activity rankings — opt-in only (default: `false`) | `true` or `false` |
 | `NICKNAME` | Display name for activity rankings (required if `RANKINGS_OPT_IN=true`) | `Alice` |
 
@@ -291,6 +329,7 @@ Anvil starts with 10 pre-funded accounts, each with 10,000 ETH. Default: `http:/
 
 ```bash
 # .env
+WALLET_MODE=foundry
 ETH_RPC_URL=http://127.0.0.1:8545
 FOUNDRY_ACCOUNT=aurehub-wallet
 KEYSTORE_PASSWORD_FILE=~/.aurehub/.wallet.password
@@ -367,9 +406,9 @@ USDT's non-standard implementation requires `approve(0)` to reset the allowance 
 **Q: Are other chains supported?**
 Only Ethereum mainnet (chain_id: 1) is currently supported. Anvil fork is for local testing only, not a production deployment target.
 
-**Q: `cast send` returns `Device not configured (os error 6)` — what do I do?**
+**Q: I see `Device not configured (os error 6)` in Foundry mode — what do I do?**
 
-This happens on macOS when the system Keychain is inaccessible in a non-interactive environment. Fix:
+This happens on macOS when Foundry's keystore cannot access the system Keychain in a non-interactive environment. Fix:
 
 1. Create a password file and set permissions:
    ```bash
@@ -381,7 +420,7 @@ This happens on macOS when the system Keychain is inaccessible in a non-interact
 
 **Q: What is a Skill package? How does it drive the AI to trade gold?**
 
-A Skill package is a set of structured AI instruction files (`SKILL.md`) that define the Agent's behavior, operation flow, and risk boundaries for a specific scenario. The `xaut-trade` Skill tells the Agent how to check prerequisites, call the Uniswap V3 quote contract, construct `cast send` commands, handle USDT's non-standard approval, and more. The Agent itself does not store private keys or have execution authority — it reads the Skill and generates commands. Depending on the configured risk thresholds, the Agent requests the required confirmation(s) before signing and broadcasting.
+A Skill package is a set of structured AI instruction files (`SKILL.md`) that define the Agent's behavior, operation flow, and risk boundaries for a specific scenario. The `xaut-trade` Skill tells the Agent how to check prerequisites, call the Uniswap V3 quote contract, execute trades via Node.js scripts, handle USDT's non-standard approval, and more. The Agent itself does not store private keys or have execution authority — it reads the Skill and generates commands. Depending on the configured risk thresholds, the Agent requests the required confirmation(s) before signing and broadcasting.
 
 **Q: Do I need a computer running 24/7?**
 
@@ -399,7 +438,7 @@ The primary test target is Claude (Sonnet / Opus series); other LLMs that can fo
 
 **Q: Will you read my API Key or private key from `.env`?**
 
-No. The Skill package runs entirely locally. The only optional external data sharing is the activity rankings feature (opt-in during setup or first-success prompt, sends wallet address and nickname to xaue.com). All trades are executed via local `cast` — no intermediary servers. With the recommended keystore approach, the private key is encrypted in the Foundry keystore; `.env` only stores the account name, wallet address, and other config. Never commit `.env` to version control.
+No. The Skill package runs entirely locally. The only optional external data sharing is the activity rankings feature (opt-in during setup or first-success prompt, sends wallet address and nickname to xaue.com). All trades are executed via local Node.js scripts — no intermediary servers. Private keys are encrypted locally (WDK vault or Foundry keystore); `.env` only stores the account name and other config (wallet address is derived at runtime). Never commit `.env` to version control.
 
 **Q: Will the Agent auto-buy based on price movements?**
 

@@ -1,99 +1,88 @@
 # Balance & Pre-flight Checks
 
-Complete the following steps in order before any quote or execution:
+Complete the following steps in order before any quote or execution.
+
+All commands below assume CWD is `$SCRIPTS_DIR` and env is sourced. Each Bash block must begin with:
+
+```bash
+source ~/.aurehub/.env
+cd "$SCRIPTS_DIR"
+```
 
 ## 1. Environment Check
 
 ```bash
-cast --version
-cast block-number --rpc-url "$ETH_RPC_URL"
+source ~/.aurehub/.env
+cd "$SCRIPTS_DIR"
+node swap.js address
 ```
 
-If either fails, stop and prompt:
-- Foundry not installed: install Foundry first
+If the command fails, stop and prompt:
+- Node.js not installed or < 18: install Node.js first
+- Config missing: trigger onboarding
 - RPC unavailable: trigger RPC fallback sequence (see RPC Fallback section in SKILL.md)
 
-## 2. Keystore Signing Validation
+## 2. Wallet Mode Validation
 
-Runtime signing must use keystore mode only.
+Check `WALLET_MODE` in `~/.aurehub/.env`:
+
+- **If `WALLET_MODE=wdk`**: verify `WDK_PASSWORD_FILE` is set and readable:
+  ```bash
+  source ~/.aurehub/.env
+  test -r "$WDK_PASSWORD_FILE" && echo "OK" || echo "FAIL"
+  ```
+  If `FAIL`, hard-stop:
+  > Password file not readable: `$WDK_PASSWORD_FILE`
+  > Create it with: `bash -c 'read -rsp "WDK password: " p </dev/tty; echo; printf "%s" "$p" > ~/.aurehub/.wdk_password; chmod 600 ~/.aurehub/.wdk_password; echo "Saved."'`
+
+- **If `WALLET_MODE=foundry`**: verify `FOUNDRY_ACCOUNT` and `KEYSTORE_PASSWORD_FILE` are set:
+  ```bash
+  source ~/.aurehub/.env
+  [ -n "$FOUNDRY_ACCOUNT" ] && [ -n "$KEYSTORE_PASSWORD_FILE" ] && echo "OK" || echo "FAIL"
+  ```
+  If `FAIL`, hard-stop:
+  > Missing keystore signing config. Set both `FOUNDRY_ACCOUNT` and `KEYSTORE_PASSWORD_FILE` in `.env`.
+
+  Verify password file is readable:
+  ```bash
+  source ~/.aurehub/.env
+  test -r "$KEYSTORE_PASSWORD_FILE" && echo "OK" || echo "FAIL"
+  ```
+  If `FAIL`, hard-stop:
+  > Password file not readable: `$KEYSTORE_PASSWORD_FILE`
 
 If `PRIVATE_KEY` exists in `.env`, hard-stop immediately:
-> ❌ `PRIVATE_KEY` runtime mode is no longer supported.
-> Migrate with:
-> `cast wallet import "$FOUNDRY_ACCOUNT" --interactive`
-> Then keep only `FOUNDRY_ACCOUNT` + `KEYSTORE_PASSWORD_FILE` in `.env`.
+> `PRIVATE_KEY` runtime mode is no longer supported.
+> Remove `PRIVATE_KEY` from `.env` and use either WDK or Foundry wallet mode.
 
-Validate keystore prerequisites:
-
-Verify the account exists:
-```bash
-cast wallet list
-```
-Confirm the output contains `$FOUNDRY_ACCOUNT`; otherwise hard-stop:
-> ❌ keystore account `$FOUNDRY_ACCOUNT` does not exist. Run:
-> `cast wallet import $FOUNDRY_ACCOUNT --interactive`
-
-Verify the password file is readable:
-```bash
-test -r "$KEYSTORE_PASSWORD_FILE" && echo "OK" || echo "FAIL"
-```
-If output is `FAIL`, hard-stop:
-> ❌ Password file not readable: `$KEYSTORE_PASSWORD_FILE`
-> Create it and set permissions:
-> ```bash
-> echo "your_password" > ~/.aurehub/.wallet.password
-> chmod 600 ~/.aurehub/.wallet.password
-> ```
-> Then set `KEYSTORE_PASSWORD_FILE=~/.aurehub/.wallet.password` in `.env`.
-
-If either `FOUNDRY_ACCOUNT` or `KEYSTORE_PASSWORD_FILE` is missing:
-
-Hard-stop:
-> ❌ Missing keystore signing config. Set both `FOUNDRY_ACCOUNT` and `KEYSTORE_PASSWORD_FILE` in `.env`.
-
-After completing signing-mode validation, derive the wallet address:
+## 3. Derive Wallet Address
 
 ```bash
-WALLET_ADDRESS=$(cast wallet address --account "$FOUNDRY_ACCOUNT" --password-file "$KEYSTORE_PASSWORD_FILE")
+source ~/.aurehub/.env
+cd "$SCRIPTS_DIR"
+WALLET_ADDRESS=$(node swap.js address | node -p "JSON.parse(require('fs').readFileSync(0,'utf8')).address")
+echo "$WALLET_ADDRESS"
 ```
 
-## 3. Wallet & Gas Check
+## 4. Full Balance Check (ETH + USDT + XAUT)
 
 ```bash
-cast balance "$WALLET_ADDRESS" --rpc-url "$ETH_RPC_URL"
+source ~/.aurehub/.env
+cd "$SCRIPTS_DIR"
+node swap.js balance
+```
+
+Output is JSON with all balances pre-formatted (human-readable):
+
+```json
+{
+  "address": "0x...",
+  "ETH": "0.05",
+  "USDT": "1000.0",
+  "XAUT": "0.5"
+}
 ```
 
 - If ETH balance is below `risk.min_eth_for_gas`, hard-stop
-
-## 4. Stablecoin Balance Check
-
-USDT:
-
-```bash
-cast call "$USDT" "balanceOf(address)" "$WALLET_ADDRESS" --rpc-url "$ETH_RPC_URL"
-```
-
-- If payment token balance is insufficient, hard-stop and report the shortfall
-
-## 5. XAUT Balance
-
-```bash
-cast call "$XAUT" "balanceOf(address)" "$WALLET_ADDRESS" --rpc-url "$ETH_RPC_URL"
-```
-
-## Parsing Rule (MANDATORY)
-
-**Never** use return-type annotations (e.g. `balanceOf(address)(uint256)`) when the result will be used in scripts or Python interpolation. The annotated form produces output like `24980609 [2.498e7]` which breaks shell variable assignment and Python `-c` strings.
-
-Always parse `cast call` output with one of these two patterns:
-
-```bash
-# Pattern A: no annotation + cast to-dec (preferred)
-BALANCE=$(cast to-dec $(cast call "$TOKEN" "balanceOf(address)" "$WALLET" --rpc-url "$RPC"))
-
-# Pattern B: annotation + awk to strip the comment
-BALANCE=$(cast call "$TOKEN" "balanceOf(address)(uint256)" "$WALLET" --rpc-url "$RPC" | awk '{print $1}')
-```
-
-- **Sell flow (required)**: check if balance covers the sell amount; if not, hard-stop and report the shortfall
-- **Buy flow (optional)**: used for pre/post-trade position comparison
+- **Buy flow**: if USDT balance is insufficient for the intended trade, hard-stop and report the shortfall
+- **Sell flow**: if XAUT balance is insufficient for the intended trade, hard-stop and report the shortfall

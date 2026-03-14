@@ -1,0 +1,7 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+REPO_ROOT="$(git rev-parse --show-toplevel)"
+
+"$REPO_ROOT/scripts/check-no-runtime-private-key.sh"
+"$REPO_ROOT/scripts/check-skill-version.sh"

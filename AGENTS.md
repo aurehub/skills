@@ -1,10 +1,10 @@
 # Repository Guidelines
 
 ## Project Structure & Module Organization
-This repository stores reusable agent skills. Add new skills under `skills/<skill-name>/`. Each skill should include `SKILL.md`; optional files include `README.md`, `SKILL.tests.yaml`, `references/`, and `scripts/`. Use `template/SKILL.md` as the starting point for new skills. Repository-level automation lives in `scripts/`, including `scripts/publish-clawhub.sh`.
+This repository stores reusable agent skills. Add new skills under `skills/<skill-name>/`. Each skill should include `SKILL.md`; optional files include `README.md`, `SKILL.tests.yaml`, `references/`, and `scripts/`. Use `template/SKILL.md.template` as the starting point for new skills. Repository-level automation lives in `scripts/`, including `scripts/publish-clawhub.sh`.
 
 ## Build, Test, and Development Commands
-Install the skill collection locally with `npx skills add aurehub/skills`. Create a new skill from the template with `cp -r template skills/my-new-skill`. Run the existing script tests from `skills/xaut-trade/scripts/` with `npm test`. Publish one skill with `./scripts/publish-clawhub.sh skills/<skill-name> <version>`. Publish all non-example skills with `./scripts/publish-clawhub.sh --all patch`. Add `--dry-run` before publishing to preview changes.
+Install the skill collection locally with `npx skills add aurehub/skills`. Create a new skill from the template with `mkdir skills/my-new-skill && cp template/SKILL.md.template skills/my-new-skill/SKILL.md`. Run the existing script tests from `skills/xaut-trade/scripts/` with `npm test`. Publish one skill with `./scripts/publish-clawhub.sh skills/<skill-name> <version>`. Publish all non-example skills with `./scripts/publish-clawhub.sh --all patch`. Add `--dry-run` before publishing to preview changes.
 
 ## Coding Style & Naming Conventions
 Skill directory names and frontmatter `name` values must be lowercase and hyphenated, and they should match exactly, for example `skills/xaut-trade/` and `name: xaut-trade`. Keep user-facing content in English. Write concise Markdown instructions with progressive disclosure: core workflow in `SKILL.md`, detailed material in `references/`, and executable helpers in `scripts/`.
@@ -27,8 +27,11 @@ Do not commit secrets or wallet credentials. If a skill needs local configuratio
 
 ## Wallet Signing Policy (Repo-wide)
 - Runtime signing with `PRIVATE_KEY` is forbidden in all skills.
-- Runtime signing must use Foundry keystore only: `FOUNDRY_ACCOUNT` + `KEYSTORE_PASSWORD_FILE`.
-- `PRIVATE_KEY` may be used only as one-time onboarding input for `cast wallet import --interactive`, never as runtime signing configuration.
-- Wallet initialization flows must stay within two methods:
-  - Import existing private key into keystore (interactive)
-  - Create new wallet directly into keystore
+- Runtime signing must use one of the approved wallet backends:
+  - Foundry keystore: `FOUNDRY_ACCOUNT` + `KEYSTORE_PASSWORD_FILE`
+  - WDK encrypted vault: `WDK_PASSWORD_FILE` (+ `WDK_VAULT_FILE` when explicitly configured)
+- `PRIVATE_KEY` may be used only as one-time onboarding input for keystore import (e.g. `cast wallet import --interactive`), never as runtime signing configuration.
+- Wallet initialization flows must stay within approved methods:
+  - Import existing private key into Foundry keystore (interactive)
+  - Create new wallet directly into Foundry keystore
+  - Create new encrypted WDK vault wallet

@@ -1,5 +1,12 @@
 # Limit Order Cancellation
 
+All commands below assume CWD is `$SCRIPTS_DIR` and env is sourced. Each Bash block must begin with:
+
+```bash
+source ~/.aurehub/.env
+cd "$SCRIPTS_DIR"
+```
+
 ## 0. Pre-confirmation
 
 Cancelling a limit order is an on-chain operation (gas required). Confirm before cancelling:
@@ -8,13 +15,23 @@ Cancelling a limit order is an on-chain operation (gas required). Confirm before
 
 ## 1. Fetch Cancellation Parameters
 
-```bash
-CANCEL_PARAMS=$(node skills/xaut-trade/scripts/limit-order.js cancel \
-  --nonce "$NONCE")
+**Preferred: use `--order-hash`** (auto-reads nonce from `~/.aurehub/orders/`):
 
-WORD_POS=$(echo "$CANCEL_PARAMS" | python3 -c "import sys,json; print(json.load(sys.stdin)['wordPos'])")
-MASK=$(echo "$CANCEL_PARAMS"     | python3 -c "import sys,json; print(json.load(sys.stdin)['mask'])")
-PERMIT2=$(echo "$CANCEL_PARAMS"  | python3 -c "import sys,json; print(json.load(sys.stdin)['permit2'])")
+```bash
+CANCEL_PARAMS=$(node limit-order.js cancel \
+  --order-hash "$ORDER_HASH")
+
+WORD_POS=$(echo "$CANCEL_PARAMS" | node -p "JSON.parse(require('fs').readFileSync(0,'utf8')).wordPos")
+MASK=$(echo "$CANCEL_PARAMS"     | node -p "JSON.parse(require('fs').readFileSync(0,'utf8')).mask")
+```
+
+Supports prefix matching (e.g. `0x9079c4f2` matches the full hash). Falls back to `--nonce` if no local order file is found.
+
+**Fallback: use `--nonce` directly** (if local order file is missing):
+
+```bash
+CANCEL_PARAMS=$(node limit-order.js cancel \
+  --nonce "$NONCE")
 ```
 
 ## 2. Execute Cancellation
@@ -22,12 +39,13 @@ PERMIT2=$(echo "$CANCEL_PARAMS"  | python3 -c "import sys,json; print(json.load(
 Display the command and wait for user confirmation:
 
 ```bash
-TX_HASH=$(cast send "$PERMIT2" \
-  "invalidateUnorderedNonces(uint256,uint256)" \
-  "$WORD_POS" "$MASK" \
-  --account "$FOUNDRY_ACCOUNT" --password-file "$KEYSTORE_PASSWORD_FILE" \
-  --rpc-url "$ETH_RPC_URL" --json | python3 -c "import sys,json; print(json.load(sys.stdin)['transactionHash'])")
+source ~/.aurehub/.env
+cd "$SCRIPTS_DIR"
+CANCEL_JSON=$(node swap.js cancel-nonce --word-pos "$WORD_POS" --mask "$MASK")
+STATUS=$(echo "$CANCEL_JSON" | node -p "JSON.parse(require('fs').readFileSync(0,'utf8')).status")
+TX_HASH=$(echo "$CANCEL_JSON" | node -p "JSON.parse(require('fs').readFileSync(0,'utf8')).txHash")
 echo "Cancel tx: https://etherscan.io/tx/$TX_HASH"
+if [ "$STATUS" != "success" ]; then echo "WARNING: on-chain cancellation failed (status=$STATUS)"; fi
 ```
 
 ## 3. Output
