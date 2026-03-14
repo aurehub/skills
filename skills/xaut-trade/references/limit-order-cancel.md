@@ -42,8 +42,10 @@ Display the command and wait for user confirmation:
 source ~/.aurehub/.env
 cd "$SCRIPTS_DIR"
 CANCEL_JSON=$(node swap.js cancel-nonce --word-pos "$WORD_POS" --mask "$MASK")
+STATUS=$(echo "$CANCEL_JSON" | python3 -c "import sys,json; print(json.load(sys.stdin)['status'])")
 TX_HASH=$(echo "$CANCEL_JSON" | python3 -c "import sys,json; print(json.load(sys.stdin)['txHash'])")
 echo "Cancel tx: https://etherscan.io/tx/$TX_HASH"
+if [ "$STATUS" != "success" ]; then echo "WARNING: on-chain cancellation failed (status=$STATUS)"; fi
 ```
 
 ## 3. Output

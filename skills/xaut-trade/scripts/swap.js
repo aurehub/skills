@@ -247,6 +247,18 @@ async function runSwap(cfg, provider, args) {
     ),
   ]);
 
+  if (!receipt) {
+    console.log(JSON.stringify({
+      address,
+      side: args.side,
+      amountIn: args.amount,
+      minAmountOut: args.minOut,
+      txHash: sentTx.hash,
+      status: 'unknown',
+      warning: 'Transaction receipt is null — tx may have been dropped from mempool. Check on Etherscan.',
+    }, null, 2));
+    process.exit(1);
+  }
   const failed = receipt.status !== 1;
   const result = {
     address,

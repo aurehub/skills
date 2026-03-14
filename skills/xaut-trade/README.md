@@ -252,7 +252,7 @@ Before on-chain writes, the Agent always displays full commands. Confirmation le
 | Rule | Default Threshold | Behavior |
 |------|-------------------|----------|
 | Trade confirm threshold | `confirm_trade_usd = $10` | Above threshold requires confirmation |
-| Large trade | > $1,000 USD | Double confirmation required |
+| Large trade | >= $1,000 USD | Double confirmation required |
 | High slippage | > 50 bps (0.5%) | Warning + double confirmation |
 | Oversized approval | `approve > 10x amount_in` | Force approval confirmation |
 | Insufficient gas | ETH < 0.005 | Hard-stop |

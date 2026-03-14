@@ -101,7 +101,12 @@ async function place(args) {
   }
 
   const chainIdNum = parseInt(chainId, 10);
-  const deadline = Math.floor(Date.now() / 1000) + parseInt(expiry || '86400', 10);
+  const expirySec = parseInt(expiry || '86400', 10);
+  if (Number.isNaN(expirySec) || expirySec <= 0) {
+    console.error('ERROR: --expiry must be a positive integer (seconds)');
+    process.exit(1);
+  }
+  const deadline = Math.floor(Date.now() / 1000) + expirySec;
 
   // 2. Validate amounts (invariant — does not depend on nonce)
   const amountInBN = BN.from(amountIn);
@@ -128,6 +133,9 @@ async function place(args) {
   const MAX_NONCE_RETRIES = 5;
   for (let attempt = 0; attempt < MAX_NONCE_RETRIES; attempt++) {
     // Build order (must rebuild each attempt — nonce changes on retry)
+    // Fixed-price limit order: decayStart == decayEnd == deadline so the
+    // DutchOrder never decays — the swapper receives exactly minAmountOut
+    // (no Dutch-auction price improvement, but also no price deterioration).
     const builder = new DutchOrderBuilder(chainIdNum);
     const order = builder
       .deadline(deadline)
@@ -321,6 +329,10 @@ async function cancel(args) {
     if (fs.existsSync(ordersDir)) {
       const files = fs.readdirSync(ordersDir).filter(f => f.endsWith('.json'));
       const prefix = orderHash.toLowerCase();
+      if (prefix.length < 10) {
+        console.error('ERROR: --order-hash prefix too short (minimum 10 characters, e.g. "0x9079c4f2")');
+        process.exit(1);
+      }
       const match = files.find(f => {
         try {
           const data = JSON.parse(fs.readFileSync(path.join(ordersDir, f), 'utf8'));

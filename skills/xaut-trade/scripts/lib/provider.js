@@ -100,8 +100,10 @@ export class FallbackProvider {
 
         // Session-sticky: promote successful fallback to primary
         if (i > 0) {
+          const oldPrimary = this._primaryUrl;
           this._primaryUrl = url;
           this._fallbackUrls = [
+            oldPrimary,
             ...urls.slice(1, i),
             ...urls.slice(i + 1),
           ];
