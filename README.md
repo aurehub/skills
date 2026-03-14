@@ -61,6 +61,18 @@ See the full [Agent Skills specification](https://agentskills.io/specification) 
 3. Ensure your `SKILL.md` follows the [spec](https://agentskills.io/specification)
 4. Submit a pull request
 
+## Local Guardrails
+
+Enable git pre-commit checks:
+
+```bash
+./scripts/install-git-hooks.sh
+```
+
+Current checks:
+- `scripts/check-no-runtime-private-key.sh`
+- `scripts/check-skill-version.sh` (valid semver and version consistency between `SKILL.md` and `scripts/package.json` when present)
+
 ## License
 
 MIT

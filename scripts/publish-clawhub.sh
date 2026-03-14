@@ -37,6 +37,18 @@ check_clawhub() {
   fi
 }
 
+check_skill_versions() {
+  local target="${1:-}"
+  local checker="$REPO_ROOT/scripts/check-skill-version.sh"
+  [ -x "$checker" ] || die "version checker not found or not executable: $checker"
+
+  if [ -n "$target" ]; then
+    "$checker" "$target"
+  else
+    "$checker"
+  fi
+}
+
 # Extract field from SKILL.md YAML frontmatter
 extract_field() {
   local file="$1" field="$2"
@@ -66,6 +78,7 @@ publish_one() {
 
   local skill_md="$skill_path/SKILL.md"
   [ -f "$skill_md" ] || die "SKILL.md not found in $skill_path"
+  check_skill_versions "$skill_path"
 
   local name description slug
   name="$(extract_field "$skill_md" "name")"
@@ -100,6 +113,8 @@ publish_one() {
 publish_all() {
   local bump="$1"
   local count=0 failed=0
+
+  check_skill_versions
 
   echo ""
   yellow "Scanning $SKILLS_DIR for skills..."
