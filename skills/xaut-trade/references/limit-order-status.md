@@ -7,6 +7,8 @@ source ~/.aurehub/.env
 cd "$SCRIPTS_DIR"
 ```
 
+> `--api-url` and `--chain-id` are omitted from examples below — the script reads defaults from `limit_order.uniswapx_api` and `networks.ethereum_mainnet.chain_id` in `~/.aurehub/config.yaml`.
+
 ## 1. Query a Single Order (by orderHash)
 
 ```bash

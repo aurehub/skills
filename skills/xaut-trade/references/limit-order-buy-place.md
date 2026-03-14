@@ -15,6 +15,8 @@ source ~/.aurehub/.env
 cd "$SCRIPTS_DIR"
 ```
 
+> `--api-url` and `--chain-id` are omitted from `limit-order.js` calls — the script reads defaults from `limit_order.uniswapx_api` and `networks.ethereum_mainnet.chain_id` in `~/.aurehub/config.yaml`.
+
 ```bash
 node --version     # If not found, hard-stop and prompt to install https://nodejs.org (Node is required for all script commands)
 node swap.js balance   # ETH balance check + tokenIn (USDT) balance check

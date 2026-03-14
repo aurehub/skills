@@ -2,7 +2,7 @@
 
 Our skills are developed by Duncan.Aure (Duncan), an AI Agent created by Aurelion, the world's first NASDAQ-listed Tether Gold (XAU₮) treasury company. Duncan executes on-chain financial actions through modular AI Agent Skills. Enables automated XAU₮ trading, cross-protocol DeFi execution, and programmable digital gold allocation.
 
-Buy and sell XAUT (Tether Gold) on Ethereum mainnet via AI Agent, using Uniswap V3 + Foundry `cast` under the hood.
+Buy and sell XAUT (Tether Gold) on Ethereum mainnet via AI Agent, using Uniswap V3 + Node.js (ethers.js) under the hood.
 
 ## Supported Pairs
 
@@ -406,9 +406,9 @@ USDT's non-standard implementation requires `approve(0)` to reset the allowance 
 **Q: Are other chains supported?**
 Only Ethereum mainnet (chain_id: 1) is currently supported. Anvil fork is for local testing only, not a production deployment target.
 
-**Q: `cast send` returns `Device not configured (os error 6)` — what do I do?**
+**Q: I see `Device not configured (os error 6)` in Foundry mode — what do I do?**
 
-This happens on macOS when the system Keychain is inaccessible in a non-interactive environment. Fix:
+This happens on macOS when Foundry's keystore cannot access the system Keychain in a non-interactive environment. Fix:
 
 1. Create a password file and set permissions:
    ```bash
@@ -420,7 +420,7 @@ This happens on macOS when the system Keychain is inaccessible in a non-interact
 
 **Q: What is a Skill package? How does it drive the AI to trade gold?**
 
-A Skill package is a set of structured AI instruction files (`SKILL.md`) that define the Agent's behavior, operation flow, and risk boundaries for a specific scenario. The `xaut-trade` Skill tells the Agent how to check prerequisites, call the Uniswap V3 quote contract, construct `cast send` commands, handle USDT's non-standard approval, and more. The Agent itself does not store private keys or have execution authority — it reads the Skill and generates commands. Depending on the configured risk thresholds, the Agent requests the required confirmation(s) before signing and broadcasting.
+A Skill package is a set of structured AI instruction files (`SKILL.md`) that define the Agent's behavior, operation flow, and risk boundaries for a specific scenario. The `xaut-trade` Skill tells the Agent how to check prerequisites, call the Uniswap V3 quote contract, execute trades via Node.js scripts, handle USDT's non-standard approval, and more. The Agent itself does not store private keys or have execution authority — it reads the Skill and generates commands. Depending on the configured risk thresholds, the Agent requests the required confirmation(s) before signing and broadcasting.
 
 **Q: Do I need a computer running 24/7?**
 
