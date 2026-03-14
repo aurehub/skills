@@ -337,12 +337,12 @@ if [ -f ~/.aurehub/.env ]; then
   ok ".env already exists, updating wallet mode"
   _env_set "WALLET_MODE" "$WALLET_MODE"
   if [ "$WALLET_MODE" = "wdk" ]; then
-    _env_set "WDK_PASSWORD_FILE" "~/.aurehub/.wdk_password"
+    _env_set "WDK_PASSWORD_FILE" "$HOME/.aurehub/.wdk_password"
     # Remove stale Foundry keys when switching to WDK
     sed -i.bak '/^FOUNDRY_ACCOUNT=/d; /^KEYSTORE_PASSWORD_FILE=/d' ~/.aurehub/.env && rm -f ~/.aurehub/.env.bak
   else
     _env_set "FOUNDRY_ACCOUNT" "$ACCOUNT_NAME"
-    _env_set "KEYSTORE_PASSWORD_FILE" "~/.aurehub/.wallet.password"
+    _env_set "KEYSTORE_PASSWORD_FILE" "$HOME/.aurehub/.wallet.password"
     # Remove stale WDK keys when switching to Foundry
     sed -i.bak '/^WDK_PASSWORD_FILE=/d' ~/.aurehub/.env && rm -f ~/.aurehub/.env.bak
   fi
@@ -366,7 +366,7 @@ else
 WALLET_MODE=$WALLET_MODE
 ETH_RPC_URL=$ETH_RPC_URL
 ETH_RPC_URL_FALLBACK=https://eth.merkle.io,https://rpc.flashbots.net/fast,https://eth.drpc.org,https://ethereum.publicnode.com
-WDK_PASSWORD_FILE=~/.aurehub/.wdk_password
+WDK_PASSWORD_FILE=$HOME/.aurehub/.wdk_password
 # Required for limit orders only:
 # UNISWAPX_API_KEY=your_api_key_here
 # Optional — set during setup or first-success prompt if omitted:
@@ -380,7 +380,7 @@ ETH_RPC_URL=$ETH_RPC_URL
 # Add a paid Alchemy/Infura node at the front for higher reliability
 ETH_RPC_URL_FALLBACK=https://eth.merkle.io,https://rpc.flashbots.net/fast,https://eth.drpc.org,https://ethereum.publicnode.com
 FOUNDRY_ACCOUNT=$ACCOUNT_NAME
-KEYSTORE_PASSWORD_FILE=~/.aurehub/.wallet.password
+KEYSTORE_PASSWORD_FILE=$HOME/.aurehub/.wallet.password
 # Required for limit orders only:
 # UNISWAPX_API_KEY=your_api_key_here
 # Optional — set during setup or first-success prompt if omitted:
@@ -561,8 +561,11 @@ fi
 # ── Step 10: Verification ───────────────────────────────────────────────────────
 step "Verify environment"
 
-# WALLET_MODE and ETH_RPC_URL are already set as shell variables from earlier
-# steps — no need to source .env (avoids executing untrusted shell code).
+# WALLET_MODE is always set from Step 2. ETH_RPC_URL is set in the fresh-install
+# path but NOT in the re-run path — read it from .env if unset.
+if [ -z "${ETH_RPC_URL:-}" ]; then
+  ETH_RPC_URL=$(grep '^ETH_RPC_URL=' ~/.aurehub/.env 2>/dev/null | head -1 | cut -d= -f2-)
+fi
 
 if [ "$WALLET_MODE" = "wdk" ]; then
   # Verify RPC connectivity using node

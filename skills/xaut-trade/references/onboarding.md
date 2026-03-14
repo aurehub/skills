@@ -135,7 +135,7 @@ cat > ~/.aurehub/.env << 'EOF'
 WALLET_MODE=wdk
 ETH_RPC_URL=https://eth.llamarpc.com
 ETH_RPC_URL_FALLBACK=https://eth.merkle.io,https://rpc.flashbots.net/fast,https://eth.drpc.org,https://ethereum.publicnode.com
-WDK_PASSWORD_FILE=~/.aurehub/.wdk_password
+WDK_PASSWORD_FILE=$HOME/.aurehub/.wdk_password
 EOF
 chmod 600 ~/.aurehub/.env
 ```
@@ -144,7 +144,7 @@ If `~/.aurehub/.env` already exists (e.g. switching from Foundry), only update t
 
 ```bash
 # Update or add each key, preserving other settings
-for kv in "WALLET_MODE=wdk" "WDK_PASSWORD_FILE=~/.aurehub/.wdk_password"; do
+for kv in "WALLET_MODE=wdk" "WDK_PASSWORD_FILE=$HOME/.aurehub/.wdk_password"; do
   key="${kv%%=*}"
   grep -q "^${key}=" ~/.aurehub/.env && sed -i.bak "s|^${key}=.*|${kv}|" ~/.aurehub/.env || echo "$kv" >> ~/.aurehub/.env
 done
@@ -228,7 +228,7 @@ cast wallet new ~/.foundry/keystores "$FOUNDRY_ACCOUNT" \
   --password-file "$KEYSTORE_PASSWORD_FILE"
 ```
 
-> Default values: `FOUNDRY_ACCOUNT=aurehub-wallet`, `KEYSTORE_PASSWORD_FILE=~/.aurehub/.wallet.password`
+> Default values: `FOUNDRY_ACCOUNT=aurehub-wallet`, `KEYSTORE_PASSWORD_FILE=$HOME/.aurehub/.wallet.password`
 
 #### Step F4: Write .env for Foundry
 
@@ -240,7 +240,7 @@ WALLET_MODE=foundry
 ETH_RPC_URL=https://eth.llamarpc.com
 ETH_RPC_URL_FALLBACK=https://eth.merkle.io,https://rpc.flashbots.net/fast,https://eth.drpc.org,https://ethereum.publicnode.com
 FOUNDRY_ACCOUNT=aurehub-wallet
-KEYSTORE_PASSWORD_FILE=~/.aurehub/.wallet.password
+KEYSTORE_PASSWORD_FILE=$HOME/.aurehub/.wallet.password
 EOF
 chmod 600 ~/.aurehub/.env
 ```
@@ -248,7 +248,7 @@ chmod 600 ~/.aurehub/.env
 If `~/.aurehub/.env` already exists (e.g. switching from WDK), only update the wallet-related fields:
 
 ```bash
-for kv in "WALLET_MODE=foundry" "FOUNDRY_ACCOUNT=aurehub-wallet" "KEYSTORE_PASSWORD_FILE=~/.aurehub/.wallet.password"; do
+for kv in "WALLET_MODE=foundry" "FOUNDRY_ACCOUNT=aurehub-wallet" "KEYSTORE_PASSWORD_FILE=$HOME/.aurehub/.wallet.password"; do
   key="${kv%%=*}"
   grep -q "^${key}=" ~/.aurehub/.env && sed -i.bak "s|^${key}=.*|${kv}|" ~/.aurehub/.env || echo "$kv" >> ~/.aurehub/.env
 done
@@ -294,6 +294,9 @@ else
   SCRIPTS_DIR=$(dirname "$(find "$HOME" -maxdepth 6 -type f -path "*/xaut-trade/scripts/setup.sh" 2>/dev/null | head -1)")
 fi
 cd "$SCRIPTS_DIR" && npm install
+
+# Save scripts path for future sessions
+printf '%s/setup.sh\n' "$SCRIPTS_DIR" > ~/.aurehub/.setup_path
 ```
 
 #### Step C3: Verify
