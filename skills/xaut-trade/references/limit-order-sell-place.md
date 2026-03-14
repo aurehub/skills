@@ -51,9 +51,15 @@ node swap.js approve --token XAUT --amount <AMOUNT_IN> --spender 0x000000000022D
 
 ## 5. Place Order
 
+> **Important — raw units**: Unlike `swap.js` (which accepts human-readable amounts), `limit-order.js` requires **raw integer amounts in smallest token units**.
+> Both XAUT and USDT have 6 decimals, so multiply by `10^6`:
+> - 0.001 XAUT → `1000`
+> - 5000 USDT → `5000000000`
+> - Formula: `raw = human_amount * 1000000` (drop any fractional remainder)
+
 ```bash
 # EXPIRY_SECONDS: use the user-specified expiry, or fall back to 86400 (1 day).
-# The script uses the provided value directly (no min/max clamping in code).
+# AMOUNT_IN and MIN_AMOUNT_OUT must be raw integers (smallest unit, 6 decimals).
 RESULT=$(node limit-order.js place \
   --token-in       "$XAUT" \
   --token-out      "$USDT" \
