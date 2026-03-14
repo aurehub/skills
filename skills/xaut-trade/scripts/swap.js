@@ -16,7 +16,7 @@
 import { fileURLToPath } from 'node:url';
 import { readFileSync } from 'node:fs';
 import { formatUnits, Interface } from 'ethers6';
-import { loadConfig, resolveToken } from './lib/config.js';
+import { loadConfig, resolveToken, validateContracts } from './lib/config.js';
 import { createProvider } from './lib/provider.js';
 import { createSigner } from './lib/signer.js';
 import { getBalance, getAllowance, approve } from './lib/erc20.js';
@@ -284,11 +284,18 @@ async function runCancelNonce(cfg, provider, args) {
   if (!args.wordPos) throw new Error('--word-pos is required for cancel-nonce');
   if (!args.mask) throw new Error('--mask is required for cancel-nonce');
 
+  // Validate wordPos and mask as valid uint256 values
+  let wordPosBig, maskBig;
+  try { wordPosBig = BigInt(args.wordPos); } catch { throw new Error(`--word-pos is not a valid integer: ${args.wordPos}`); }
+  try { maskBig = BigInt(args.mask); } catch { throw new Error(`--mask is not a valid integer: ${args.mask}`); }
+  if (wordPosBig < 0n || wordPosBig >= (1n << 248n)) throw new Error(`--word-pos out of range: ${args.wordPos}`);
+  if (maskBig <= 0n || maskBig >= (1n << 256n)) throw new Error(`--mask out of range: ${args.mask}`);
+
   const signer = await createSigner(cfg, provider ? provider.getEthersProvider() : null);
 
   const permit2 = '0x000000000022D473030F116dDEE9F6B43aC78BA3';
   const iface = new Interface(['function invalidateUnorderedNonces(uint256 wordPos, uint256 mask)']);
-  const data = iface.encodeFunctionData('invalidateUnorderedNonces', [args.wordPos, args.mask]);
+  const data = iface.encodeFunctionData('invalidateUnorderedNonces', [wordPosBig, maskBig]);
 
   const tx = await signer.sendTransaction({ to: permit2, data });
   const receipt = await tx.wait();
@@ -338,6 +345,7 @@ if (isDirectRun) {
   }
 
   const cfg = loadConfig(parsed.configDir);
+  validateContracts(cfg);
   const COMMANDS_NEEDING_PROVIDER = new Set([
     'address',
     'balance',

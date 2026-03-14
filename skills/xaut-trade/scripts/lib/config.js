@@ -78,11 +78,40 @@ export function loadConfig(configDir) {
  * @returns {{ address: string, decimals: number }}
  * @throws {Error} If the symbol is not found in the tokens section
  */
+// Canonical mainnet addresses for tamper detection
+const CANONICAL_TOKENS = {
+  XAUT: '0x68749665FF8D2d112Fa859AA293F07A622782F38',
+  USDT: '0xdAC17F958D2ee523a2206206994597C13D831ec7',
+};
+const CANONICAL_CONTRACTS = {
+  router: '0x68b3465833fb72A70ecDF485E0e4C7bD8665Fc45',
+  quoter: '0x61fFE014bA17989E743c5F6cB21bF9697530B21e',
+  permit2: '0x000000000022D473030F116dDEE9F6B43aC78BA3',
+};
+
 export function resolveToken(config, symbol) {
   const tokens = config?.yaml?.tokens ?? {};
   const token = tokens[symbol];
   if (!token) {
     throw new Error(`Unknown token symbol: "${symbol}"`);
   }
+  // Validate address against canonical value if known
+  const canonical = CANONICAL_TOKENS[symbol];
+  if (canonical && token.address.toLowerCase() !== canonical.toLowerCase()) {
+    throw new Error(`Token ${symbol} address mismatch: config has ${token.address}, expected ${canonical}. Check config.yaml for tampering.`);
+  }
+  // Validate decimals
+  if (typeof token.decimals !== 'number' || !Number.isInteger(token.decimals) || token.decimals < 0 || token.decimals > 18) {
+    throw new Error(`Token ${symbol} has invalid decimals: ${token.decimals}`);
+  }
   return { address: token.address, decimals: token.decimals };
+}
+
+export function validateContracts(config) {
+  const contracts = config?.yaml?.contracts ?? {};
+  for (const [name, canonical] of Object.entries(CANONICAL_CONTRACTS)) {
+    if (contracts[name] && contracts[name].toLowerCase() !== canonical.toLowerCase()) {
+      throw new Error(`Contract ${name} address mismatch: config has ${contracts[name]}, expected ${canonical}. Check config.yaml for tampering.`);
+    }
+  }
 }

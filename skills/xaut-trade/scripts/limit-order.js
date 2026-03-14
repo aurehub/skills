@@ -121,6 +121,10 @@ async function place(args) {
   //    SDK uses ethers v5 BigNumber (not native BigInt) — .gte() etc required
   const amountInBN = BN.from(amountIn);
   const minAmountOutBN = BN.from(minAmountOut);
+  if (minAmountOutBN.lte(BN.from(0))) {
+    console.error('ERROR: --min-amount-out must be greater than 0 (zero disables slippage protection)');
+    process.exit(1);
+  }
 
   const builder = new DutchOrderBuilder(chainIdNum);
   const order = builder
