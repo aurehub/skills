@@ -83,6 +83,24 @@ Report: `Swap tx: https://etherscan.io/tx/<txHash>`
 
 > On failure (`"status": "failed"`), report retry suggestions (reduce trade amount / increase slippage tolerance / check nonce and gas).
 
+## 3a. Swap Error Recovery
+
+**CRITICAL**: If the swap command returns an error, exits with a non-zero code, or returns `"status": "unconfirmed"`:
+
+1. **Do NOT retry immediately.** The transaction may have been broadcast and mined despite the RPC error.
+2. Check the current balance:
+   ```bash
+   source ~/.aurehub/.env
+   cd "$SCRIPTS_DIR"
+   node swap.js balance
+   ```
+3. Compare the USDT balance against the pre-swap balance (from pre-flight Step 1):
+   - **If USDT balance decreased by the trade amount** → the swap **succeeded**. Proceed to Result Verification (Step 4). Do NOT re-approve or re-swap.
+   - **If USDT balance is unchanged** → the swap did **not** execute. Safe to retry from Step 1 (Allowance Check).
+4. If a `txHash` was returned (including in the `"unconfirmed"` response), verify on Etherscan: `https://etherscan.io/tx/<txHash>`
+
+> **Why this matters**: RPC nodes can return errors (e.g. 400, 504, "Unknown block") even when the transaction was successfully broadcast and mined. Retrying without checking balance will execute a **duplicate trade**, costing the user double.
+
 ## 4. Result Verification
 
 ```bash

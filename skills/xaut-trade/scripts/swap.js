@@ -237,18 +237,39 @@ async function runSwap(cfg, provider, args) {
   });
 
   const timeoutMs = (risk.deadline_seconds ?? 300) * 1000;
+
+  // Send transaction — if this throws, the tx was never broadcast (safe to retry)
   const sentTx = await signer.sendTransaction(tx);
+
+  // Use fallback-aware receipt wait when available (RPC resilience)
   const waitFn = provider?.waitForTransaction
     ? provider.waitForTransaction(sentTx.hash, 1, timeoutMs)
     : sentTx.wait();
-  const receipt = await Promise.race([
-    waitFn,
-    new Promise((_, reject) =>
-      setTimeout(() => reject(new Error(
-        `Transaction not confirmed within ${timeoutMs / 1000}s (txHash: ${sentTx.hash}). It may still be pending — check on Etherscan.`
-      )), timeoutMs)
-    ),
-  ]);
+
+  // Wait for confirmation — if this throws, the tx WAS broadcast but confirmation
+  // failed (RPC error, timeout). Output txHash so caller can verify before retrying.
+  let receipt;
+  try {
+    receipt = await Promise.race([
+      waitFn,
+      new Promise((_, reject) =>
+        setTimeout(() => reject(new Error(
+          `Transaction not confirmed within ${timeoutMs / 1000}s (txHash: ${sentTx.hash}). It may still be pending — check on Etherscan.`
+        )), timeoutMs)
+      ),
+    ]);
+  } catch (confirmErr) {
+    console.log(JSON.stringify({
+      address,
+      side: args.side,
+      amountIn: args.amount,
+      minAmountOut: args.minOut,
+      txHash: sentTx.hash,
+      status: 'unconfirmed',
+      warning: `Transaction was broadcast but confirmation failed: ${confirmErr.message}. Check balance or Etherscan before retrying — the swap may have succeeded.`,
+    }, null, 2));
+    process.exit(1);
+  }
 
   if (!receipt) {
     console.log(JSON.stringify({

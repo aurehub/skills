@@ -355,6 +355,10 @@ Output: `{ "address": "0x...", "side": "buy", "amountIn": "...", "minAmountOut":
 - Execute with the confirmation level required by thresholds/policy
 - Return tx hash and Etherscan link: `https://etherscan.io/tx/<txHash>`
 
+**Swap error recovery (CRITICAL — see [references/buy.md](references/buy.md) Section 3a):**
+
+If the swap command returns an error or `"status": "unconfirmed"`: **do NOT retry**. First check `node swap.js balance` and compare USDT balance against the pre-swap value. If USDT decreased, the swap succeeded — proceed to verification. Only retry if balance is unchanged.
+
 **Result verification:**
 
 ```bash
@@ -454,6 +458,10 @@ Output: `{ "address": "0x...", "side": "sell", "amountIn": "...", "minAmountOut"
 - Execute with the confirmation level required by thresholds/policy
 - Return tx hash and Etherscan link
 
+**Swap error recovery (CRITICAL — see [references/sell.md](references/sell.md) Section 7a):**
+
+If the swap command returns an error or `"status": "unconfirmed"`: **do NOT retry**. First check `node swap.js balance` and compare XAUT balance against the pre-swap value. If XAUT decreased, the swap succeeded — proceed to verification. Only retry if balance is unchanged.
+
 **Result verification:**
 
 ```bash
@@ -539,6 +547,7 @@ Output must include:
 - Insufficient balance: report minimum top-up amount and stop
 - User has not confirmed: stay in Preview -- do not execute
 - Transaction failed: return failure reason and retry suggestions (reduce amount / increase slippage tolerance / check nonce and gas)
+- **Swap error or `"status": "unconfirmed"`**: **NEVER retry without first checking balance.** RPC errors can occur even when the transaction was successfully mined. Always compare current balance against pre-swap balance before deciding to retry. See buy.md Section 3a / sell.md Section 7a.
 
 ## XAUT Knowledge Base
 
