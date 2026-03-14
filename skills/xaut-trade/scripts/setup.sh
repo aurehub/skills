@@ -334,9 +334,13 @@ if [ -f ~/.aurehub/.env ]; then
   _env_set "WALLET_MODE" "$WALLET_MODE"
   if [ "$WALLET_MODE" = "wdk" ]; then
     _env_set "WDK_PASSWORD_FILE" "~/.aurehub/.wdk_password"
+    # Remove stale Foundry keys when switching to WDK
+    sed -i.bak '/^FOUNDRY_ACCOUNT=/d; /^KEYSTORE_PASSWORD_FILE=/d' ~/.aurehub/.env && rm -f ~/.aurehub/.env.bak
   else
     _env_set "FOUNDRY_ACCOUNT" "$ACCOUNT_NAME"
     _env_set "KEYSTORE_PASSWORD_FILE" "~/.aurehub/.wallet.password"
+    # Remove stale WDK keys when switching to Foundry
+    sed -i.bak '/^WDK_PASSWORD_FILE=/d' ~/.aurehub/.env && rm -f ~/.aurehub/.env.bak
   fi
   # Ensure ETH_RPC_URL exists
   if ! grep -q "^ETH_RPC_URL=" ~/.aurehub/.env 2>/dev/null; then
@@ -357,7 +361,7 @@ else
     cat > ~/.aurehub/.env << EOF
 WALLET_MODE=$WALLET_MODE
 ETH_RPC_URL=$ETH_RPC_URL
-# ETH_RPC_URL_FALLBACK=https://eth.merkle.io,https://rpc.flashbots.net/fast,https://eth.drpc.org,https://ethereum.publicnode.com
+ETH_RPC_URL_FALLBACK=https://eth.merkle.io,https://rpc.flashbots.net/fast,https://eth.drpc.org,https://ethereum.publicnode.com
 WDK_PASSWORD_FILE=~/.aurehub/.wdk_password
 # Required for limit orders only:
 # UNISWAPX_API_KEY=your_api_key_here
@@ -510,7 +514,7 @@ if [ "$NODE_OK" = true ]; then
           echo -e "  ${YELLOW}Key looks too short. Please verify and try again.${NC}"
           continue
         fi
-        ENV_TMP_FILE=$(mktemp /tmp/xaut_env.XXXXXX)
+        ENV_TMP_FILE=$(umask 077; mktemp /tmp/xaut_env.XXXXXX)
         grep -v '^UNISWAPX_API_KEY=' ~/.aurehub/.env > "$ENV_TMP_FILE" 2>/dev/null || true
         mv "$ENV_TMP_FILE" ~/.aurehub/.env
         echo "UNISWAPX_API_KEY=$UNISWAPX_KEY" >> ~/.aurehub/.env
@@ -538,15 +542,15 @@ read -rp "  Join rankings? [y/N]: " JOIN_RANKINGS
 if [[ "${JOIN_RANKINGS:-}" =~ ^[Yy]$ ]]; then
   read -rp "  Enter your nickname: " RANKINGS_NICKNAME
   if [ -n "$RANKINGS_NICKNAME" ]; then
-    echo "RANKINGS_OPT_IN=true" >> ~/.aurehub/.env
-    echo "NICKNAME=$RANKINGS_NICKNAME" >> ~/.aurehub/.env
+    _env_set "RANKINGS_OPT_IN" "true"
+    _env_set "NICKNAME" "$RANKINGS_NICKNAME"
     ok "Rankings enabled (nickname: $RANKINGS_NICKNAME)"
   else
-    echo "RANKINGS_OPT_IN=false" >> ~/.aurehub/.env
+    _env_set "RANKINGS_OPT_IN" "false"
     ok "Rankings skipped (empty nickname)"
   fi
 else
-  echo "RANKINGS_OPT_IN=false" >> ~/.aurehub/.env
+  _env_set "RANKINGS_OPT_IN" "false"
   ok "Rankings skipped"
 fi
 

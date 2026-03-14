@@ -12,7 +12,7 @@
 //
 // Signing mode: delegates to swap.js sign (supports both WDK and Foundry).
 //   PRIVATE_KEY runtime signing is intentionally not supported.
-import { execSync } from 'node:child_process';
+import { spawnSync } from 'node:child_process';
 import fs from 'node:fs';
 import os from 'node:os';
 import path from 'node:path';
@@ -153,10 +153,15 @@ async function place(args) {
   const tmpFile = path.join(tmpDir, 'typed-data.json');
   fs.writeFileSync(tmpFile, typedDataJson);
   try {
-    signature = execSync(
-      `node "${path.join(__dirname, 'swap.js')}" sign --data-file "${tmpFile}"`,
+    const signResult = spawnSync(
+      process.execPath,
+      [path.join(__dirname, 'swap.js'), 'sign', '--data-file', tmpFile],
       { encoding: 'utf8' }
-    ).trim();
+    );
+    if (signResult.status !== 0) {
+      throw new Error(signResult.stderr?.trim() || 'swap.js sign failed');
+    }
+    signature = signResult.stdout.trim();
   } finally {
     fs.rmSync(tmpDir, { recursive: true, force: true });
   }

@@ -118,9 +118,10 @@ export class FallbackProvider {
       }
     }
 
-    // All URLs failed
+    // All URLs failed — redact API keys from URLs before logging
+    const redact = (u) => { try { const o = new URL(u); return `${o.protocol}//${o.host}${o.pathname.replace(/\/[^/]{20,}$/, '/***')}`; } catch { return '[invalid url]'; } };
     const summary = errors
-      .map(({ url, error }) => `${url}: ${error.message}`)
+      .map(({ url, error }) => `${redact(url)}: ${error.message}`)
       .join('; ');
     throw new Error(`All RPC endpoints failed — ${summary}`);
   }

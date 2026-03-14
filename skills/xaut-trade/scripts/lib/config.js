@@ -62,7 +62,7 @@ export function loadConfig(configDir) {
   let yamlConfig = {};
   try {
     const raw = readFileSync(join(dir, 'config.yaml'), 'utf8');
-    yamlConfig = yaml.load(raw) ?? {};
+    yamlConfig = yaml.load(raw, { schema: yaml.JSON_SCHEMA }) ?? {};
   } catch (err) {
     if (err.code !== 'ENOENT') throw err;
   }

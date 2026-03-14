@@ -59,7 +59,10 @@ export async function approve(token, spender, amount, signer, opts = {}) {
   if (opts.requiresResetApprove) {
     const resetData = iface.encodeFunctionData('approve', [spender, 0n]);
     const resetTx = await signer.sendTransaction({ to: token.address, data: resetData });
-    await resetTx.wait();
+    const resetReceipt = await resetTx.wait();
+    if (resetReceipt.status !== 1) {
+      throw new Error(`Allowance reset failed (txHash: ${resetTx.hash}). Approval not sent.`);
+    }
   }
 
   const data = iface.encodeFunctionData('approve', [spender, rawAmount]);
