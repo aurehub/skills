@@ -47,6 +47,48 @@ For a chat-first real-mainnet walkthrough (Agent-driven, minimal manual steps), 
 
 If you prefer to configure everything yourself, or if the script fails at a specific step:
 
+First choose a wallet mode: **WDK (recommended)** or **Foundry**.
+
+#### Option A: WDK mode (recommended)
+
+**1. Create password file**
+
+```bash
+mkdir -p ~/.aurehub
+bash -c 'read -rsp "WDK password (min 12 chars): " p </dev/tty; echo; printf "%s" "$p" > ~/.aurehub/.wdk_password; chmod 600 ~/.aurehub/.wdk_password; echo "Password saved."'
+```
+
+**2. Create WDK wallet** (requires Node.js >= 18)
+
+```bash
+SETUP_PATH=$(cat ~/.aurehub/.setup_path 2>/dev/null)
+if [ -f "$SETUP_PATH" ]; then
+  SCRIPTS_DIR=$(dirname "$SETUP_PATH")
+elif GIT_ROOT=$(git rev-parse --show-toplevel 2>/dev/null) && [ -d "$GIT_ROOT/skills/xaut-trade/scripts" ]; then
+  SCRIPTS_DIR="$GIT_ROOT/skills/xaut-trade/scripts"
+else
+  SCRIPTS_DIR=$(dirname "$(find "$HOME" -maxdepth 6 -type f -path "*/xaut-trade/scripts/setup.sh" 2>/dev/null | head -1)")
+fi
+cd "$SCRIPTS_DIR/market" && npm install
+cd "$SCRIPTS_DIR" && npm install
+node "$SCRIPTS_DIR/market/lib/create-wallet.js" --password-file ~/.aurehub/.wdk_password
+```
+
+**3. Create .env**
+
+```bash
+cat > ~/.aurehub/.env << EOF
+WALLET_MODE=wdk
+ETH_RPC_URL=https://eth.llamarpc.com
+ETH_RPC_URL_FALLBACK=https://eth.merkle.io,https://rpc.flashbots.net/fast,https://eth.drpc.org,https://ethereum.publicnode.com
+WDK_PASSWORD_FILE=~/.aurehub/.wdk_password
+# UNISWAPX_API_KEY=your_key_here   # required for limit orders only
+EOF
+chmod 600 ~/.aurehub/.env
+```
+
+#### Option B: Foundry mode
+
 **1. Install Foundry**
 
 ```bash
@@ -57,8 +99,6 @@ source ~/.zshrc   # or ~/.bashrc
 
 **2. Create password file and configure wallet**
 
-Create the password file first (password is hidden, file gets `600` permissions atomically):
-
 ```bash
 mkdir -p ~/.aurehub
 bash -c 'read -rsp "Keystore password: " p </dev/tty; echo; printf "%s" "$p" > ~/.aurehub/.wallet.password; chmod 600 ~/.aurehub/.wallet.password; echo "Password saved."'
@@ -66,40 +106,35 @@ bash -c 'read -rsp "Keystore password: " p </dev/tty; echo; printf "%s" "$p" > ~
 
 Then choose one initialization method:
 
-Import an existing private key into keystore (interactive):
-
 ```bash
+# Import existing private key (interactive)
 cast wallet import aurehub-wallet --interactive
-```
 
-Or create a brand-new keystore wallet:
-
-```bash
+# Or create a new wallet
 mkdir -p ~/.foundry/keystores
 cast wallet new ~/.foundry/keystores aurehub-wallet \
   --password-file ~/.aurehub/.wallet.password
 ```
 
-> Foundry keystores are stored in `~/.foundry/keystores/`; the password file goes in `~/.aurehub/`.
-
-**3. Create config files**
+**3. Create .env**
 
 ```bash
-mkdir -p ~/.aurehub
-
-# Generate .env (WDK mode example — for Foundry mode, see .env.example)
-# WARNING: this overwrites any existing .env. If you already have one, edit it instead.
 cat > ~/.aurehub/.env << EOF
-WALLET_MODE=wdk
+WALLET_MODE=foundry
 ETH_RPC_URL=https://eth.llamarpc.com
 ETH_RPC_URL_FALLBACK=https://eth.merkle.io,https://rpc.flashbots.net/fast,https://eth.drpc.org,https://ethereum.publicnode.com
-WDK_PASSWORD_FILE=~/.aurehub/.wdk_password
+FOUNDRY_ACCOUNT=aurehub-wallet
+KEYSTORE_PASSWORD_FILE=~/.aurehub/.wallet.password
 # UNISWAPX_API_KEY=your_key_here   # required for limit orders only
-# RANKINGS_OPT_IN=false            # optional, opt-in only
-# NICKNAME=YourName                # required only when RANKINGS_OPT_IN=true
 EOF
+chmod 600 ~/.aurehub/.env
+```
 
-# Copy trade config (defaults are ready to use)
+#### Common steps (both modes)
+
+**4. Copy config and install dependencies**
+
+```bash
 SETUP_PATH=$(cat ~/.aurehub/.setup_path 2>/dev/null)
 if [ -f "$SETUP_PATH" ]; then
   SKILL_DIR=$(cd "$(dirname "$SETUP_PATH")/.." && pwd)
@@ -238,6 +273,7 @@ Thresholds can be customized in the `risk` section of `config.yaml`.
 | `ETH_RPC_URL` | Ethereum RPC URL | `https://eth.llamarpc.com` |
 | `ETH_RPC_URL_FALLBACK` | Comma-separated fallback RPCs tried in order on network error (429/502/timeout) | `https://eth.merkle.io,...` |
 | `WDK_PASSWORD_FILE` | Path to WDK vault password file (**WDK mode**) | `~/.aurehub/.wdk_password` |
+| `WDK_VAULT_FILE` | Override default vault path (**WDK mode**, optional) | `~/.aurehub/.wdk_vault` |
 | `FOUNDRY_ACCOUNT` | Foundry keystore account name (**Foundry mode**) | `aurehub-wallet` |
 | `KEYSTORE_PASSWORD_FILE` | Path to keystore password file (**Foundry mode**) | `~/.aurehub/.wallet.password` |
 | `UNISWAPX_API_KEY` | UniswapX API Key (**limit orders only**, not needed for market orders) | Get at: developers.uniswap.org/dashboard |

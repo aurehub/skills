@@ -394,36 +394,36 @@ cases:
         - ["cast block-number", "quote", "amountOut"]
 
   - id: tc-029
-    name: "WDK mode env check"
-    suite: [full]
+    name: wdk-mode-env-check
     input: "buy 100 USDT of XAUT"
     env_override:
       wallet_mode: wdk
       wdk_vault_exists: false
     expect:
-      type: gate
-      contains: ["vault", "setup"]
+      contains:
+        - ["vault", "setup"]
+    tier: gate
 
   - id: tc-030
-    name: "missing wallet_mode redirects to setup"
-    suite: [full]
+    name: missing-wallet-mode-redirects-to-setup
     input: "buy 100 USDT of XAUT"
     env_override:
       wallet_mode: null
     expect:
-      type: gate
-      contains: ["wallet_mode", "setup"]
+      contains:
+        - ["wallet_mode", "setup"]
+    tier: gate
 
   - id: tc-031
-    name: "Foundry mode env check"
-    suite: [full]
+    name: foundry-mode-env-check
     input: "buy 100 USDT of XAUT"
     env_override:
       wallet_mode: foundry
       foundry_installed: false
     expect:
-      type: gate
-      contains: ["Foundry", "cast"]
+      contains:
+        - ["Foundry", "cast"]
+    tier: gate
 
 suites:
   smoke:

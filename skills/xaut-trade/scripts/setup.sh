@@ -357,7 +357,7 @@ else
     cat > ~/.aurehub/.env << EOF
 WALLET_MODE=$WALLET_MODE
 ETH_RPC_URL=$ETH_RPC_URL
-# ETH_RPC_URL_FALLBACK=https://rpc.merkle.io,https://rpc.flashbots.net,https://eth.drpc.org
+# ETH_RPC_URL_FALLBACK=https://eth.merkle.io,https://rpc.flashbots.net/fast,https://eth.drpc.org,https://ethereum.publicnode.com
 WDK_PASSWORD_FILE=~/.aurehub/.wdk_password
 # Required for limit orders only:
 # UNISWAPX_API_KEY=your_api_key_here

@@ -9,7 +9,7 @@ Cancelling a limit order is an on-chain operation (gas required). Confirm before
 ## 1. Fetch Cancellation Parameters
 
 ```bash
-CANCEL_PARAMS=$(node skills/xaut-trade/scripts/limit-order.js cancel \
+CANCEL_PARAMS=$(node limit-order.js cancel \
   --nonce "$NONCE")
 
 WORD_POS=$(echo "$CANCEL_PARAMS" | python3 -c "import sys,json; print(json.load(sys.stdin)['wordPos'])")

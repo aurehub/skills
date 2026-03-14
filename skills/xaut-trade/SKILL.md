@@ -176,21 +176,13 @@ All `node swap.js` commands assume CWD is `$SCRIPTS_DIR`.
 
 After sourcing `~/.aurehub/.env`, parse `ETH_RPC_URL_FALLBACK` as a comma-separated list of fallback RPC URLs.
 
-If any `node swap.js` command fails and its output contains any of the following:
-`429`, `502`, `503`, `timeout`, `connection refused`, `rate limit`, `Too Many Requests`, `-32603`, `no response`, `method is not whitelisted`, `HTTP error 403`
+RPC failover is handled automatically by the FallbackProvider inside swap.js. When `ETH_RPC_URL` fails (429/502/503/timeout), the provider transparently retries with each URL in `ETH_RPC_URL_FALLBACK` in order. No agent action is needed for RPC switching.
 
-Then:
-1. Try the same command with `--rpc-url <fallback_url>` for each fallback URL in order
-2. First success -> use that URL as the active RPC for this operation class in this session:
-   - read operations (quote, balance, allowance checks)
-   - write operations (approve, swap)
-3. All fallbacks exhausted -> hard-stop with:
-   > RPC unavailable. All configured nodes failed (primary + N fallbacks).
-   > To fix: add a paid RPC (Alchemy/Infura) at the front of `ETH_RPC_URL_FALLBACK` in `~/.aurehub/.env`
+If all RPCs fail, swap.js will exit with an error containing network-related messages. In that case, hard-stop with:
+> RPC unavailable. All configured nodes failed (primary + fallbacks).
+> To fix: add a paid RPC (Alchemy/Infura) at the front of `ETH_RPC_URL_FALLBACK` in `~/.aurehub/.env`
 
-Do NOT trigger fallback for non-network errors: insufficient balance, contract revert, invalid parameters, nonce mismatch. Report these directly to the user.
-
-**Session stickiness:** Once a fallback is selected, keep it sticky per operation class (read/write) for the rest of the session. Do not switch back to primary unless the active node fails.
+Do NOT treat non-network errors (insufficient balance, contract revert, invalid parameters, nonce mismatch) as RPC failures. Report these directly to the user.
 
 ## Intent Detection
 
@@ -297,13 +289,13 @@ QUOTE_JSON=$(node swap.js quote --side buy --amount <USDT_AMOUNT>)
 echo "$QUOTE_JSON"
 ```
 
-The output is JSON: `{ "amountIn": "...", "amountOut": "...", "minAmountOut": "...", "price": "...", "gasEstimate": "...", "slippageBps": ... }`
+The output is JSON: `{ "side": "buy", "amountIn": "...", "amountOut": "...", "amountOutRaw": "...", "sqrtPriceX96": "...", "gasEstimate": "..." }`
 
 Parse the JSON to extract:
-- `amountOut`: estimated XAUT to receive
-- `minAmountOut`: minimum after slippage protection
-- `price`: reference rate (1 XAUT ~ X USDT)
+- `amountOut`: estimated XAUT to receive (human-readable)
 - `gasEstimate`: estimated gas cost
+- Derive `minAmountOut` yourself: `amountOut * (1 - slippageBps / 10000)` using `risk.default_slippage_bps` from config.yaml
+- Derive reference rate: `amountIn / amountOut` (both tokens have 6 decimals)
 
 Display:
 - Wallet address (from balance or address output)
@@ -405,7 +397,7 @@ QUOTE_JSON=$(node swap.js quote --side sell --amount <XAUT_AMOUNT>)
 echo "$QUOTE_JSON"
 ```
 
-Output JSON: `{ "amountIn": "...", "amountOut": "...", "minAmountOut": "...", "price": "...", "gasEstimate": "...", "slippageBps": ... }`
+Output JSON: `{ "side": "sell", "amountIn": "...", "amountOut": "...", "amountOutRaw": "...", "sqrtPriceX96": "...", "gasEstimate": "..." }`
 
 Parse and display:
 - Wallet address (from balance or address output)

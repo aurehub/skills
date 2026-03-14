@@ -20,6 +20,7 @@ Output:
 
 ```json
 {
+  "address": "0x...",
   "token": "USDT",
   "allowance": "0.0",
   "spender": "0x..."
@@ -43,6 +44,7 @@ Output:
 
 ```json
 {
+  "address": "0x...",
   "token": "USDT",
   "amount": "<AMOUNT_IN>",
   "spender": "0x...",
@@ -67,6 +69,7 @@ Output:
 
 ```json
 {
+  "address": "0x...",
   "side": "buy",
   "amountIn": "<AMOUNT_IN>",
   "minAmountOut": "<MIN_AMOUNT_OUT>",

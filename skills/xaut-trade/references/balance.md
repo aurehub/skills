@@ -24,7 +24,7 @@ If the command fails, stop and prompt:
 
 ## 2. Wallet Mode Validation
 
-Check `wallet_mode` in `~/.aurehub/config.yaml`:
+Check `WALLET_MODE` in `~/.aurehub/.env`:
 
 - **If `wallet_mode: wdk`**: verify `WDK_PASSWORD_FILE` is set and readable:
   ```bash

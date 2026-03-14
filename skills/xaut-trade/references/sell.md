@@ -86,6 +86,17 @@ cd "$SCRIPTS_DIR"
 node swap.js allowance --token XAUT
 ```
 
+Output:
+
+```json
+{
+  "address": "0x...",
+  "token": "XAUT",
+  "allowance": "0.0",
+  "spender": "0x..."
+}
+```
+
 If allowance < `AMOUNT_IN`, approve first.
 
 ## 6. Approve (XAUT is standard ERC-20)
@@ -103,6 +114,7 @@ Output:
 
 ```json
 {
+  "address": "0x...",
   "token": "XAUT",
   "amount": "<XAUT_AMOUNT>",
   "spender": "0x...",
@@ -127,6 +139,7 @@ Output:
 
 ```json
 {
+  "address": "0x...",
   "side": "sell",
   "amountIn": "<XAUT_AMOUNT>",
   "minAmountOut": "<MIN_AMOUNT_OUT>",

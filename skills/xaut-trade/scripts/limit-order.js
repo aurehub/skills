@@ -10,8 +10,7 @@
 //   node limit-order.js list   --wallet <addr> --api-url <url> --chain-id <int> [--order-status open|filled|expired|cancelled]
 //   node limit-order.js cancel --nonce <uint>
 //
-// Signing mode (same as SKILL.md):
-//   FOUNDRY_ACCOUNT + KEYSTORE_PASSWORD_FILE only.
+// Signing mode: delegates to swap.js sign (supports both WDK and Foundry).
 //   PRIVATE_KEY runtime signing is intentionally not supported.
 import { execSync } from 'node:child_process';
 import fs from 'node:fs';

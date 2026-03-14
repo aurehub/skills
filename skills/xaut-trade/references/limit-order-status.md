@@ -3,7 +3,7 @@
 ## 1. Query a Single Order (by orderHash)
 
 ```bash
-RESULT=$(node skills/xaut-trade/scripts/limit-order.js status \
+RESULT=$(node limit-order.js status \
   --order-hash "$ORDER_HASH" \
   --chain-id   1 \
   --api-url    "$UNISWAPX_API")
@@ -14,7 +14,7 @@ STATUS=$(echo "$RESULT" | python3 -c "import sys,json; print(json.load(sys.stdin
 ## 2. List All Open Orders (by wallet address)
 
 ```bash
-RESULT=$(node skills/xaut-trade/scripts/limit-order.js list \
+RESULT=$(node limit-order.js list \
   --wallet       "$WALLET_ADDRESS" \
   --chain-id     1 \
   --api-url      "$UNISWAPX_API" \
