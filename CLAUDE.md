@@ -23,7 +23,7 @@ skills/           # Each subdirectory is one skill
     references/           # Progressive-disclosure docs loaded on demand
     scripts/              # Executable helpers (Node.js, Bash, etc.)
 template/
-  SKILL.md        # Boilerplate for creating new skills
+  SKILL.md.template        # Boilerplate for creating new skills
 scripts/
   publish-clawhub.sh    # Publish skills to ClawHub registry
 ```
@@ -87,4 +87,4 @@ Key design:
 - **Market module**: Node.js (`scripts/` and `scripts/lib/`) using ethers.js v6, replaces `cast` for all trading operations
 - **Limit orders**: Node.js scripts using UniswapX SDK + ethers.js v5, requires `UNISWAPX_API_KEY`
 - **Testing**: `SKILL.tests.yaml` defines 31 test cases in smoke (13) and full (31) suites
-- **References**: 9 Markdown files covering onboarding, balance, quote, buy, sell, and limit order flows
+- **References**: 11 Markdown files covering onboarding, balance, quote, buy, sell, wallet modes, and limit order flows

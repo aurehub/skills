@@ -31,13 +31,15 @@ export class FallbackProvider {
   /**
    * @param {string} primaryUrl  - Primary RPC URL (required)
    * @param {string[]} fallbackUrls - Ordered list of fallback URLs
+   * @param {number} requestTimeoutMs - Per-request timeout for JSON-RPC calls
    */
-  constructor(primaryUrl, fallbackUrls = []) {
+  constructor(primaryUrl, fallbackUrls = [], requestTimeoutMs = 12_000) {
     if (!primaryUrl) {
       throw new Error('FallbackProvider requires a primary RPC URL');
     }
     this._primaryUrl = primaryUrl;
     this._fallbackUrls = fallbackUrls;
+    this._requestTimeoutMs = requestTimeoutMs;
     // Underlying ethers provider always points at the current primary
     this._ethersProvider = new JsonRpcProvider(primaryUrl);
   }
@@ -59,11 +61,26 @@ export class FallbackProvider {
       params,
     });
 
-    const response = await fetch(url, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body,
-    });
+    const controller = new AbortController();
+    const timer = setTimeout(() => controller.abort(), this._requestTimeoutMs);
+    let response;
+    try {
+      response = await fetch(url, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body,
+        signal: controller.signal,
+      });
+    } catch (err) {
+      if (err?.name === 'AbortError') {
+        const timeoutErr = new Error(`RPC request timeout after ${this._requestTimeoutMs}ms`);
+        timeoutErr.code = 'ETIMEDOUT';
+        throw timeoutErr;
+      }
+      throw err;
+    } finally {
+      clearTimeout(timer);
+    }
 
     if (!response.ok) {
       const err = new Error(`HTTP ${response.status}: ${response.statusText}`);

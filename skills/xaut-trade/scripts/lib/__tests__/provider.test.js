@@ -166,6 +166,27 @@ describe('FallbackProvider', () => {
     expect(result).toBe('0x5');
   });
 
+  it('times out individual RPC requests and retries fallback', async () => {
+    const provider = new FallbackProvider(
+      'https://primary.example.com',
+      ['https://fallback1.example.com'],
+      5
+    );
+
+    provider._rawSend = vi.fn().mockImplementation(async (url) => {
+      if (url === 'https://primary.example.com') {
+        const err = new Error('RPC request timeout after 5ms');
+        err.code = 'ETIMEDOUT';
+        throw err;
+      }
+      return '0x6';
+    });
+
+    const result = await provider.send('eth_blockNumber', []);
+    expect(result).toBe('0x6');
+    expect(provider._rawSend).toHaveBeenCalledTimes(2);
+  });
+
   it('does not fall back on non-retriable errors', async () => {
     const provider = new FallbackProvider('https://primary.example.com', [
       'https://fallback1.example.com',

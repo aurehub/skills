@@ -4,8 +4,7 @@
 #
 # Exit codes:
 #   0 — all automated steps complete; check the manual steps summary at the end
-#   1 — a step failed; error message printed, see references/onboarding.md
-#   2 — environment prerequisite missing (e.g. Node.js not installed); re-run after fixing
+#   1 — setup failed (including missing prerequisites); see references/onboarding.md
 
 set -euo pipefail
 
