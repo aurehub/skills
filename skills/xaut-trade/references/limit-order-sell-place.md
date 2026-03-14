@@ -52,8 +52,7 @@ node swap.js approve --token XAUT --amount <AMOUNT_IN> --spender 0x000000000022D
 ## 5. Place Order
 
 ```bash
-# EXPIRY_SECONDS: use the user-specified expiry, or fall back to
-# limit_order.default_expiry_seconds in config.yaml (default: 86400 = 1 day).
+# EXPIRY_SECONDS: use the user-specified expiry, or fall back to 86400 (1 day).
 # The script uses the provided value directly (no min/max clamping in code).
 RESULT=$(node limit-order.js place \
   --token-in       "$XAUT" \
