@@ -57,6 +57,16 @@ node swap.js approve --token XAUT --amount <AMOUNT_IN> --spender 0x000000000022D
 > - 5000 USDT → `5000000000`
 > - Formula: `raw = human_amount * 1000000` (drop any fractional remainder)
 
+Resolve contract addresses and wallet before placing:
+
+```bash
+source ~/.aurehub/.env
+cd "$SCRIPTS_DIR"
+XAUT=$(python3 -c "import yaml,os; c=yaml.safe_load(open(os.path.expanduser('~/.aurehub/config.yaml'))); print(c['tokens']['XAUT']['address'])")
+USDT=$(python3 -c "import yaml,os; c=yaml.safe_load(open(os.path.expanduser('~/.aurehub/config.yaml'))); print(c['tokens']['USDT']['address'])")
+WALLET_ADDRESS=$(node swap.js address | python3 -c "import sys,json; print(json.load(sys.stdin)['address'])")
+```
+
 ```bash
 # EXPIRY_SECONDS: use the user-specified expiry, or fall back to 86400 (1 day).
 # AMOUNT_IN and MIN_AMOUNT_OUT must be raw integers (smallest unit, 6 decimals).

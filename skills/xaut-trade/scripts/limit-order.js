@@ -101,6 +101,10 @@ async function place(args) {
   }
 
   const chainIdNum = parseInt(chainId, 10);
+  if (Number.isNaN(chainIdNum) || chainIdNum <= 0) {
+    console.error('ERROR: --chain-id must be a positive integer');
+    process.exit(1);
+  }
   const expirySec = parseInt(expiry || '86400', 10);
   if (Number.isNaN(expirySec) || expirySec <= 0) {
     console.error('ERROR: --expiry must be a positive integer (seconds)');

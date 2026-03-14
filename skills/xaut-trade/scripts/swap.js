@@ -312,6 +312,16 @@ async function runCancelNonce(cfg, provider, args) {
   const tx = await signer.sendTransaction({ to: permit2, data });
   const receipt = await tx.wait();
 
+  if (!receipt) {
+    console.log(JSON.stringify({
+      address: signer.address,
+      txHash: tx.hash,
+      status: 'unknown',
+      warning: 'Transaction receipt is null — tx may have been dropped from mempool. Check on Etherscan.',
+    }, null, 2));
+    process.exit(1);
+  }
+
   console.log(JSON.stringify({
     address: signer.address,
     txHash: tx.hash,

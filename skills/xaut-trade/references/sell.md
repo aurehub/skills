@@ -45,9 +45,10 @@ AMOUNT_OUT=$(echo "$RESULT" | python3 -c "import sys,json; print(json.load(sys.s
 AMOUNT_OUT_RAW=$(echo "$RESULT" | python3 -c "import sys,json; print(json.load(sys.stdin)['amountOutRaw'])")
 ```
 
-Calculate `minAmountOut` (default slippage 50 bps):
+Calculate `minAmountOut` using `risk.default_slippage_bps` from config.yaml:
 
 ```bash
+DEFAULT_SLIPPAGE_BPS=$(python3 -c "import yaml,os; c=yaml.safe_load(open(os.path.expanduser('~/.aurehub/config.yaml'))); print(c.get('risk',{}).get('default_slippage_bps', 50))")
 MIN_AMOUNT_OUT=$(python3 -c \
   "print(int($AMOUNT_OUT_RAW * (10000 - $DEFAULT_SLIPPAGE_BPS) // 10000))")
 ```
@@ -70,13 +71,15 @@ Must include at minimum:
 
 **Large-trade check**: convert `amountOut` (USDT) to USD value; if it exceeds `risk.large_trade_usd`, require double confirmation.
 
-## 4. Explicit Confirmation Gate
+## 4. Confirmation Gate
 
-Do not execute any on-chain write unless the user has explicitly confirmed.
+Trade execution confirmation follows the threshold-based policy (see Section 9 — Mandatory Rules):
 
-Accepted confirmation phrases:
-- "confirm approve"
-- "confirm swap"
+- `< risk.confirm_trade_usd`: show full preview, then execute without blocking confirmation
+- `>= risk.confirm_trade_usd` and `< risk.large_trade_usd`: single confirmation
+- `>= risk.large_trade_usd` or estimated slippage exceeds `risk.max_slippage_bps_warn`: double confirmation
+
+Accepted confirmation phrases: "confirm approve", "confirm swap"
 
 ## 5. Allowance Check
 

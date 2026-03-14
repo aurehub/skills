@@ -38,9 +38,11 @@ GAS_ESTIMATE=$(echo "$RESULT" | python3 -c "import sys,json; print(json.load(sys
 
 ## 2. Calculate minAmountOut
 
-Default slippage `default_slippage_bps` (e.g. 50 bps = 0.5%):
+Read `default_slippage_bps` from config.yaml (e.g. 50 bps = 0.5%):
 
 ```bash
+# Read slippage from config.yaml, default to 50 bps
+DEFAULT_SLIPPAGE_BPS=$(python3 -c "import yaml,os; c=yaml.safe_load(open(os.path.expanduser('~/.aurehub/config.yaml'))); print(c.get('risk',{}).get('default_slippage_bps', 50))")
 # Use python3 to avoid bash integer overflow on large trades
 MIN_AMOUNT_OUT=$(python3 -c \
   "print(int($AMOUNT_OUT_RAW * (10000 - $DEFAULT_SLIPPAGE_BPS) // 10000))")
