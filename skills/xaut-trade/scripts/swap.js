@@ -253,16 +253,18 @@ async function runSwap(cfg, provider, args) {
   // Wait for confirmation — if this throws, the tx WAS broadcast but confirmation
   // failed (RPC error, timeout). Output txHash so caller can verify before retrying.
   let receipt;
+  let confirmTimer;
   try {
     receipt = await Promise.race([
       waitFn,
-      new Promise((_, reject) =>
-        setTimeout(() => reject(new Error(
+      new Promise((_, reject) => {
+        confirmTimer = setTimeout(() => reject(new Error(
           `Transaction not confirmed within ${timeoutMs / 1000}s (txHash: ${sentTx.hash}). It may still be pending — check on Etherscan.`
-        )), timeoutMs)
-      ),
+        )), timeoutMs);
+      }),
     ]);
   } catch (confirmErr) {
+    clearTimeout(confirmTimer);
     console.log(JSON.stringify({
       address,
       side: args.side,
@@ -274,6 +276,7 @@ async function runSwap(cfg, provider, args) {
     }, null, 2));
     process.exit(1);
   }
+  clearTimeout(confirmTimer);
 
   if (!receipt) {
     console.log(JSON.stringify({
@@ -443,6 +446,7 @@ if (isDirectRun) {
           await runCancelNonce(cfg, provider, parsed);
           break;
       }
+      process.exit(0);
     } catch (err) {
       console.error(JSON.stringify({ error: err.message }));
       process.exit(1);

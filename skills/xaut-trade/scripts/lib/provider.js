@@ -177,27 +177,55 @@ export class FallbackProvider {
   async waitForTransaction(txHash, confirmations = 1, timeoutMs = 300000) {
     const urls = [this._primaryUrl, ...this._fallbackUrls];
 
-    for (let i = 0; i < urls.length; i++) {
-      try {
-        const provider = new JsonRpcProvider(urls[i]);
-        const receipt = await provider.waitForTransaction(txHash, confirmations, timeoutMs);
-        // Promote successful URL if it's a fallback
-        if (i > 0) {
-          const oldPrimary = this._primaryUrl;
-          this._primaryUrl = urls[i];
-          this._fallbackUrls = [
-            oldPrimary,
-            ...urls.slice(1, i),
-            ...urls.slice(i + 1),
-          ];
-          this._ethersProvider = new JsonRpcProvider(this._primaryUrl);
-        }
-        return receipt;
-      } catch (err) {
-        if (!isRetriable(err) && !/no response/i.test(err.message)) throw err;
-        if (i === urls.length - 1) throw err;
-      }
+    // Race all URLs in parallel — whichever returns the receipt first wins.
+    // This prevents a slow/lagging primary RPC from blocking confirmation
+    // detection when faster fallback nodes already have the receipt indexed.
+    const providers = urls.map(url => {
+      const p = new JsonRpcProvider(url);
+      p.pollingInterval = 1000;
+      return p;
+    });
+
+    // Do NOT pass timeoutMs to individual providers — ethers6 creates an internal
+    // setTimeout for the timeout that destroy() cannot cancel, which would hold
+    // the event loop for the full duration. Manage the overall timeout ourselves.
+    const racePromises = providers.map((provider, i) =>
+      provider.waitForTransaction(txHash, confirmations)
+        .then(receipt => ({ receipt, index: i }))
+    );
+
+    let result;
+    let timer;
+    try {
+      result = await Promise.race([
+        Promise.any(racePromises),
+        new Promise((_, reject) => {
+          timer = setTimeout(() => reject(new Error(
+            `waitForTransaction timeout after ${timeoutMs / 1000}s`
+          )), timeoutMs);
+        }),
+      ]);
+    } finally {
+      clearTimeout(timer);
+      // Destroy all providers to stop their polling loops and free the event loop.
+      providers.forEach(p => p.destroy());
     }
+
+    const { receipt, index } = result;
+
+    // Promote the winning URL to primary if it was a fallback
+    if (index > 0) {
+      const oldPrimary = this._primaryUrl;
+      this._primaryUrl = urls[index];
+      this._fallbackUrls = [
+        oldPrimary,
+        ...urls.slice(1, index),
+        ...urls.slice(index + 1),
+      ];
+      this._ethersProvider = new JsonRpcProvider(this._primaryUrl);
+    }
+
+    return receipt;
   }
 }
 
