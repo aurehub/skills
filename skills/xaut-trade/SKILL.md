@@ -43,7 +43,7 @@ This skill connects to external services (Ethereum RPC, UniswapX API, and option
      (Optional: `cast wallet list` can verify the account name appears in Foundry's keystore)
    - Check `KEYSTORE_PASSWORD_FILE` readable: `source ~/.aurehub/.env && test -r "$KEYSTORE_PASSWORD_FILE" && echo OK || echo FAIL`
    - Check Node.js >= 18: `node -v` (needed for market module)
-6. **Both modes**: verify wallet loads by resolving `SCRIPTS_DIR` and running:
+6. **Both modes**: verify wallet loads by resolving `SCRIPTS_DIR` (see **Resolving SCRIPTS_DIR** below) and running:
    ```bash
    source ~/.aurehub/.env
    cd "$SCRIPTS_DIR"
