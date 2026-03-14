@@ -173,8 +173,11 @@ async function place(args) {
       const signResult = spawnSync(
         process.execPath,
         [path.join(__dirname, 'swap.js'), 'sign', '--data-file', tmpFile],
-        { encoding: 'utf8' }
+        { encoding: 'utf8', timeout: 30_000 }
       );
+      if (signResult.error) {
+        throw new Error(`Failed to spawn swap.js sign: ${signResult.error.message}`);
+      }
       if (signResult.status !== 0) {
         throw new Error(signResult.stderr?.trim() || 'swap.js sign failed');
       }

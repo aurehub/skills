@@ -131,9 +131,9 @@ All `node swap.js` commands assume CWD is `$SCRIPTS_DIR`.
 
 **Extra checks for limit orders** (only when the intent is limit buy / sell / query / cancel):
 
-5. Are limit order dependencies installed: `ls "$SCRIPTS_DIR/node_modules"`
+7. Are limit order dependencies installed: `ls "$SCRIPTS_DIR/node_modules"`
    Fail -> run `cd "$SCRIPTS_DIR" && npm install`, then continue
-6. Is `UNISWAPX_API_KEY` configured: `[ -n "$UNISWAPX_API_KEY" ] && [ "$UNISWAPX_API_KEY" != "your_api_key_here" ]`
+8. Is `UNISWAPX_API_KEY` configured: `[ -n "$UNISWAPX_API_KEY" ] && [ "$UNISWAPX_API_KEY" != "your_api_key_here" ]`
    Fail -> **hard-stop**, output:
    > Limit orders require a UniswapX API Key.
    > How to get one (about 5 minutes, free):

@@ -141,10 +141,7 @@ async function main() {
   // 4. Generate 16 bytes random entropy (BIP-39 seed)
   const entropy = randomBytes(16);
 
-  // 5. Generate 24 bytes random salt (matches signer.js test fixture which uses 16 bytes,
-  //    but task spec says 24 bytes — however signer.js only calls pbkdf2Sync(password, salt, ...)
-  //    and does not validate salt length, so we use 16 bytes to match the WDK spec)
-  //    NOTE: signer.js test uses 16-byte salt, spec says 24. We use 16 to match WDK source.
+  // 5. Generate 16-byte random salt for PBKDF2 key derivation (matches WDK source)
   const salt = randomBytes(16);
 
   // 6. Derive 32-byte key via PBKDF2-SHA256

@@ -208,7 +208,7 @@ async function runSwap(cfg, provider, args) {
   if (!args.side) throw new Error('--side is required for swap');
   if (!args.amount) throw new Error('--amount is required for swap');
   if (!args.minOut) throw new Error('--min-out is required for swap');
-  if (Number(args.minOut) <= 0) throw new Error('--min-out must be greater than 0 (zero disables slippage protection)');
+  if (!args.minOut || Number.isNaN(Number(args.minOut)) || Number(args.minOut) <= 0) throw new Error('--min-out must be a positive number (zero disables slippage protection)');
   if (args.side !== 'buy' && args.side !== 'sell') throw new Error('--side must be "buy" or "sell"');
 
   const signer = await createSigner(cfg, provider ? provider.getEthersProvider() : null);

@@ -39,7 +39,6 @@ function wdkEncrypt(buffer, key) {
   plain[0] = buffLength;
   plain.set(buffer, 1);
 
-  sodium.sodium_memzero(buffer);
   sodium.crypto_secretbox_easy(cipher, plain, nonce, key);
 
   return payload;

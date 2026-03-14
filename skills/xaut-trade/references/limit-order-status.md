@@ -38,7 +38,7 @@ Returns JSON: `{ address, total, orders: [{ orderHash, status, inputToken, input
 | `cancelled` | Cancelled |
 | `not_found` | orderHash does not exist or has been purged from the API (may be cleared after expiry) |
 
-## 3. Error Handling
+## 4. Error Handling
 
 - API unreachable: prompt to check network, suggest retrying later
 - `not_found`: suggest the orderHash may be wrong, or the order has expired and been purged

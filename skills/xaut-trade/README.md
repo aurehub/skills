@@ -145,7 +145,7 @@ fi
 cp "$SKILL_DIR/config.example.yaml" ~/.aurehub/config.yaml
 ```
 
-**4. Install runtime dependencies (required for market and limit orders)**
+**5. Install runtime dependencies (required for market and limit orders)**
 
 ```bash
 node --version   # requires >= 18; install from https://nodejs.org if missing
@@ -160,7 +160,7 @@ fi
 cd "$SCRIPTS_DIR" && npm install
 ```
 
-**5. Get a UniswapX API Key (limit orders only)**
+**6. Get a UniswapX API Key (limit orders only)**
 
 How to obtain (about 5 minutes, free):
 1. Visit [developers.uniswap.org/dashboard](https://developers.uniswap.org/dashboard)
@@ -173,7 +173,7 @@ echo 'UNISWAPX_API_KEY=your_key_here' >> ~/.aurehub/.env
 
 Market orders do not require an API Key.
 
-**6. Fund the wallet**
+**7. Fund the wallet**
 
 - A small amount of ETH (≥ 0.005) for gas
 - USDT (for buying XAUT)
