@@ -8,7 +8,8 @@
 //                               --chain-id <int> --api-url <url>
 //   node limit-order.js status --order-hash <0x...> --api-url <url> --chain-id <int>
 //   node limit-order.js list   --wallet <addr> --api-url <url> --chain-id <int> [--order-status open|filled|expired|cancelled]
-//   node limit-order.js cancel --nonce <uint>
+//   node limit-order.js cancel --order-hash <0x...>   (reads nonce from ~/.aurehub/orders/)
+//   node limit-order.js cancel --nonce <uint>          (fallback)
 //
 // Signing mode: delegates to swap.js sign (supports both WDK and Foundry).
 //   PRIVATE_KEY runtime signing is intentionally not supported.
@@ -102,7 +103,15 @@ async function place(args) {
   const chainIdNum = parseInt(chainId, 10);
   const deadline = Math.floor(Date.now() / 1000) + parseInt(expiry || '86400', 10);
 
-  // 2. Fetch nonce from UniswapX API
+  // 2. Validate amounts (invariant — does not depend on nonce)
+  const amountInBN = BN.from(amountIn);
+  const minAmountOutBN = BN.from(minAmountOut);
+  if (minAmountOutBN.lte(BN.from(0))) {
+    console.error('ERROR: --min-amount-out must be greater than 0 (zero disables slippage protection)');
+    process.exit(1);
+  }
+
+  // 3. Fetch nonce from UniswapX API
   // UniswapX API requires Origin header matching app.uniswap.org; may break if Uniswap changes policy
   const apiKey = process.env.UNISWAPX_API_KEY || '';
   const uniswapHeaders = {
@@ -113,93 +122,108 @@ async function place(args) {
   const nonceRes = await fetch(`${apiUrl}/nonce?address=${wallet}&chainId=${chainId}`, { headers: uniswapHeaders });
   if (!nonceRes.ok) throw new Error(`Nonce fetch failed: ${nonceRes.status} ${await nonceRes.text()}`);
   const nonceData = await nonceRes.json();
-  const nonce = nonceData.nonce;
+  let nonce = nonceData.nonce;
 
-  // 3. Build order using DutchOrderBuilder (no LimitOrderBuilder in SDK v2)
-  //    Set decayStartTime === decayEndTime === deadline → zero decay = limit order
-  //    SDK uses ethers v5 BigNumber (not native BigInt) — .gte() etc required
-  const amountInBN = BN.from(amountIn);
-  const minAmountOutBN = BN.from(minAmountOut);
-  if (minAmountOutBN.lte(BN.from(0))) {
-    console.error('ERROR: --min-amount-out must be greater than 0 (zero disables slippage protection)');
-    process.exit(1);
-  }
+  // 4. Build, sign, and submit order with nonce retry logic (max 5 attempts)
+  const MAX_NONCE_RETRIES = 5;
+  for (let attempt = 0; attempt < MAX_NONCE_RETRIES; attempt++) {
+    // Build order (must rebuild each attempt — nonce changes on retry)
+    const builder = new DutchOrderBuilder(chainIdNum);
+    const order = builder
+      .deadline(deadline)
+      .decayStartTime(deadline)
+      .decayEndTime(deadline)
+      .nonce(BN.from(nonce))
+      .swapper(wallet)
+      .input({ token: tokenIn, startAmount: amountInBN, endAmount: amountInBN })
+      .output({
+        token: tokenOut,
+        startAmount: minAmountOutBN,
+        endAmount: minAmountOutBN,
+        recipient: wallet,
+      })
+      .build();
 
-  const builder = new DutchOrderBuilder(chainIdNum);
-  const order = builder
-    .deadline(deadline)
-    .decayStartTime(deadline)
-    .decayEndTime(deadline)
-    .nonce(BN.from(nonce))
-    .swapper(wallet)
-    // input: startAmount === endAmount (no decay on input side)
-    .input({ token: tokenIn, startAmount: amountInBN, endAmount: amountInBN })
-    // output: startAmount === endAmount (fixed price, zero decay)
-    .output({
-      token: tokenOut,
-      startAmount: minAmountOutBN,
-      endAmount: minAmountOutBN,
-      recipient: wallet,
-    })
-    .build();
+    // Sign via EIP-712
+    const { domain, types, values } = order.permitData();
+    const bnReplacer = (_, v) => (v && v.type === 'BigNumber' && v.hex) ? v.hex : v;
+    const eip712Domain = [
+      { name: 'name', type: 'string' },
+      ...(domain.version !== undefined ? [{ name: 'version', type: 'string' }] : []),
+      ...(domain.chainId !== undefined ? [{ name: 'chainId', type: 'uint256' }] : []),
+      ...(domain.verifyingContract !== undefined ? [{ name: 'verifyingContract', type: 'address' }] : []),
+    ];
+    const primaryType = 'PermitWitnessTransferFrom';
+    const typesWithDomain = { EIP712Domain: eip712Domain, ...types };
+    const typedDataJson = JSON.stringify({ domain, types: typesWithDomain, primaryType, message: values }, bnReplacer);
+    let signature;
 
-  // 4. Sign via EIP-712
-  const { domain, types, values } = order.permitData();
-  // Serialize BigNumber → hex string so cast wallet sign can parse it
-  const bnReplacer = (_, v) => (v && v.type === 'BigNumber' && v.hex) ? v.hex : v;
-  // cast wallet sign requires primaryType and EIP712Domain in types
-  const eip712Domain = [
-    { name: 'name', type: 'string' },
-    ...(domain.version !== undefined ? [{ name: 'version', type: 'string' }] : []),
-    ...(domain.chainId !== undefined ? [{ name: 'chainId', type: 'uint256' }] : []),
-    ...(domain.verifyingContract !== undefined ? [{ name: 'verifyingContract', type: 'address' }] : []),
-  ];
-  const primaryType = 'PermitWitnessTransferFrom'; // Permit2 fixed primary type
-  const typesWithDomain = { EIP712Domain: eip712Domain, ...types };
-  const typedDataJson = JSON.stringify({ domain, types: typesWithDomain, primaryType, message: values }, bnReplacer);
-  let signature;
-
-  // Sign via swap.js sign subcommand (supports both WDK and Foundry modes)
-  const tmpDir = fs.mkdtempSync(path.join(os.tmpdir(), 'limit-order-'));
-  const tmpFile = path.join(tmpDir, 'typed-data.json');
-  fs.writeFileSync(tmpFile, typedDataJson);
-  try {
-    const signResult = spawnSync(
-      process.execPath,
-      [path.join(__dirname, 'swap.js'), 'sign', '--data-file', tmpFile],
-      { encoding: 'utf8' }
-    );
-    if (signResult.status !== 0) {
-      throw new Error(signResult.stderr?.trim() || 'swap.js sign failed');
+    const tmpDir = fs.mkdtempSync(path.join(os.tmpdir(), 'limit-order-'));
+    const tmpFile = path.join(tmpDir, 'typed-data.json');
+    fs.writeFileSync(tmpFile, typedDataJson);
+    try {
+      const signResult = spawnSync(
+        process.execPath,
+        [path.join(__dirname, 'swap.js'), 'sign', '--data-file', tmpFile],
+        { encoding: 'utf8' }
+      );
+      if (signResult.status !== 0) {
+        throw new Error(signResult.stderr?.trim() || 'swap.js sign failed');
+      }
+      signature = signResult.stdout.trim();
+    } finally {
+      fs.rmSync(tmpDir, { recursive: true, force: true });
     }
-    signature = signResult.stdout.trim();
-  } finally {
-    fs.rmSync(tmpDir, { recursive: true, force: true });
+
+    // Submit to UniswapX API
+    const encodedOrder = order.serialize();
+    const orderHash = order.hash();
+
+    const submitRes = await fetch(`${apiUrl}/order`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', ...uniswapHeaders },
+      body: JSON.stringify({ encodedOrder, signature, chainId: chainIdNum }),
+    });
+
+    if (!submitRes.ok) {
+      const body = await submitRes.text();
+      if (body.includes('NonceUsed') && attempt < MAX_NONCE_RETRIES - 1) {
+        nonce = BN.from(nonce).add(BN.from(1)).toString();
+        continue;
+      }
+      throw new Error(`Order submission failed: ${submitRes.status} ${body}`);
+    }
+
+    // 5. Auto-save order to ~/.aurehub/orders/ for later cancellation
+    const orderData = {
+      orderHash,
+      nonce,
+      deadline: new Date(deadline * 1000).toISOString(),
+      deadlineUnix: deadline,
+      tokenIn,
+      tokenOut,
+      amountIn,
+      minAmountOut,
+      wallet,
+      createdAt: new Date().toISOString(),
+    };
+    const ordersDir = path.join(os.homedir(), '.aurehub', 'orders');
+    fs.mkdirSync(ordersDir, { recursive: true });
+    fs.writeFileSync(
+      path.join(ordersDir, `${orderHash.slice(0, 10)}.json`),
+      JSON.stringify(orderData, null, 2)
+    );
+
+    // 6. Output JSON for SKILL.md to parse
+    console.log(JSON.stringify({
+      address: wallet,
+      orderHash,
+      deadline: orderData.deadline,
+      deadlineUnix: deadline,
+      nonce,
+    }));
+    return;
   }
-
-  // 5. Submit to UniswapX API
-  const encodedOrder = order.serialize();
-  const orderHash = order.hash();
-
-  const submitRes = await fetch(`${apiUrl}/order`, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json', ...uniswapHeaders },
-    body: JSON.stringify({ encodedOrder, signature, chainId: chainIdNum }),
-  });
-
-  if (!submitRes.ok) {
-    const body = await submitRes.text();
-    throw new Error(`Order submission failed: ${submitRes.status} ${body}`);
-  }
-
-  // 6. Output JSON for SKILL.md to parse
-  console.log(JSON.stringify({
-    address: wallet,
-    orderHash,
-    deadline: new Date(deadline * 1000).toISOString(),
-    deadlineUnix: deadline,
-    nonce,
-  }));
 }
 
 async function status(args) {
@@ -289,15 +313,34 @@ async function list(args) {
 }
 
 async function cancel(args) {
-  const { nonce } = args;
+  let { nonce, orderHash } = args;
+
+  // Resolve nonce from local order file if --order-hash is provided
+  if (!nonce && orderHash) {
+    const ordersDir = path.join(os.homedir(), '.aurehub', 'orders');
+    if (fs.existsSync(ordersDir)) {
+      const files = fs.readdirSync(ordersDir).filter(f => f.endsWith('.json'));
+      const prefix = orderHash.toLowerCase();
+      const match = files.find(f => {
+        try {
+          const data = JSON.parse(fs.readFileSync(path.join(ordersDir, f), 'utf8'));
+          return data.orderHash && data.orderHash.toLowerCase().startsWith(prefix);
+        } catch { return false; }
+      });
+      if (match) {
+        const data = JSON.parse(fs.readFileSync(path.join(ordersDir, match), 'utf8'));
+        nonce = data.nonce;
+      }
+    }
+  }
+
   if (!nonce) {
-    console.error('Missing required: --nonce');
+    console.error('Missing required: --nonce or --order-hash (with matching local order file)');
     process.exit(1);
   }
 
   const { wordPos, mask } = computeNonceComponents(BigInt(nonce));
 
-  // Output JSON for SKILL.md to capture and pass to cast send
   console.log(JSON.stringify({
     wordPos: wordPos.toString(),
     mask: mask.toString(),

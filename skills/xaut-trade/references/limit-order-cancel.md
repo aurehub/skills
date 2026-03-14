@@ -15,12 +15,23 @@ Cancelling a limit order is an on-chain operation (gas required). Confirm before
 
 ## 1. Fetch Cancellation Parameters
 
+**Preferred: use `--order-hash`** (auto-reads nonce from `~/.aurehub/orders/`):
+
 ```bash
 CANCEL_PARAMS=$(node limit-order.js cancel \
-  --nonce "$NONCE")
+  --order-hash "$ORDER_HASH")
 
 WORD_POS=$(echo "$CANCEL_PARAMS" | python3 -c "import sys,json; print(json.load(sys.stdin)['wordPos'])")
 MASK=$(echo "$CANCEL_PARAMS"     | python3 -c "import sys,json; print(json.load(sys.stdin)['mask'])")
+```
+
+Supports prefix matching (e.g. `0x9079c4f2` matches the full hash). Falls back to `--nonce` if no local order file is found.
+
+**Fallback: use `--nonce` directly** (if local order file is missing):
+
+```bash
+CANCEL_PARAMS=$(node limit-order.js cancel \
+  --nonce "$NONCE")
 ```
 
 ## 2. Execute Cancellation
