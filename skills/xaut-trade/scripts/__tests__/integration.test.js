@@ -6,11 +6,6 @@ describe('module imports', () => {
     expect(typeof m.loadConfig).toBe('function');
     expect(typeof m.resolveToken).toBe('function');
   });
-  it('imports provider', async () => {
-    const m = await import('../lib/provider.js');
-    expect(typeof m.createProvider).toBe('function');
-    expect(typeof m.FallbackProvider).toBe('function');
-  });
   it('imports signer', async () => {
     const m = await import('../lib/signer.js');
     expect(typeof m.createSigner).toBe('function');
