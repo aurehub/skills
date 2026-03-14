@@ -580,7 +580,7 @@ if [ "$WALLET_MODE" = "wdk" ]; then
     fi
   else
     # Fallback: use node to check RPC
-    if node -e "fetch('$ETH_RPC_URL',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({jsonrpc:'2.0',method:'eth_blockNumber',params:[],id:1})}).then(r=>r.json()).then(d=>{if(d.result)process.exit(0);else process.exit(1)}).catch(()=>process.exit(1))" 2>/dev/null; then
+    if ETH_RPC_URL="$ETH_RPC_URL" node -e "const u=process.env.ETH_RPC_URL;fetch(u,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({jsonrpc:'2.0',method:'eth_blockNumber',params:[],id:1})}).then(r=>r.json()).then(d=>{if(d.result)process.exit(0);else process.exit(1)}).catch(()=>process.exit(1))" 2>/dev/null; then
       ok "RPC reachable"
     else
       echo -e "  ${RED}❌ RPC check failed — ETH_RPC_URL is unreachable: $ETH_RPC_URL${NC}"

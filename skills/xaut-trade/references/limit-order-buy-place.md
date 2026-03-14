@@ -76,7 +76,7 @@ NONCE=$(echo "$RESULT"      | python3 -c "import sys,json; print(json.load(sys.s
 Return to user:
 - `orderHash`: for querying / cancelling the order
 - `deadline`: order expiry in local time
-- nonce (needed for cancellation)
+- `nonce`: **ask the user to record this** — it is required for cancellation and may not be recoverable from the API if the session ends
 - Reminder: order has been submitted to UniswapX; the computer does not need to stay online — the Filler network fills automatically when the price is reached
 
 ## 7. Error Handling

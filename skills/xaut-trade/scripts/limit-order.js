@@ -37,7 +37,7 @@ function loadDefaults() {
   try {
     const configDir = path.join(os.homedir(), '.aurehub');
     const raw = fs.readFileSync(path.join(configDir, 'config.yaml'), 'utf8');
-    const cfg = yaml.load(raw) ?? {};
+    const cfg = yaml.load(raw, { schema: yaml.JSON_SCHEMA }) ?? {};
     return {
       apiUrl: cfg.limit_order?.uniswapx_api || null,
       chainId: String(cfg.networks?.ethereum_mainnet?.chain_id || '1'),
@@ -48,6 +48,10 @@ function loadDefaults() {
 function parseArgs(args) {
   const result = {};
   for (let i = 0; i < args.length; i += 2) {
+    if (i + 1 >= args.length) {
+      console.error(`Missing value for flag: ${args[i]}`);
+      process.exit(1);
+    }
     const key = args[i].replace(/^--/, '').replace(/-([a-z])/g, (_, c) => c.toUpperCase());
     result[key] = args[i + 1];
   }

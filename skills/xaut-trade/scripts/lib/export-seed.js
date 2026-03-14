@@ -137,6 +137,7 @@ async function main() {
   const encryptedEntropy = Buffer.from(vault.encryptedEntropy, 'hex');
   const key = pbkdf2Sync(password, salt, 100_000, 32, 'sha256');
   const entropy = wdkDecrypt(encryptedEntropy, key);
+  key.fill(0);
   const mnemonic = bip39.entropyToMnemonic(entropy);
   sodium.sodium_memzero(entropy);
 

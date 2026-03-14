@@ -76,7 +76,10 @@ export async function approve(token, spender, amount, signer, opts = {}) {
 
   const data = iface.encodeFunctionData('approve', [spender, rawAmount]);
   const tx = await signer.sendTransaction({ to: token.address, data });
-  await waitWithTimeout(tx);
+  const receipt = await waitWithTimeout(tx);
+  if (receipt.status !== 1) {
+    throw new Error(`Approval failed (txHash: ${tx.hash}). Check token contract and allowance.`);
+  }
 
   return { hash: tx.hash };
 }

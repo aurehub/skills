@@ -206,6 +206,7 @@ async function _createWdkSigner(cfg, provider) {
 
   const key = wdkDeriveKey(password, salt);
   const entropy = wdkDecrypt(encryptedEntropy, key);
+  key.fill(0);
   let wallet;
   try {
     const mnemonic = bip39.entropyToMnemonic(entropy);

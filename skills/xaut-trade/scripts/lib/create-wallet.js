@@ -152,6 +152,7 @@ async function main() {
 
   // 7. Encrypt entropy using XSalsa20-Poly1305 (WDK format)
   const encryptedEntropy = wdkEncrypt(entropy, key);
+  key.fill(0);
 
   // 8. Assemble vault JSON
   const vault = {
