@@ -24,7 +24,7 @@ RESULT=$(node limit-order.js list \
   --order-status open)   # Optional: open / filled / expired / cancelled — omit to return all
 ```
 
-Returns JSON: `{ total, orders: [{ orderHash, status, inputToken, inputAmount, outputToken, outputAmount, txHash, createdAt }] }`
+Returns JSON: `{ address, total, orders: [{ orderHash, status, inputToken, inputAmount, outputToken, outputAmount, txHash, createdAt }] }`
 
 ## 3. Status Display
 
