@@ -199,7 +199,7 @@ async function runApprove(cfg, provider, args) {
   const rules = tokenRules[args.token] ?? {};
   const requiresResetApprove = rules.requires_reset_approve ?? false;
 
-  const result = await approve(token, spender, args.amount, signer, { requiresResetApprove });
+  const result = await approve(token, spender, args.amount, signer, { requiresResetApprove, fallbackProvider: provider });
 
   console.log(JSON.stringify({ address: signer.address, token: args.token, amount: args.amount, spender, txHash: result.hash }, null, 2));
 }
@@ -238,8 +238,11 @@ async function runSwap(cfg, provider, args) {
 
   const timeoutMs = (risk.deadline_seconds ?? 300) * 1000;
   const sentTx = await signer.sendTransaction(tx);
+  const waitFn = provider?.waitForTransaction
+    ? provider.waitForTransaction(sentTx.hash, 1, timeoutMs)
+    : sentTx.wait();
   const receipt = await Promise.race([
-    sentTx.wait(),
+    waitFn,
     new Promise((_, reject) =>
       setTimeout(() => reject(new Error(
         `Transaction not confirmed within ${timeoutMs / 1000}s (txHash: ${sentTx.hash}). It may still be pending — check on Etherscan.`

@@ -158,9 +158,46 @@ export class FallbackProvider {
 
   /**
    * Return the underlying ethers JsonRpcProvider (e.g. for Wallet.connect()).
+   * Always reflects the current primary URL (updated after fallback switches).
    */
   getEthersProvider() {
     return this._ethersProvider;
+  }
+
+  /**
+   * Wait for a transaction receipt with fallback support.
+   * When the current provider's waitForTransaction fails with a retriable
+   * error, try each fallback URL's provider instead.
+   *
+   * @param {string} txHash
+   * @param {number} [confirmations=1]
+   * @param {number} [timeoutMs=300000]
+   * @returns {Promise<import('ethers6').TransactionReceipt|null>}
+   */
+  async waitForTransaction(txHash, confirmations = 1, timeoutMs = 300000) {
+    const urls = [this._primaryUrl, ...this._fallbackUrls];
+
+    for (let i = 0; i < urls.length; i++) {
+      try {
+        const provider = new JsonRpcProvider(urls[i]);
+        const receipt = await provider.waitForTransaction(txHash, confirmations, timeoutMs);
+        // Promote successful URL if it's a fallback
+        if (i > 0) {
+          const oldPrimary = this._primaryUrl;
+          this._primaryUrl = urls[i];
+          this._fallbackUrls = [
+            oldPrimary,
+            ...urls.slice(1, i),
+            ...urls.slice(i + 1),
+          ];
+          this._ethersProvider = new JsonRpcProvider(this._primaryUrl);
+        }
+        return receipt;
+      } catch (err) {
+        if (!isRetriable(err) && !/no response/i.test(err.message)) throw err;
+        if (i === urls.length - 1) throw err;
+      }
+    }
   }
 }
 

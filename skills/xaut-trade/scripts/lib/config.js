@@ -104,7 +104,7 @@ export function resolveToken(config, symbol) {
   if (typeof token.decimals !== 'number' || !Number.isInteger(token.decimals) || token.decimals < 0 || token.decimals > 18) {
     throw new Error(`Token ${symbol} has invalid decimals: ${token.decimals}`);
   }
-  return { address: token.address, decimals: token.decimals };
+  return { address: canonical || token.address, decimals: token.decimals };
 }
 
 export function validateContracts(config) {
