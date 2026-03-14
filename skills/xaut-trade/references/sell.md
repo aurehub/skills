@@ -155,14 +155,6 @@ Report: `Swap tx: https://etherscan.io/tx/<txHash>`
 
 ## 8. Result Verification
 
-Pre-swap snapshot (fetch before executing swap):
-
-```bash
-source ~/.aurehub/.env
-cd "$SCRIPTS_DIR"
-node swap.js balance
-```
-
 Post-swap balance:
 
 ```bash
@@ -173,8 +165,7 @@ node swap.js balance
 
 Return:
 - tx hash
-- XAUT balance before and after (comparison)
-- post-trade USDT balance
+- Post-trade balances (XAUT, USDT, ETH)
 - on failure, return retry suggestions (reduce sell amount / increase slippage tolerance / check nonce and gas)
 
 ## 9. Mandatory Rules

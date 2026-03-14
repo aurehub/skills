@@ -89,9 +89,13 @@ async function place(args) {
     if (!v) { console.error(`Missing required argument: --${k.replace(/([A-Z])/g, '-$1').toLowerCase()}`); process.exit(1); }
   }
 
-  // Precision check: XAUT has 6 decimals max
+  // Precision check: both XAUT and USDT have 6 decimals max
   if (!checkPrecision(amountIn, 6)) {
-    console.error('ERROR: XAUT amount exceeds maximum precision (6 decimal places)');
+    console.error('ERROR: amountIn exceeds maximum precision (6 decimal places)');
+    process.exit(1);
+  }
+  if (!checkPrecision(minAmountOut, 6)) {
+    console.error('ERROR: minAmountOut exceeds maximum precision (6 decimal places)');
     process.exit(1);
   }
 

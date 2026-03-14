@@ -104,7 +104,7 @@ async function main() {
   const opts = parseArgs(process.argv);
 
   // ── TTY gate: refuse to reveal seed in non-interactive contexts ──────────
-  if (!process.stdin.isTTY || !process.stdout.isTTY) {
+  if (!process.stdin.isTTY || !process.stdout.isTTY || !process.stderr.isTTY) {
     fatal(
       'This command must be run in an interactive terminal.\n' +
       'It cannot be executed by scripts, agents, or piped commands\n' +
