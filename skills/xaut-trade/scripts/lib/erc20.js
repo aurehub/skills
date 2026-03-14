@@ -50,20 +50,25 @@ export async function getAllowance(token, owner, spender, provider) {
  * @param {string} spender
  * @param {string} amount  Human-readable amount (e.g. "1000")
  * @param {object} signer  ethers signer (or compatible mock)
- * @param {{ requiresResetApprove?: boolean, timeoutSeconds?: number }} opts
+ * @param {{ requiresResetApprove?: boolean, timeoutSeconds?: number, waitForReceipt?: (txHash: string) => Promise }} opts
  * @returns {Promise<{ hash: string }>}
  */
 export async function approve(token, spender, amount, signer, opts = {}) {
   const rawAmount = parseUnits(amount, token.decimals);
   const timeoutMs = (opts.timeoutSeconds ?? 300) * 1000;
-  const waitWithTimeout = (sentTx) => Promise.race([
-    sentTx.wait(),
-    new Promise((_, reject) =>
-      setTimeout(() => reject(new Error(
-        `Approve tx not confirmed within ${timeoutMs / 1000}s (txHash: ${sentTx.hash}). It may still be pending.`
-      )), timeoutMs)
-    ),
-  ]);
+  const waitWithTimeout = async (sentTx) => {
+    const receiptPromise = opts.waitForReceipt
+      ? opts.waitForReceipt(sentTx.hash)
+      : sentTx.wait();
+    return Promise.race([
+      receiptPromise,
+      new Promise((_, reject) =>
+        setTimeout(() => reject(new Error(
+          `Approve tx not confirmed within ${timeoutMs / 1000}s (txHash: ${sentTx.hash}). It may still be pending.`
+        )), timeoutMs)
+      ),
+    ]);
+  };
 
   if (opts.requiresResetApprove) {
     const resetData = iface.encodeFunctionData('approve', [spender, 0n]);

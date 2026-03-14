@@ -27,6 +27,20 @@ function createProvider(env) {
   return new JsonRpcProvider(url);
 }
 
+/**
+ * Poll eth_getTransactionReceipt until confirmed or timeout.
+ * ethers v6's tx.wait() is unreliably slow (~5 min); this polls every 3s.
+ */
+async function pollReceipt(provider, txHash, timeoutMs = 300000, intervalMs = 3000) {
+  const deadline = Date.now() + timeoutMs;
+  while (Date.now() < deadline) {
+    const receipt = await provider.getTransactionReceipt(txHash);
+    if (receipt) return receipt;
+    await new Promise((r) => setTimeout(r, intervalMs));
+  }
+  return null;
+}
+
 // ---------------------------------------------------------------------------
 // Constants
 // ---------------------------------------------------------------------------
@@ -206,7 +220,8 @@ async function runApprove(cfg, provider, args) {
     if (parseFloat(currentAllowance) === 0) requiresResetApprove = false;
   }
 
-  const result = await approve(token, spender, args.amount, signer, { requiresResetApprove });
+  const waitForReceipt = (txHash) => pollReceipt(provider, txHash);
+  const result = await approve(token, spender, args.amount, signer, { requiresResetApprove, waitForReceipt });
 
   console.log(JSON.stringify({ address: signer.address, token: args.token, amount: args.amount, spender, txHash: result.hash }, null, 2));
 }
@@ -248,7 +263,7 @@ async function runSwap(cfg, provider, args) {
   // Send transaction — if this throws, the tx was never broadcast (safe to retry)
   const sentTx = await signer.sendTransaction(tx);
 
-  const waitFn = sentTx.wait();
+  const waitFn = pollReceipt(provider, sentTx.hash, timeoutMs);
 
   // Wait for confirmation — if this throws, the tx WAS broadcast but confirmation
   // failed (RPC error, timeout). Output txHash so caller can verify before retrying.
