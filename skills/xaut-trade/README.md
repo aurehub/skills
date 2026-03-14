@@ -438,7 +438,7 @@ The primary test target is Claude (Sonnet / Opus series); other LLMs that can fo
 
 **Q: Will you read my API Key or private key from `.env`?**
 
-No. The Skill package runs entirely locally. The only optional external data sharing is the activity rankings feature (opt-in during setup or first-success prompt, sends wallet address and nickname to xaue.com). All trades are executed via local `cast` — no intermediary servers. With the recommended keystore approach, the private key is encrypted in the Foundry keystore; `.env` only stores the account name, wallet address, and other config. Never commit `.env` to version control.
+No. The Skill package runs entirely locally. The only optional external data sharing is the activity rankings feature (opt-in during setup or first-success prompt, sends wallet address and nickname to xaue.com). All trades are executed via local Node.js scripts — no intermediary servers. Private keys are encrypted locally (WDK vault or Foundry keystore); `.env` only stores the account name and other config (wallet address is derived at runtime). Never commit `.env` to version control.
 
 **Q: Will the Agent auto-buy based on price movements?**
 
