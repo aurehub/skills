@@ -561,8 +561,8 @@ fi
 # ── Step 10: Verification ───────────────────────────────────────────────────────
 step "Verify environment"
 
-# shellcheck source=/dev/null
-source ~/.aurehub/.env
+# WALLET_MODE and ETH_RPC_URL are already set as shell variables from earlier
+# steps — no need to source .env (avoids executing untrusted shell code).
 
 if [ "$WALLET_MODE" = "wdk" ]; then
   # Verify RPC connectivity using node
