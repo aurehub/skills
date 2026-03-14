@@ -1,6 +1,7 @@
 import { readFileSync } from 'fs';
 import { join } from 'path';
 import yaml from 'js-yaml';
+import { getAddress } from 'ethers6';
 
 /**
  * Parse a .env file content into a plain object.
@@ -104,7 +105,8 @@ export function resolveToken(config, symbol) {
   if (typeof token.decimals !== 'number' || !Number.isInteger(token.decimals) || token.decimals < 0 || token.decimals > 18) {
     throw new Error(`Token ${symbol} has invalid decimals: ${token.decimals}`);
   }
-  return { address: canonical || token.address, decimals: token.decimals };
+  // Normalize to EIP-55 checksum to tolerate old config files with lowercase addresses.
+  return { address: getAddress(token.address), decimals: token.decimals };
 }
 
 export function validateContracts(config) {
@@ -112,6 +114,10 @@ export function validateContracts(config) {
   for (const [name, canonical] of Object.entries(CANONICAL_CONTRACTS)) {
     if (contracts[name] && contracts[name].toLowerCase() !== canonical.toLowerCase()) {
       throw new Error(`Contract ${name} address mismatch: config has ${contracts[name]}, expected ${canonical}. Check config.yaml for tampering.`);
+    }
+    // Normalize to EIP-55 checksum to tolerate old config files with lowercase addresses.
+    if (contracts[name]) {
+      contracts[name] = getAddress(contracts[name]);
     }
   }
 }
