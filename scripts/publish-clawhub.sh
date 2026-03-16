@@ -99,13 +99,40 @@ publish_one() {
     return 0
   fi
 
-  clawhub publish "$skill_path" \
-    --slug "$slug" \
-    --name "$name" \
-    --version "$version" \
-    --tags latest
+  local max_retries=2
+  local attempt=0
+  local output=""
+  local rc=0
 
-  green "  Published $slug@$version"
+  while [ $attempt -lt $max_retries ]; do
+    attempt=$((attempt + 1))
+    output="$(clawhub publish "$skill_path" \
+      --slug "$slug" \
+      --name "$name" \
+      --version "$version" \
+      --tags latest 2>&1)" && rc=0 || rc=$?
+
+    if [ $rc -eq 0 ]; then
+      green "  Published $slug@$version"
+      return 0
+    fi
+
+    # Treat "Version already exists" as success (idempotent)
+    if echo "$output" | grep -qi "Version already exists"; then
+      yellow "  $slug@$version already published (skipped)"
+      return 0
+    fi
+
+    # Retry on timeout
+    if echo "$output" | grep -qi "Timeout" && [ $attempt -lt $max_retries ]; then
+      yellow "  Attempt $attempt timed out, retrying..."
+      continue
+    fi
+
+    # Non-retryable failure
+    echo "$output" >&2
+    die "Failed to publish $slug@$version"
+  done
 }
 
 # ── publish all skills ───────────────────────────────────────────────────────
@@ -147,12 +174,39 @@ publish_all() {
       continue
     fi
 
-    if clawhub publish "$skill_dir" \
-      --slug "$slug" \
-      --name "$name" \
-      --bump "$bump" \
-      --tags latest; then
-      green "  Published $slug"
+    local output="" rc=0 attempt=0 max_retries=2
+    local published=false
+
+    while [ $attempt -lt $max_retries ]; do
+      attempt=$((attempt + 1))
+      output="$(clawhub publish "$skill_dir" \
+        --slug "$slug" \
+        --name "$name" \
+        --bump "$bump" \
+        --tags latest 2>&1)" && rc=0 || rc=$?
+
+      if [ $rc -eq 0 ]; then
+        green "  Published $slug"
+        published=true
+        break
+      fi
+
+      if echo "$output" | grep -qi "Version already exists"; then
+        yellow "  $slug already at latest version (skipped)"
+        published=true
+        break
+      fi
+
+      if echo "$output" | grep -qi "Timeout" && [ $attempt -lt $max_retries ]; then
+        yellow "  Attempt $attempt timed out, retrying..."
+        continue
+      fi
+
+      echo "$output" >&2
+      break
+    done
+
+    if [ "$published" = true ]; then
       count=$((count + 1))
     else
       red "  Failed to publish $slug"
