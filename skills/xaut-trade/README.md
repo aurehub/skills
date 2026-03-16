@@ -381,6 +381,8 @@ The Agent will run the full flow (quote → confirm → approve → swap), all o
 
 ## Security & Privacy
 
+> For the complete environment and security declaration (required config files, environment variables, filesystem access, security safeguards), see the **Environment & Security Declaration** section in [SKILL.md](SKILL.md).
+
 This skill communicates with external services during setup and trading:
 
 | Service | When | Data Sent |

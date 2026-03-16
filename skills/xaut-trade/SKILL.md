@@ -2,10 +2,10 @@
 name: xaut-trade
 description: "Buy or sell XAUT (Tether Gold) on Ethereum. Supports market orders (Uniswap V3) and limit orders (UniswapX). Wallet modes: Foundry keystore or WDK. Triggers: buy XAUT, XAUT trade, swap USDT for XAUT, sell XAUT, swap XAUT for USDT, limit order, limit buy XAUT, limit sell XAUT, check limit order, cancel limit order, XAUT when, create wallet, setup wallet."
 license: MIT
-compatibility: Requires Node.js >= 18 and internet access to Ethereum RPC and UniswapX API. Foundry (cast) required only for foundry wallet mode.
+compatibility: "Requires Node.js >= 18, ~/.aurehub/ config directory, Ethereum RPC (HTTPS), and UniswapX API access. Reads/writes encrypted wallet vault and password files under ~/.aurehub/. Foundry (cast) required only for foundry wallet mode."
 metadata:
   author: aurehub
-  version: "2.1.0"
+  version: "2.1.1"
 ---
 
 # xaut-trade
@@ -21,6 +21,46 @@ Use when the user wants to buy or sell XAUT (Tether Gold):
 ## External Communications
 
 This skill connects to external services (Ethereum RPC, UniswapX API, and optionally xaue.com rankings). On first setup, it may install dependencies via npm. Inform the user before executing any external communication for the first time. See the README for a full list.
+
+## Environment & Security Declaration
+
+### Required config files (under `~/.aurehub/`)
+
+| File | Purpose | Required |
+|------|---------|----------|
+| `.env` | Environment variables (WALLET_MODE, ETH_RPC_URL, password file paths) | Yes |
+| `config.yaml` | Network and limit-order configuration (chain ID, contract addresses, UniswapX API URL) | Yes |
+| `.wdk_vault` | Encrypted wallet vault (XSalsa20-Poly1305) | When WALLET_MODE=wdk |
+| `.wdk_password` | Vault decryption password (file mode 0600) | When WALLET_MODE=wdk |
+
+### Environment variables
+
+| Variable | Purpose | Required |
+|----------|---------|----------|
+| `WALLET_MODE` | Wallet type: `wdk` (encrypted vault) or `foundry` (keystore) | Yes |
+| `ETH_RPC_URL` | Ethereum JSON-RPC endpoint (HTTPS) | Yes |
+| `WDK_PASSWORD_FILE` | Path to WDK vault password file (mode 0600) | When WALLET_MODE=wdk |
+| `KEYSTORE_PASSWORD_FILE` | Path to Foundry keystore password file (mode 0600) | When WALLET_MODE=foundry |
+| `UNISWAPX_API_KEY` | UniswapX API key for limit orders | When using limit orders |
+| `ETH_RPC_URL_FALLBACK` | Optional fallback RPC endpoint | No |
+
+### Network access
+
+- **Ethereum JSON-RPC** (ETH_RPC_URL) — blockchain reads and transaction submission
+- **UniswapX API** (HTTPS) — limit order nonce, submission, status, cancellation
+- **xaue.com Rankings API** (HTTPS, opt-in) — leaderboard registration
+
+### Shell commands
+
+- `node scripts/*.js` — all trading operations run via Node.js subprocesses
+- `cast` (foundry mode only) — keystore signing
+
+### Security safeguards
+
+- Runtime `PRIVATE_KEY` is explicitly rejected; only file-based wallet modes are supported
+- Seed phrase export is TTY-gated and requires interactive confirmation
+- Vault and password files enforce 0600 permissions
+- Decrypted key material is zeroed from memory after use
 
 ## Environment Readiness Check (run first on every session)
 
