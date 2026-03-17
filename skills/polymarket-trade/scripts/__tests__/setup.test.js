@@ -2,7 +2,7 @@ import { describe, it, expect } from 'vitest';
 import { mkdtempSync, writeFileSync, rmSync, mkdirSync } from 'fs';
 import { join } from 'path';
 import { tmpdir } from 'os';
-import { checkEnvFile, checkVaultFile, checkClobCreds, checkNodeModules } from '../setup.js';
+import { checkEnvFile, checkVaultFile, checkClobCreds, checkNodeModules, checkPasswordFile, checkConfigFile } from '../setup.js';
 
 let dir;
 function setup() { dir = mkdtempSync(join(tmpdir(), 'pm-setup-')); }
@@ -63,6 +63,40 @@ describe('checkClobCreds', () => {
     setup();
     try {
       expect(checkClobCreds(dir)).toBe(false);
+    } finally { teardown(); }
+  });
+});
+
+describe('checkPasswordFile', () => {
+  it('passes when .wdk_password exists', () => {
+    setup();
+    try {
+      writeFileSync(join(dir, '.wdk_password'), 'secret');
+      expect(() => checkPasswordFile(dir)).not.toThrow();
+    } finally { teardown(); }
+  });
+
+  it('throws when .wdk_password is missing', () => {
+    setup();
+    try {
+      expect(() => checkPasswordFile(dir)).toThrow('.wdk_password');
+    } finally { teardown(); }
+  });
+});
+
+describe('checkConfigFile', () => {
+  it('passes when polymarket.yaml exists', () => {
+    setup();
+    try {
+      writeFileSync(join(dir, 'polymarket.yaml'), 'rpc: http://localhost');
+      expect(() => checkConfigFile(dir)).not.toThrow();
+    } finally { teardown(); }
+  });
+
+  it('throws when polymarket.yaml is missing', () => {
+    setup();
+    try {
+      expect(() => checkConfigFile(dir)).toThrow('polymarket.yaml');
     } finally { teardown(); }
   });
 });

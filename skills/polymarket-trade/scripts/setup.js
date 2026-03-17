@@ -19,7 +19,7 @@ export function checkEnvFile(aurehubDir = AUREHUB_DIR) {
     throw new Error(`Missing ~/.aurehub/.env. Create it with WALLET_MODE=wdk and POLYGON_RPC_URL=<url>`);
   }
   const content = readFileSync(path, 'utf8');
-  if (!content.includes('WALLET_MODE=wdk')) {
+  if (!/^WALLET_MODE=wdk\s*$/m.test(content)) {
     throw new Error(`WALLET_MODE must be "wdk" in ~/.aurehub/.env`);
   }
 }
@@ -116,7 +116,7 @@ export async function deriveClobCreds(aurehubDir = AUREHUB_DIR) {
     key: creds.key,
     secret: creds.secret,
     passphrase: creds.passphrase,
-    nonce: 0,
+    nonce: creds.nonce ?? 0,
     derivedAt: new Date().toISOString(),
     walletAddress: wallet.address,
   };
