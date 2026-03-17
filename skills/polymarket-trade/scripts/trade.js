@@ -143,6 +143,7 @@ export async function sell({ market, side, amount, cfg, provider, wallet }) {
 
   // Hard stops (gas + market active)
   const polRaw = await provider.getBalance(wallet.address);
+  // Pass estimated dollar value so minOrderSize check applies to USD proceeds (not share count)
   validateHardStops(parseFloat(estUsdce), {
     usdceBalance: 999999, // not checked for sell
     polBalance:   parseFloat(ethers.utils.formatEther(polRaw)),
