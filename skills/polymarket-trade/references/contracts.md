@@ -19,9 +19,9 @@ Used for: BUY approval target (non-neg_risk markets); SELL `setApprovalForAll` o
 ## Neg Risk Exchange
 
 ```
-0xC5d563A36AE78145C45a50134d48A1215220f80b
+0xC5d563A36AE78145C45a50134d48A1215220f80a
 ```
-[Polygonscan](https://polygonscan.com/address/0xC5d563A36AE78145C45a50134d48A1215220f80b)
+[Polygonscan](https://polygonscan.com/address/0xC5d563A36AE78145C45a50134d48A1215220f80a)
 
 Used for: BUY approval target (neg_risk markets); SELL `setApprovalForAll` operator (neg_risk markets)
 

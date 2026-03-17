@@ -15,6 +15,6 @@ polymarket:
 contracts:
   usdc_e: "0x2791Bca1f2de4661ED88A30C99A7a9449Aa84174"
   ctf_exchange: "0x4bFb41d5B3570DeFd03C39a9A4D8dE6Bd8B8982E"
-  neg_risk_exchange: "0xC5d563A36AE78145C45a50134d48A1215220f80b"
+  neg_risk_exchange: "0xC5d563A36AE78145C45a50134d48A1215220f80a"
   ctf_contract: "0x4D97DCd97eC945f40cF65F87097ACe5EA0476045"
   # neg_risk_adapter: not used in v1 (exchange contract handles internally)

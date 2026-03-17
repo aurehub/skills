@@ -50,7 +50,7 @@ export async function buy({ market, side, amount, cfg, provider, wallet }) {
   const negRisk = await client.getNegRisk(tokenID);
   const contracts = cfg.yaml?.contracts ?? {};
   const spender = negRisk
-    ? (contracts.neg_risk_exchange ?? '0xC5d563A36AE78145C45a50134d48A1215220f80b')
+    ? (contracts.neg_risk_exchange ?? '0xC5d563A36AE78145C45a50134d48A1215220f80a')
     : (contracts.ctf_exchange      ?? '0x4bFb41d5B3570DeFd03C39a9A4D8dE6Bd8B8982E');
   const usdceAddr = contracts.usdc_e ?? '0x2791Bca1f2de4661ED88A30C99A7a9449Aa84174';
 
@@ -165,7 +165,7 @@ export async function sell({ market, side, amount, cfg, provider, wallet }) {
 
   // setApprovalForAll
   const operator = negRisk
-    ? (contracts.neg_risk_exchange ?? '0xC5d563A36AE78145C45a50134d48A1215220f80b')
+    ? (contracts.neg_risk_exchange ?? '0xC5d563A36AE78145C45a50134d48A1215220f80a')
     : (contracts.ctf_exchange      ?? '0x4bFb41d5B3570DeFd03C39a9A4D8dE6Bd8B8982E');
   console.log(`\nApproving exchange operator...`);
   const ctfSigned = ctf.connect(wallet);
