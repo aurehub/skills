@@ -23,6 +23,8 @@ describe('quote', () => {
   it('returns amountOut, amountOutRaw, sqrtPriceX96, and gasEstimate from QuoterV2', async () => {
     // 1 XAUT (6 decimals) = 1_000_000 raw
     const rawAmountOut = 1_000_000n;
+    // 79228162514264337593543950336 = 2^96, the Uniswap V3 sqrtPriceX96 value for price = 1.0
+    // sqrtPriceX96 = sqrt(price) * 2^96; at price=1.0 this equals exactly 2^96
     const rawSqrtPrice = 79228162514264337593543950336n;
     const rawGasEstimate = 150_000n;
 
