@@ -1,0 +1,10 @@
+{
+  "version": 1,
+  "skills": {
+    "web3-polymarket": {
+      "source": "Polymarket/agent-skills",
+      "sourceType": "github",
+      "computedHash": "281e0a43cc1a5864ffb95f69c9e193964c1b332af6fded869280527a9d9b565b"
+    }
+  }
+}
