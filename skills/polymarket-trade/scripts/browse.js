@@ -22,6 +22,7 @@ export function formatMarketOutput(market, orderbooks = {}, marketInfo = null) {
 
   const bestBid = ob => ob?.bids?.[0]?.price ?? '—';
   const bestAsk = ob => ob?.asks?.[0]?.price ?? '—';
+  // Approximate total market depth (bid + ask notional), not a one-sided figure
   const liq = ob => {
     if (!ob) return '—';
     const sum = [...(ob.bids ?? []), ...(ob.asks ?? [])]

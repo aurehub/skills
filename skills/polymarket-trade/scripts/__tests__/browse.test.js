@@ -43,6 +43,13 @@ describe('formatMarketOutput', () => {
   it('shows min order size', () => {
     const out = formatMarketOutput(mockMarket, mockOrderbooks);
     expect(out).toContain('Min order');
+    expect(out).toContain('$5');
+  });
+
+  it('renders — fallbacks when orderbooks and marketInfo are missing', () => {
+    const out = formatMarketOutput(mockMarket, {});
+    expect(out).toContain('—');
+    expect(out).toContain('Will BTC reach $100k');
   });
 });
 
