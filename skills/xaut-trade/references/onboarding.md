@@ -162,6 +162,11 @@ Now skip to **Step C1: Write config.yaml** below.
 
 #### Step F1: Install Foundry (if `cast` is unavailable)
 
+> **Security note**: The command below pipes a remote script directly into your shell.
+> This is the official Foundry installation method. To verify the installer before running,
+> you can download and inspect it first: `curl -L https://foundry.paradigm.xyz -o foundryup-install.sh`
+> then review `foundryup-install.sh` before executing it with `bash foundryup-install.sh`.
+
 ```bash
 curl -L https://foundry.paradigm.xyz | bash && \
   export PATH="$HOME/.foundry/bin:$PATH" && \
