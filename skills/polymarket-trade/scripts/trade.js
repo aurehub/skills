@@ -104,9 +104,12 @@ export async function buy({ market, side, amount, cfg, provider, wallet }) {
     { tickSize, negRisk },
     OrderType.FOK,
   );
-  console.log(`\n✅ Order submitted`);
-  console.log(`   Status:   ${result.status ?? 'submitted'}`);
-  console.log(`   Order ID: ${result.orderID ?? result.id ?? '—'}`);
+  if (!result.success) {
+    throw new Error(`Order not filled: ${result.errorMsg || result.status || 'insufficient liquidity'}`);
+  }
+  console.log(`\n✅ Order filled`);
+  console.log(`   Status:   ${result.status}`);
+  console.log(`   Order ID: ${result.orderID ?? '—'}`);
   return result;
 }
 
@@ -180,9 +183,12 @@ export async function sell({ market, side, amount, cfg, provider, wallet }) {
     { tickSize, negRisk },
     OrderType.FOK,
   );
-  console.log(`\n✅ Order submitted`);
-  console.log(`   Status:   ${result.status ?? 'submitted'}`);
-  console.log(`   Order ID: ${result.orderID ?? result.id ?? '—'}`);
+  if (!result.success) {
+    throw new Error(`Order not filled: ${result.errorMsg || result.status || 'insufficient liquidity'}`);
+  }
+  console.log(`\n✅ Order filled`);
+  console.log(`   Status:   ${result.status}`);
+  console.log(`   Order ID: ${result.orderID ?? '—'}`);
   return result;
 }
 

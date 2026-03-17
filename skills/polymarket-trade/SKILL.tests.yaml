@@ -161,10 +161,10 @@ suites:
             type: error
 
       - id: full-sell-fok
-        description: Sell — FOK order submitted
+        description: Sell — FOK order filled
         prompt: "Sell 5 YES shares on bitcoin 100k"
         expect:
-          - pattern: "Order submitted|order ID"
+          - pattern: "Order filled|order ID"
             type: output
 
       - id: full-setup-no-relay
