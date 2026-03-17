@@ -100,8 +100,12 @@ export async function createSigner(cfg) {
   const salt = Buffer.from(vault.salt, 'hex');
   const encryptedEntropy = Buffer.from(vault.encryptedEntropy, 'hex');
   const key = wdkDeriveKey(password, salt);
-  const entropy = wdkDecrypt(encryptedEntropy, key);
-  key.fill(0);
+  let entropy;
+  try {
+    entropy = wdkDecrypt(encryptedEntropy, key);
+  } finally {
+    key.fill(0);
+  }
 
   let wallet;
   try {
