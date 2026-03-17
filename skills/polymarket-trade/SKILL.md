@@ -40,7 +40,7 @@ For setup and CLOB credential derivation: `node scripts/setup.js`
 
 ## Browse Flow
 
-Run environment check (steps 1, 4, 5 — no wallet, no gas, no CLOB credentials needed):
+Run environment check (steps 1, 4 — no wallet, no RPC, no CLOB credentials needed):
 ```
 node scripts/browse.js "<keyword or market slug>"
 ```
@@ -48,7 +48,7 @@ Show the output to the user. Token IDs from this output are used for buy/sell.
 
 ## Balance Flow
 
-Run environment check (steps 1-6):
+Run environment check (steps 1-5):
 ```
 node scripts/balance.js
 ```

@@ -61,13 +61,13 @@ suites:
             type: error
 
       - id: smoke-missing-clob
-        description: Environment check — missing CLOB credentials
+        description: Environment check — missing CLOB credentials blocks buy
         setup:
           files:
             ~/.aurehub/.polymarket_clob: null
         prompt: "Buy $10 YES on bitcoin"
         expect:
-          - pattern: "setup.js|CLOB credentials"
+          - pattern: "setup\\.js|CLOB credentials"
             type: error
 
   full:

@@ -94,14 +94,11 @@ export function runSetupEnvCheck(aurehubDir = AUREHUB_DIR) {
   resolveRpcUrl(cfg);
 }
 
-/** Run env checks for browse flows (steps 1, 4, 5 — no wallet, no gas, no CLOB needed).
- *  Browse uses only public API endpoints; vault/password files are not required. */
+/** Run env checks for browse flows (steps 1, 4 — no wallet, no gas, no CLOB needed).
+ *  Browse uses only public HTTP APIs (Gamma + CLOB); no RPC connection required. */
 export function runBrowseEnvCheck(aurehubDir = AUREHUB_DIR) {
   checkEnvFile(aurehubDir);
   checkConfigFile(aurehubDir);
-  // step 5: verify RPC URL env var is configured (catches misconfiguration before network call)
-  const cfg = loadConfig(aurehubDir);
-  resolveRpcUrl(cfg);
 }
 
 // ── CLOB credential derivation ────────────────────────────────────────────────
