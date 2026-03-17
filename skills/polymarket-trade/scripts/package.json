@@ -1,0 +1,20 @@
+{
+  "name": "polymarket-trade-scripts",
+  "version": "1.0.0",
+  "description": "Helper scripts for polymarket-trade skill",
+  "type": "module",
+  "scripts": {
+    "test": "vitest run __tests__/config.test.js __tests__/signer.test.js __tests__/clob.test.js __tests__/setup.test.js __tests__/browse.test.js __tests__/balance.test.js __tests__/trade.test.js"
+  },
+  "dependencies": {
+    "@polymarket/clob-client": "~5.7.0",
+    "b4a": "^1.6.7",
+    "bip39-mnemonic": "^2.5.0",
+    "ethers": "^5.7.2",
+    "js-yaml": "^4",
+    "sodium-native": "^5.0.8"
+  },
+  "devDependencies": {
+    "vitest": "^4.1.0"
+  }
+}
