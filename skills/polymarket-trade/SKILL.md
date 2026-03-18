@@ -18,16 +18,25 @@ Trade on Polymarket prediction markets. Non-custodial — private key stays in y
 
 ## Prerequisites
 
-Before any action, verify the environment:
-1. `~/.aurehub/.env` exists with `WALLET_MODE=wdk`
-2. `~/.aurehub/.wdk_vault` exists
-3. `~/.aurehub/.wdk_password` exists
-4. `~/.aurehub/polymarket.yaml` exists (copy from `config.example.yaml`)
-5. `POLYGON_RPC_URL` set in `.env` (check via `rpc_env` field in yaml)
+Before any action, check prerequisites for the current flow and auto-fix what you can.
 
-If any check fails, tell the user what's missing and how to fix it before proceeding.
+**Browse flow** (no wallet or CLOB needed): check steps 3–4 only.
+**Balance / Trade / Setup flow**: check all steps 1–6 in order.
 
-For setup and CLOB credential derivation: `node scripts/setup.js`
+| Step | Missing item | Agent action |
+|------|---|---|
+| 1 | `~/.aurehub/.wdk_vault` | Inform: must be created via xaut-trade or wdk-trade setup first. Stop. |
+| 2 | `~/.aurehub/.wdk_password` | Inform: must be created via xaut-trade or wdk-trade setup first. Stop. |
+| 3 | `~/.aurehub/.env` missing | Run: `cp <skill-dir>/.env.example ~/.aurehub/.env` |
+| 3 | `~/.aurehub/.env` exists, `POLYGON_RPC_URL` absent | Append `POLYGON_RPC_URL=https://polygon-rpc.com` to `~/.aurehub/.env` |
+| 4 | `~/.aurehub/polymarket.yaml` missing | Run: `cp <skill-dir>/config.example.yaml ~/.aurehub/polymarket.yaml` |
+| 5 | `node_modules` missing in `<skill-dir>/scripts/` | Run: `npm install` in `<skill-dir>/scripts/` |
+| 6 | `~/.aurehub/.polymarket_clob` missing | Run: `node <skill-dir>/scripts/setup.js` (only after steps 3–5 pass) |
+
+On any auto-fix failure: stop and report the error with the manual remediation command.
+After all fixes succeed, re-run the relevant checks and proceed.
+
+`<skill-dir>` is the directory containing this SKILL.md file.
 
 ## Intent Detection
 
@@ -40,7 +49,7 @@ For setup and CLOB credential derivation: `node scripts/setup.js`
 
 ## Browse Flow
 
-Run environment check (steps 1, 4 — no wallet, no RPC, no CLOB credentials needed):
+Run environment check (no wallet, no RPC, no CLOB credentials needed):
 ```
 node scripts/browse.js "<keyword or market slug>"
 ```
@@ -48,7 +57,7 @@ Show the output to the user. Token IDs from this output are used for buy/sell.
 
 ## Balance Flow
 
-Run environment check (steps 1-5):
+Run environment check:
 ```
 node scripts/balance.js
 ```
