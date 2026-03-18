@@ -18,4 +18,6 @@ contracts:
   ctf_exchange: "0x4bFb41d5B3570DeFd03C39a9A4D8dE6Bd8B8982E"
   neg_risk_exchange: "0xC5d563A36AE78145C45a50134d48A1215220f80a"
   ctf_contract: "0x4D97DCd97eC945f40cF65F87097ACe5EA0476045"
+  uniswap_router: "0xE592427A0AEce92De3Edee1F18E0157C05861564"   # Uniswap V3 SwapRouter on Polygon
+  uniswap_quoter: "0xb27308f9F90D607463bb33eA1BeBb41C27CE5AB6"   # Uniswap V3 QuoterV1 on Polygon
   # neg_risk_adapter: not used in v1 (exchange contract handles internally)
