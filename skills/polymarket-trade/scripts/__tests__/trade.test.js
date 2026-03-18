@@ -77,6 +77,7 @@ describe('checkAndSwapIfNeeded', () => {
     const result = await checkAndSwapIfNeeded({ ...baseParams, usdceBalance: 3 });
     expect(result).toBe(true);
     expect(swapPolToUsdc).toHaveBeenCalled();
+    expect(baseParams.confirmFn).toHaveBeenCalledOnce();
   });
 
   it('hard-stops when POL insufficient for swap + gas reserve', async () => {

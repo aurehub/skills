@@ -121,10 +121,12 @@ export async function buy({ market, side, amount, cfg, provider, wallet }) {
   });
   if (swapResult === 'cancelled') return;
 
-  // Re-check USDC.e after potential swap
-  const usdceRawPost = await usdce.balanceOf(wallet.address);
-  const usdcePost = parseFloat(ethers.utils.formatUnits(usdceRawPost, 6));
-  if (usdcePost < amount) throw new Error('Swap completed but USDC.e balance still insufficient.');
+  // Re-check USDC.e only after a swap (if already sufficient, no need to re-check)
+  if (swapResult !== false) {
+    const usdceRawPost = await usdce.balanceOf(wallet.address);
+    const usdcePost = parseFloat(ethers.utils.formatUnits(usdceRawPost, 6));
+    if (usdcePost < amount) throw new Error('Swap completed but USDC.e balance still insufficient.');
+  }
 
   // Hard stops — part 2: POL gas check (re-fetch balance after potential swap)
   const polRawPost = await provider.getBalance(wallet.address);
@@ -203,7 +205,7 @@ export async function sell({ market, side, amount, cfg, provider, wallet }) {
   const polRaw = await provider.getBalance(wallet.address);
   // Pass estimated dollar value so minOrderSize check applies to USD proceeds (not share count)
   validateHardStops(parseFloat(estUsdce), {
-    usdceBalance: 999999, // not checked for sell
+    usdceBalance: 999999, // USDC.e check not applicable for sell — bypassed intentionally
     polBalance:   parseFloat(ethers.utils.formatEther(polRaw)),
     marketActive: market.active,
     minOrderSize: parseFloat(market.min_incentive_size ?? '0'),
