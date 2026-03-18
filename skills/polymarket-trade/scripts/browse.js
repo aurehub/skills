@@ -8,9 +8,26 @@ const DEFAULT_CLOB_URL  = 'https://clob.polymarket.com';
 // ── Pure formatting helpers (exported for testing) ────────────────────────────
 
 export function extractTokenIds(market) {
-  const yes = market.tokens?.find(t => t.outcome?.toLowerCase() === 'yes');
-  const no  = market.tokens?.find(t => t.outcome?.toLowerCase() === 'no');
-  return { YES: yes?.token_id ?? null, NO: no?.token_id ?? null };
+  // CLOB format: tokens array with token_id and outcome fields
+  if (market.tokens?.length) {
+    const yes = market.tokens.find(t => t.outcome?.toLowerCase() === 'yes');
+    const no  = market.tokens.find(t => t.outcome?.toLowerCase() === 'no');
+    return { YES: yes?.token_id ?? null, NO: no?.token_id ?? null };
+  }
+  // Gamma API keyword search format: clobTokenIds (JSON string) + outcomes (JSON string)
+  if (market.clobTokenIds) {
+    try {
+      const tokenIds = JSON.parse(market.clobTokenIds);
+      const outcomes = JSON.parse(market.outcomes ?? '["Yes","No"]');
+      const yesIdx = outcomes.findIndex(o => o.toLowerCase() === 'yes');
+      const noIdx  = outcomes.findIndex(o => o.toLowerCase() === 'no');
+      return {
+        YES: yesIdx >= 0 ? (tokenIds[yesIdx] ?? null) : (tokenIds[0] ?? null),
+        NO:  noIdx  >= 0 ? (tokenIds[noIdx]  ?? null) : (tokenIds[1] ?? null),
+      };
+    } catch { /* fall through */ }
+  }
+  return { YES: null, NO: null };
 }
 
 export function formatMarketOutput(market, orderbooks = {}, marketInfo = null) {
@@ -19,6 +36,20 @@ export function formatMarketOutput(market, orderbooks = {}, marketInfo = null) {
   const no  = market.tokens?.find(t => t.outcome?.toLowerCase() === 'no');
   const obYes = ids.YES ? orderbooks[ids.YES] : null;
   const obNo  = ids.NO  ? orderbooks[ids.NO]  : null;
+
+  // Gamma keyword format: extract prices from outcomePrices (JSON string)
+  let yesPrice = yes?.price;
+  let noPrice  = no?.price;
+  if (yesPrice === undefined && market.outcomePrices) {
+    try {
+      const outcomes = JSON.parse(market.outcomes ?? '["Yes","No"]');
+      const prices   = JSON.parse(market.outcomePrices);
+      const yesIdx   = outcomes.findIndex(o => o.toLowerCase() === 'yes');
+      const noIdx    = outcomes.findIndex(o => o.toLowerCase() === 'no');
+      yesPrice = yesIdx >= 0 ? parseFloat(prices[yesIdx]) : parseFloat(prices[0]);
+      noPrice  = noIdx  >= 0 ? parseFloat(prices[noIdx])  : parseFloat(prices[1]);
+    } catch { /* fall through — prices remain undefined */ }
+  }
 
   const bestBid = ob => ob?.bids?.[0]?.price ?? '—';
   const bestAsk = ob => ob?.asks?.[0]?.price ?? '—';
@@ -30,12 +61,13 @@ export function formatMarketOutput(market, orderbooks = {}, marketInfo = null) {
     return `$${sum.toFixed(0)}`;
   };
 
+  const fmtPrice = p => (p != null && Number.isFinite(p)) ? p.toFixed(2) : '—';
   const lines = [
     `Market: "${market.question}"`,
     `Status: ${market.active ? 'ACTIVE' : 'CLOSED'} | neg_risk: ${!!market.neg_risk}`,
-    `YES: ${yes?.price?.toFixed(2) ?? '—'} ($${yes?.price?.toFixed(2) ?? '—'})   ` +
+    `YES: ${fmtPrice(yesPrice)} ($${fmtPrice(yesPrice)})   ` +
       `bid/ask: ${bestBid(obYes)}/${bestAsk(obYes)}   liquidity: ${liq(obYes)}`,
-    `NO:  ${no?.price?.toFixed(2)  ?? '—'} ($${no?.price?.toFixed(2)  ?? '—'})   ` +
+    `NO:  ${fmtPrice(noPrice)} ($${fmtPrice(noPrice)})   ` +
       `bid/ask: ${bestBid(obNo)}/${bestAsk(obNo)}   liquidity: ${liq(obNo)}`,
     `Min order: $${marketInfo?.min_order_size ?? market.min_incentive_size ?? '—'}`,
     `Token IDs:`,
@@ -49,7 +81,10 @@ export function formatMarketOutput(market, orderbooks = {}, marketInfo = null) {
 
 async function fetchGamma(url, query) {
   const { default: axios } = await import('axios');
-  const endpoint = query.includes('/') ? `${url}/markets/${query}` : `${url}/markets?q=${encodeURIComponent(query)}`;
+  // Add active=true to keyword search to exclude resolved/closed markets
+  const endpoint = query.includes('/')
+    ? `${url}/markets/${query}`
+    : `${url}/markets?q=${encodeURIComponent(query)}&active=true`;
   const res = await axios.get(endpoint, { timeout: 10_000 });
   const data = res.data;
   return Array.isArray(data) ? data : (data.markets ?? [data]);

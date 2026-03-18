@@ -54,10 +54,59 @@ describe('formatMarketOutput', () => {
 });
 
 describe('extractTokenIds', () => {
-  it('returns YES and NO token IDs', () => {
+  it('returns YES and NO token IDs from tokens array (CLOB format)', () => {
     const ids = extractTokenIds(mockMarket);
     expect(ids.YES).toBe('712345');
     expect(ids.NO).toBe('523456');
+  });
+
+  it('returns YES and NO token IDs from clobTokenIds string (Gamma keyword format)', () => {
+    const gammaMarket = {
+      question: 'Will BTC hit 100k?',
+      active: true,
+      clobTokenIds: '["53135072abc","60869871def"]',
+      outcomes: '["Yes","No"]',
+    };
+    const ids = extractTokenIds(gammaMarket);
+    expect(ids.YES).toBe('53135072abc');
+    expect(ids.NO).toBe('60869871def');
+  });
+
+  it('returns null/null when neither tokens nor clobTokenIds present', () => {
+    const ids = extractTokenIds({ question: 'test', active: true });
+    expect(ids.YES).toBeNull();
+    expect(ids.NO).toBeNull();
+  });
+});
+
+describe('formatMarketOutput with Gamma keyword format', () => {
+  it('shows token IDs from clobTokenIds', () => {
+    const gammaMarket = {
+      question: 'Will BTC hit 100k?',
+      active: true,
+      neg_risk: false,
+      clobTokenIds: '["53135072abc","60869871def"]',
+      outcomes: '["Yes","No"]',
+      outcomePrices: '["0.72","0.28"]',
+      min_incentive_size: '5',
+    };
+    const out = formatMarketOutput(gammaMarket, {});
+    expect(out).toContain('53135072abc');
+    expect(out).toContain('60869871def');
+  });
+
+  it('shows prices from outcomePrices when tokens array absent', () => {
+    const gammaMarket = {
+      question: 'Will BTC hit 100k?',
+      active: true,
+      neg_risk: false,
+      clobTokenIds: '["53135072abc","60869871def"]',
+      outcomes: '["Yes","No"]',
+      outcomePrices: '["0.72","0.28"]',
+    };
+    const out = formatMarketOutput(gammaMarket, {});
+    expect(out).toContain('0.72');
+    expect(out).toContain('0.28');
   });
 });
 
