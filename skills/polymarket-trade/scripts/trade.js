@@ -77,7 +77,7 @@ export async function checkAndSwapIfNeeded({
 // ── Buy flow ──────────────────────────────────────────────────────────────────
 
 export async function buy({ market, side, amount, cfg, provider, wallet }) {
-  const { ClobClient, Side, OrderType } = await import('@polymarket/clob-client');
+  const { Side, OrderType } = await import('@polymarket/clob-client');
   const client = await createL2Client(cfg, wallet, join(AUREHUB_DIR, '.polymarket_clob'));
 
   const ids = extractTokenIds(market);
@@ -259,7 +259,7 @@ if (process.argv[1] === fileURLToPath(import.meta.url)) {
   const side    = (getArg('--side') ?? 'YES').toUpperCase();
   const amount  = parseFloat(getArg('--amount') ?? '0');
 
-  if (!query || !amount) {
+  if (!query || !amount || amount <= 0) {
     console.error('Usage: node scripts/trade.js [--buy|--sell] --market <slug> --side YES|NO --amount <usd>');
     process.exit(1);
   }

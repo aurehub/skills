@@ -33,4 +33,4 @@ For SELL, `--amount` is the **number of shares (CTF tokens)**. This is asymmetri
 
 ## Checking Share Balance
 
-Use block explorer or etherscan to check CTF token holdings. Position tracking is not included in v1.
+Use `balance.js` to check open positions (shows current value) or a block explorer for raw CTF token holdings.

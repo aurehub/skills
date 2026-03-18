@@ -11,8 +11,12 @@ const QUOTER_ABI = [
 ];
 
 // SwapRouter V1 ABI
+// SwapRouter V1 does NOT auto-refund unspent native POL — refundETH() must be called explicitly.
+// We use multicall to batch exactOutputSingle + refundETH in a single transaction.
 const ROUTER_ABI = [
   'function exactOutputSingle(tuple(address tokenIn, address tokenOut, uint24 fee, address recipient, uint256 deadline, uint256 amountOut, uint256 amountInMaximum, uint160 sqrtPriceLimitX96) params) payable returns (uint256 amountIn)',
+  'function refundETH() external payable',
+  'function multicall(bytes[] calldata data) external payable returns (bytes[] memory results)',
 ];
 
 // ERC-20 Transfer event for parsing receipt
@@ -68,23 +72,26 @@ export async function swapPolToUsdc({ polAmountMax, usdceTarget, cfg, wallet, pr
   const routerAddr = cfg.yaml?.contracts?.uniswap_router ?? DEFAULT_ROUTER;
   const router = new ethers.Contract(routerAddr, ROUTER_ABI, provider);
   const routerSigned = router.connect(wallet);
+  const routerIface = new ethers.utils.Interface(ROUTER_ABI);
 
   const deadline = Math.floor(Date.now() / 1000) + 600;
   const amountOut = ethers.utils.parseUnits(usdceTarget.toFixed(6), 6);
 
-  const tx = await routerSigned.exactOutputSingle(
-    {
-      tokenIn:           WMATIC,
-      tokenOut:          USDC_E,
-      fee:               3000,
-      recipient:         wallet.address,
-      deadline,
-      amountOut,
-      amountInMaximum:   polAmountMax,
-      sqrtPriceLimitX96: 0,
-    },
-    { value: polAmountMax },
-  );
+  // Batch exactOutputSingle + refundETH so unspent POL is returned in the same tx.
+  // SwapRouter V1 does not auto-refund excess msg.value — explicit refundETH() is required.
+  const swapCalldata   = routerIface.encodeFunctionData('exactOutputSingle', [{
+    tokenIn:           WMATIC,
+    tokenOut:          USDC_E,
+    fee:               3000,
+    recipient:         wallet.address,
+    deadline,
+    amountOut,
+    amountInMaximum:   polAmountMax,
+    sqrtPriceLimitX96: 0,
+  }]);
+  const refundCalldata = routerIface.encodeFunctionData('refundETH', []);
+
+  const tx = await routerSigned.multicall([swapCalldata, refundCalldata], { value: polAmountMax });
   const receipt = await tx.wait();
 
   // Parse actual USDC.e received from Transfer event (to=wallet)

@@ -83,7 +83,7 @@ describe('swapPolToUsdc', () => {
 
   const mockWallet = { address: '0x1111111111111111111111111111111111111111' };
 
-  it('calls router exactOutputSingle with correct struct and value', async () => {
+  it('calls router multicall with exactOutputSingle+refundETH and passes value', async () => {
     const mockTx = { wait: vi.fn().mockResolvedValue({
       logs: [{
         address: '0x2791Bca1f2de4661ED88A30C99A7a9449Aa84174',
@@ -91,8 +91,8 @@ describe('swapPolToUsdc', () => {
         data: ethers.utils.defaultAbiCoder.encode(['uint256'], [ethers.utils.parseUnits('27.5', 6)]),
       }],
     })};
-    const mockExactOutputSingle = vi.fn().mockResolvedValue(mockTx);
-    ethers.Contract.mockImplementation(function() { return { connect: () => ({ exactOutputSingle: mockExactOutputSingle }) }; });
+    const mockMulticall = vi.fn().mockResolvedValue(mockTx);
+    ethers.Contract.mockImplementation(function() { return { connect: () => ({ multicall: mockMulticall }) }; });
 
     const polAmountMax = ethers.utils.parseEther('12.75'); // polNeeded × 1.02
     const mockProvider = { getBalance: vi.fn().mockResolvedValue(ethers.utils.parseEther('100')) };
@@ -104,16 +104,9 @@ describe('swapPolToUsdc', () => {
       provider: mockProvider,
     });
 
-    expect(mockExactOutputSingle).toHaveBeenCalledWith(
-      expect.objectContaining({
-        tokenIn:          '0x0d500B1d8E8eF31E21C99d1Db9A6444d3ADf1270',
-        tokenOut:         '0x2791Bca1f2de4661ED88A30C99A7a9449Aa84174',
-        fee:              3000,
-        recipient:        '0x1111111111111111111111111111111111111111',
-        amountOut:        ethers.utils.parseUnits('27.500000', 6),
-        amountInMaximum:  polAmountMax,
-        sqrtPriceLimitX96: 0,
-      }),
+    // multicall called with [swapCalldata, refundCalldata] and { value: polAmountMax }
+    expect(mockMulticall).toHaveBeenCalledWith(
+      [expect.stringMatching(/^0x/), expect.stringMatching(/^0x/)],
       { value: polAmountMax },
     );
   });

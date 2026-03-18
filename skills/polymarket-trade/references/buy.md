@@ -32,4 +32,4 @@ For BUY, `--amount` is in **dollars (USDC.e)**. The SDK calculates the number of
 
 ## After the Buy
 
-Your YES/NO shares are ERC-1155 tokens held in your wallet at the CTF contract address. Check them with `balance.js` (positions not shown in v1) or on Polygonscan.
+Your YES/NO shares are ERC-1155 tokens held in your wallet at the CTF contract address. Check them with `balance.js` (shows open positions with current value) or on Polygonscan.
