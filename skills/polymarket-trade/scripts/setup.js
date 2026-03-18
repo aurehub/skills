@@ -16,11 +16,7 @@ const SCRIPTS_DIR = fileURLToPath(new URL('.', import.meta.url));
 export function checkEnvFile(aurehubDir = AUREHUB_DIR) {
   const path = join(aurehubDir, '.env');
   if (!existsSync(path)) {
-    throw new Error(`Missing ~/.aurehub/.env. Create it with WALLET_MODE=wdk and POLYGON_RPC_URL=<url>`);
-  }
-  const content = readFileSync(path, 'utf8');
-  if (!/^WALLET_MODE=wdk\s*$/m.test(content)) {
-    throw new Error(`WALLET_MODE must be "wdk" in ~/.aurehub/.env`);
+    throw new Error(`Missing ~/.aurehub/.env. Create it with POLYGON_RPC_URL=<your-polygon-rpc-url>`);
   }
 }
 

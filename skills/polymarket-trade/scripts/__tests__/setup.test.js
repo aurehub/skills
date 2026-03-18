@@ -9,10 +9,10 @@ function setup() { dir = mkdtempSync(join(tmpdir(), 'pm-setup-')); }
 function teardown() { rmSync(dir, { recursive: true }); }
 
 describe('checkEnvFile', () => {
-  it('passes when .env exists with WALLET_MODE=wdk', () => {
+  it('passes when .env exists', () => {
     setup();
     try {
-      writeFileSync(join(dir, '.env'), 'WALLET_MODE=wdk\n');
+      writeFileSync(join(dir, '.env'), 'POLYGON_RPC_URL=https://polygon-rpc.com\n');
       expect(() => checkEnvFile(dir)).not.toThrow();
     } finally { teardown(); }
   });
@@ -24,11 +24,11 @@ describe('checkEnvFile', () => {
     } finally { teardown(); }
   });
 
-  it('throws when WALLET_MODE is not wdk', () => {
+  it('does not require WALLET_MODE=wdk', () => {
     setup();
     try {
-      writeFileSync(join(dir, '.env'), 'WALLET_MODE=foundry\n');
-      expect(() => checkEnvFile(dir)).toThrow('WALLET_MODE');
+      writeFileSync(join(dir, '.env'), 'POLYGON_RPC_URL=https://polygon-rpc.com\n');
+      expect(() => checkEnvFile(dir)).not.toThrow();
     } finally { teardown(); }
   });
 });
