@@ -282,6 +282,7 @@ export async function sell({ market, side, amount, cfg, provider, wallet }) {
   const operator = negRisk
     ? (contracts.neg_risk_exchange ?? '0xC5d563A36AE78145C45a50134d48A1215220f80a')
     : (contracts.ctf_exchange      ?? '0x4bFb41d5B3570DeFd03C39a9A4D8dE6Bd8B8982E');
+  if (!ethers.utils.isAddress(operator)) throw new Error(`Invalid contract address in config: ${negRisk ? 'neg_risk_exchange' : 'ctf_exchange'} = "${operator}"`);
   console.log(`\nApproving exchange operator...`);
   const ctfSigned = ctf.connect(wallet);
   const approveTx = await ctfSigned.setApprovalForAll(operator, true);
@@ -335,7 +336,8 @@ if (process.argv[1] === fileURLToPath(import.meta.url)) {
   const amount  = parseFloat(getArg('--amount') ?? '0');
 
   if (!query || !amount || amount <= 0 || !Number.isFinite(amount) || amount > 1_000_000) {
-    console.error('Usage: node scripts/trade.js [--buy|--sell] --market <slug> --side YES|NO --amount <usd>');
+    console.error('Usage: node scripts/trade.js --market <slug> --side YES|NO --amount <usd>          # buy');
+    console.error('       node scripts/trade.js --sell --market <slug> --side YES|NO --amount <shares>  # sell');
     process.exit(1);
   }
 
