@@ -38,6 +38,7 @@ describe('getSwapQuote', () => {
     expect(result.polNeeded).toBeDefined();
     expect(typeof result.rate).toBe('number');
     expect(result.rate).toBeGreaterThan(0);
+    expect(result.rate).toBeCloseTo(2.2, 4); // 27.5 / 12.5 = 2.2
   });
 
   it('calls QuoterV1 with correct parameters', async () => {
@@ -80,13 +81,13 @@ describe('getSwapQuote', () => {
 describe('swapPolToUsdc', () => {
   afterEach(() => vi.clearAllMocks());
 
-  const mockWallet = { address: '0xUserWallet' };
+  const mockWallet = { address: '0x1111111111111111111111111111111111111111' };
 
   it('calls router exactOutputSingle with correct struct and value', async () => {
     const mockTx = { wait: vi.fn().mockResolvedValue({
       logs: [{
         address: '0x2791Bca1f2de4661ED88A30C99A7a9449Aa84174',
-        topics: [ethers.utils.id('Transfer(address,address,uint256)'), null, ethers.utils.hexZeroPad('0x1234567890123456789012345678901234567890', 32)],
+        topics: [ethers.utils.id('Transfer(address,address,uint256)'), null, ethers.utils.hexZeroPad(mockWallet.address, 32)],
         data: ethers.utils.defaultAbiCoder.encode(['uint256'], [ethers.utils.parseUnits('27.5', 6)]),
       }],
     })};
@@ -108,7 +109,7 @@ describe('swapPolToUsdc', () => {
         tokenIn:          '0x0d500B1d8E8eF31E21C99d1Db9A6444d3ADf1270',
         tokenOut:         '0x2791Bca1f2de4661ED88A30C99A7a9449Aa84174',
         fee:              3000,
-        recipient:        '0xUserWallet',
+        recipient:        '0x1111111111111111111111111111111111111111',
         amountOut:        ethers.utils.parseUnits('27.500000', 6),
         amountInMaximum:  polAmountMax,
         sqrtPriceLimitX96: 0,

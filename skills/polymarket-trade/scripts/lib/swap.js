@@ -24,6 +24,9 @@ const ERC20_TRANSFER_ABI = ['event Transfer(address indexed from, address indexe
  * @returns {{ polNeeded: BigNumber, rate: number }}
  */
 export async function getSwapQuote({ usdceNeeded, provider, cfg }) {
+  if (!Number.isFinite(usdceNeeded) || usdceNeeded <= 0) {
+    throw new Error(`Invalid usdceNeeded: ${usdceNeeded}`);
+  }
   const quoterAddr = cfg.yaml?.contracts?.uniswap_quoter ?? DEFAULT_QUOTER;
   const quoter = new ethers.Contract(quoterAddr, QUOTER_ABI, provider);
   const amountOut = ethers.utils.parseUnits(usdceNeeded.toFixed(6), 6);
@@ -51,6 +54,9 @@ export async function getSwapQuote({ usdceNeeded, provider, cfg }) {
  * @returns {string} actual USDC.e received (formatted, e.g. "27.50")
  */
 export async function swapPolToUsdc({ polAmountMax, usdceTarget, cfg, wallet, provider }) {
+  if (!Number.isFinite(usdceTarget) || usdceTarget <= 0) {
+    throw new Error(`Invalid usdceTarget: ${usdceTarget}`);
+  }
   // Pre-flight: check POL balance
   const polBal = await provider.getBalance(wallet.address);
   if (polBal.lt(polAmountMax)) {
