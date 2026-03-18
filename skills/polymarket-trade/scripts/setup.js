@@ -117,7 +117,9 @@ export async function deriveClobCreds(aurehubDir = AUREHUB_DIR) {
   try { chmodSync(credsPath, 0o600); } catch { console.warn(`⚠️  Could not restrict permissions on ${credsPath} — file may be readable by other users`); }
   // Write SCRIPTS_DIR for runtime resolution by other scripts
   writeFileSync(SETUP_PATH_FILE, SCRIPTS_DIR);
+  const clobUrl = cfg.yaml?.polymarket?.clob_url ?? 'https://clob.polymarket.com';
   console.log(`✅ CLOB credentials saved to ${credsPath}`);
+  console.log(`   Endpoint: ${clobUrl}`);
   console.log(`   Key: ${creds.key.slice(0, 12)}...`);
   console.log(`   Wallet: ${wallet.address}`);
   return data;
