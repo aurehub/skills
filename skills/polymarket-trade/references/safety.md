@@ -20,7 +20,7 @@ safety:
 
 | Condition | Error |
 |-----------|-------|
-| USDC.e balance < trade amount | "Insufficient USDC.e" |
+| USDC.e balance < trade amount (buy) | Auto-swap POL→USDC.e offered; hard-stop only if POL also insufficient |
 | CTF token balance < sell shares | "Insufficient YES/NO tokens" |
 | POL gas < 0.01 | "Insufficient POL gas" |
 | Market status != ACTIVE | "Market is CLOSED" |

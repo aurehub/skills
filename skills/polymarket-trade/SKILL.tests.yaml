@@ -117,7 +117,7 @@ suites:
             type: output
 
       - id: full-buy-no-usdc
-        description: Buy — insufficient USDC.e, hard-stop
+        description: Buy — insufficient USDC.e, swap offer triggered
         setup:
           mock:
             usdce_balance: 0

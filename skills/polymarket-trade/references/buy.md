@@ -20,7 +20,7 @@ node scripts/trade.js --buy --market bitcoin-100k-2025 --side YES --amount 25
 
 1. Fetches market data (Gamma API)
 2. Shows preview: estimated price, estimated shares, spend amount
-3. Runs hard-stop checks (USDC.e balance, POL gas, market status, min order size)
+3. Runs hard-stop checks (market status, min order size); if USDC.e insufficient, offers POL→USDC.e auto-swap
 4. Safety gate prompt (if amount >= $50)
 5. Approves exact USDC.e amount to exchange contract
 6. Submits FOK market order to Polymarket CLOB

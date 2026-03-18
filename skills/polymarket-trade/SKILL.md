@@ -81,7 +81,8 @@ node scripts/balance.js
 - Amount < $50: proceeds automatically
 - $50 ≤ amount < $500: shows risk summary, prompts once
 - Amount ≥ $500: double confirmation required
-- Hard-stops: insufficient USDC.e, insufficient POL gas (<0.01), market CLOSED, amount < min_order_size, CTF balance insufficient (sell)
+- Insufficient USDC.e (buy): auto-swap POL→USDC.e offered; hard-stop only if POL also insufficient
+- Hard-stops: insufficient POL gas (<0.01), market CLOSED, amount < min_order_size, CTF balance insufficient (sell)
 
 ## Geo-restriction
 
