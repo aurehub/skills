@@ -7,6 +7,7 @@ import { createSigner } from './lib/signer.js';
 import { createL2Client } from './lib/clob.js';
 import { runTradeEnvCheck } from './setup.js';
 import { extractTokenIds, resolveMarket } from './browse.js';
+import { getSwapQuote, swapPolToUsdc } from './lib/swap.js';
 
 const AUREHUB_DIR = join(homedir(), '.aurehub');
 const ERC20_ABI  = ['function balanceOf(address) view returns (uint256)',
@@ -37,6 +38,42 @@ async function confirm(question) {
   return new Promise(resolve => rl.question(question, ans => { rl.close(); resolve(ans.trim().toLowerCase()); }));
 }
 
+// ── Swap offer helper (exported for testing) ──────────────────────────────────
+
+/**
+ * Check USDC.e balance; if insufficient, offer to swap POL → USDC.e.
+ * Returns: false (no swap needed), true (swapped), 'cancelled' (user declined).
+ */
+export async function checkAndSwapIfNeeded({
+  amount, usdceBalance, polBalance, cfg, wallet, provider, confirmFn,
+}) {
+  if (usdceBalance >= amount) return false;
+
+  const target = amount * 1.10;
+  const { polNeeded, rate } = await getSwapQuote({ usdceNeeded: target, provider, cfg });
+  const polAmountMax = polNeeded.mul(102).div(100); // ×1.02 slippage
+  const polAmountMaxF = parseFloat(ethers.utils.formatEther(polAmountMax));
+
+  if (polBalance < polAmountMaxF + 0.05) {
+    throw new Error(
+      `Insufficient POL: have ${polBalance.toFixed(4)} POL, need ${polAmountMaxF.toFixed(4)} POL (swap) + 0.05 (gas reserve)`,
+    );
+  }
+
+  console.log(`\nWarning: Insufficient USDC.e: have $${usdceBalance.toFixed(2)}, need $${amount.toFixed(2)}`);
+  console.log(`  Will swap ~${polAmountMaxF.toFixed(2)} POL for ~$${target.toFixed(2)} USDC.e (110%)`);
+  console.log(`  Est. rate: 1 POL ≈ $${rate.toFixed(2)} USDC.e  |  Slippage protection: 2%`);
+
+  const ans = await confirmFn('Confirm swap? (yes/no): ');
+  if (ans !== 'yes') {
+    console.log('Cancelled.');
+    return 'cancelled';
+  }
+
+  await swapPolToUsdc({ polAmountMax, usdceTarget: target, cfg, wallet, provider });
+  return true;
+}
+
 // ── Buy flow ──────────────────────────────────────────────────────────────────
 
 export async function buy({ market, side, amount, cfg, provider, wallet }) {
@@ -65,16 +102,34 @@ export async function buy({ market, side, amount, cfg, provider, wallet }) {
   console.log(`  Est. price:     ~$${estPrice.toFixed(4)} per share (market order — actual fill may differ)`);
   console.log(`  Est. shares:    ~${estShares}`);
 
-  // Hard stops
+  // Hard stops — part 1: market and size (always run)
+  const minOrderSize = parseFloat(market.min_incentive_size ?? '0');
+  if (!market.active) throw new Error('Market is CLOSED — cannot trade.');
+  if (amount < minOrderSize) throw new Error(`Amount $${amount} is below min order size $${minOrderSize}.`);
+
+  // Balance checks
   const usdce = new ethers.Contract(usdceAddr, ERC20_ABI, provider);
   const usdceRaw = await usdce.balanceOf(wallet.address);
   const polRaw = await provider.getBalance(wallet.address);
-  validateHardStops(amount, {
-    usdceBalance: parseFloat(ethers.utils.formatUnits(usdceRaw, 6)),
-    polBalance:   parseFloat(ethers.utils.formatEther(polRaw)),
-    marketActive: market.active,
-    minOrderSize: parseFloat(market.min_incentive_size ?? '0'),
+  const usdceBalance = parseFloat(ethers.utils.formatUnits(usdceRaw, 6));
+  const polBalance = parseFloat(ethers.utils.formatEther(polRaw));
+
+  // Swap offer if USDC.e insufficient
+  const swapResult = await checkAndSwapIfNeeded({
+    amount, usdceBalance, polBalance, cfg, wallet, provider,
+    confirmFn: confirm,
   });
+  if (swapResult === 'cancelled') return;
+
+  // Re-check USDC.e after potential swap
+  const usdceRawPost = await usdce.balanceOf(wallet.address);
+  const usdcePost = parseFloat(ethers.utils.formatUnits(usdceRawPost, 6));
+  if (usdcePost < amount) throw new Error('Swap completed but USDC.e balance still insufficient.');
+
+  // Hard stops — part 2: POL gas check (re-fetch balance after potential swap)
+  const polRawPost = await provider.getBalance(wallet.address);
+  const polBalancePost = parseFloat(ethers.utils.formatEther(polRawPost));
+  if (polBalancePost < 0.01) throw new Error(`Insufficient POL gas: have ${polBalancePost} POL, need ≥ 0.01.`);
 
   // Safety gates
   const safety = cfg.yaml?.safety ?? { warn_threshold_usd: 50, confirm_threshold_usd: 500 };

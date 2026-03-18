@@ -1,5 +1,13 @@
-import { describe, it, expect } from 'vitest';
+import { vi, describe, it, expect, afterEach } from 'vitest';
 import { getSafetyLevel, validateHardStops } from '../trade.js';
+
+vi.mock('../lib/swap.js', () => ({
+  getSwapQuote: vi.fn(),
+  swapPolToUsdc: vi.fn(),
+}));
+
+import { getSwapQuote, swapPolToUsdc } from '../lib/swap.js';
+import { checkAndSwapIfNeeded } from '../trade.js';
 
 describe('getSafetyLevel', () => {
   it('under warn threshold → proceed', () => {
@@ -36,5 +44,67 @@ describe('validateHardStops', () => {
   });
   it('throws when below min order size', () => {
     expect(() => validateHardStops(3, { ...ok, minOrderSize: 5 })).toThrow('min');
+  });
+});
+
+describe('checkAndSwapIfNeeded', () => {
+  afterEach(() => vi.clearAllMocks());
+
+  const baseParams = {
+    amount: 25,
+    usdceBalance: 100,
+    polBalance: 5,
+    cfg: { yaml: {} },
+    wallet: { address: '0xUser' },
+    provider: {},
+    confirmFn: vi.fn().mockResolvedValue('yes'),
+  };
+
+  it('returns false (no swap) when USDC.e is sufficient', async () => {
+    const result = await checkAndSwapIfNeeded({ ...baseParams, usdceBalance: 100 });
+    expect(result).toBe(false);
+    expect(getSwapQuote).not.toHaveBeenCalled();
+  });
+
+  it('offers swap when USDC.e insufficient + POL sufficient, executes on confirm', async () => {
+    const { ethers } = await import('ethers');
+    getSwapQuote.mockResolvedValue({
+      polNeeded: ethers.utils.parseEther('1'),
+      rate: 2.5,
+    });
+    swapPolToUsdc.mockResolvedValue('27.50');
+
+    const result = await checkAndSwapIfNeeded({ ...baseParams, usdceBalance: 3 });
+    expect(result).toBe(true);
+    expect(swapPolToUsdc).toHaveBeenCalled();
+  });
+
+  it('hard-stops when POL insufficient for swap + gas reserve', async () => {
+    const { ethers } = await import('ethers');
+    getSwapQuote.mockResolvedValue({
+      polNeeded: ethers.utils.parseEther('10'),
+      rate: 2.5,
+    });
+
+    // polAmountMax = 10 × 1.02 = 10.2; + 0.05 reserve = 10.25; polBalance = 5 → insufficient
+    await expect(checkAndSwapIfNeeded({ ...baseParams, usdceBalance: 3, polBalance: 5 }))
+      .rejects.toThrow('Insufficient POL');
+  });
+
+  it('returns "cancelled" when user declines swap', async () => {
+    const { ethers } = await import('ethers');
+    getSwapQuote.mockResolvedValue({
+      polNeeded: ethers.utils.parseEther('1'),
+      rate: 2.5,
+    });
+
+    const result = await checkAndSwapIfNeeded({
+      ...baseParams,
+      usdceBalance: 3,
+      polBalance: 5,
+      confirmFn: vi.fn().mockResolvedValue('no'),
+    });
+    expect(result).toBe('cancelled');
+    expect(swapPolToUsdc).not.toHaveBeenCalled();
   });
 });
