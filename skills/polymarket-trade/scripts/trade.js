@@ -11,8 +11,10 @@ import { getSwapQuote, swapPolToUsdc } from './lib/swap.js';
 
 const AUREHUB_DIR = join(homedir(), '.aurehub');
 const ERC20_ABI  = ['function balanceOf(address) view returns (uint256)',
+                    'function allowance(address,address) view returns (uint256)',
                     'function approve(address,uint256) returns (bool)'];
 const ERC1155_ABI = ['function balanceOf(address,uint256) view returns (uint256)',
+                     'function isApprovedForAll(address,address) view returns (bool)',
                      'function setApprovalForAll(address,bool)'];
 
 // ── Gas helpers ───────────────────────────────────────────────────────────────
@@ -194,14 +196,19 @@ export async function buy({ market, side, amount, cfg, provider, wallet }) {
     if (ans2 !== 'yes') { console.log('Cancelled.'); return; }
   }
 
-  // Approve exact amount
+  // Approve if current allowance is insufficient
   const exactAmount = ethers.utils.parseUnits(amount.toString(), 6);
-  console.log(`\nApproving ${spender.slice(0, 10)}... to spend ${amount} USDC.e...`);
   const usdceSigned = usdce.connect(wallet);
-  const approveTx = await usdceSigned.approve(spender, exactAmount, await polyGasOverrides(provider));
-  console.log(`Approval tx submitted, waiting for confirmation...`);
-  await approveTx.wait();
-  console.log(`Approval confirmed.`);
+  const currentAllowance = await usdce.allowance(wallet.address, spender);
+  if (currentAllowance.lt(exactAmount)) {
+    console.log(`\nApproving ${spender.slice(0, 10)}... to spend ${amount} USDC.e...`);
+    const approveTx = await usdceSigned.approve(spender, exactAmount, await polyGasOverrides(provider));
+    console.log(`Approval tx submitted, waiting for confirmation...`);
+    await approveTx.wait();
+    console.log(`Approval confirmed.`);
+  } else {
+    console.log(`\nAllowance sufficient (${ethers.utils.formatUnits(currentAllowance, 6)} USDC.e), skipping approve.`);
+  }
 
   // Submit order — split create/post so a network exception can be disambiguated
   // from a definitive server rejection (result.success === false).
@@ -306,12 +313,17 @@ export async function sell({ market, side, amount, cfg, provider, wallet }) {
     ? (contracts.neg_risk_exchange ?? '0xC5d563A36AE78145C45a50134d48A1215220f80a')
     : (contracts.ctf_exchange      ?? '0x4bFb41d5B3570DeFd03C39a9A4D8dE6Bd8B8982E');
   if (!ethers.utils.isAddress(operator)) throw new Error(`Invalid contract address in config: ${negRisk ? 'neg_risk_exchange' : 'ctf_exchange'} = "${operator}"`);
-  console.log(`\nApproving exchange operator...`);
   const ctfSigned = ctf.connect(wallet);
-  const approveTx = await ctfSigned.setApprovalForAll(operator, true, await polyGasOverrides(provider));
-  console.log(`Approval tx submitted, waiting for confirmation...`);
-  await approveTx.wait();
-  console.log(`Approval confirmed.`);
+  const alreadyApproved = await ctf.isApprovedForAll(wallet.address, operator);
+  if (!alreadyApproved) {
+    console.log(`\nApproving exchange operator...`);
+    const approveTx = await ctfSigned.setApprovalForAll(operator, true, await polyGasOverrides(provider));
+    console.log(`Approval tx submitted, waiting for confirmation...`);
+    await approveTx.wait();
+    console.log(`Approval confirmed.`);
+  } else {
+    console.log(`\nOperator already approved, skipping setApprovalForAll.`);
+  }
 
   // Submit order — split create/post so a network exception can be disambiguated
   // from a definitive server rejection (result.success === false).
