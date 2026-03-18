@@ -167,6 +167,22 @@ suites:
           - pattern: "Order filled|order ID"
             type: output
 
+      - id: full-balance-positions
+        description: Balance — shows open positions when held
+        prompt: "Show my Polymarket balance and positions"
+        expect:
+          - pattern: "balance\\.js"
+            type: command
+          - pattern: "Positions|shares"
+            type: output
+
+      - id: full-trade-keyword
+        description: Trade — keyword input resolves market, agent confirms slug
+        prompt: "Buy $10 YES on bitcoin"
+        expect:
+          - pattern: "trade\\.js.*--buy.*--side YES"
+            type: command
+
       - id: full-setup-no-relay
         description: Setup — CLOB credential derivation, no relay
         prompt: "Set up Polymarket CLOB credentials"

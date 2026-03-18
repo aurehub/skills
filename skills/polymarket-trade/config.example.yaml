@@ -10,6 +10,7 @@ safety:
 polymarket:
   clob_url: "https://clob.polymarket.com"
   gamma_url: "https://gamma-api.polymarket.com"
+  data_url: "https://data-api.polymarket.com"
   chain_id: 137              # 137 = Polygon mainnet, 80002 = Amoy testnet
 
 contracts:
