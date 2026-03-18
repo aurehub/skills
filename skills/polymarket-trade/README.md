@@ -5,7 +5,7 @@ Trade on Polymarket prediction markets on Polygon. Non-custodial — private key
 ## Prerequisites
 
 - Node.js 18+
-- A WDK wallet vault (`~/.aurehub/.wdk_vault`) — set up via the `wdk-trade` or `xaut-trade` skill
+- A WDK wallet vault (`~/.aurehub/.wdk_vault`) — set up via the `xaut-trade` skill
 - Polygon RPC URL (e.g. from Alchemy, Infura, or a public endpoint)
 - POL for gas (>= 0.01 POL) and USDC.e for trading
 

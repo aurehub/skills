@@ -25,8 +25,8 @@ Before any action, check prerequisites for the current flow and auto-fix what yo
 
 | Step | Missing item | Agent action |
 |------|---|---|
-| 1 | `~/.aurehub/.wdk_vault` | Inform: must be created via xaut-trade or wdk-trade setup first. Stop. |
-| 2 | `~/.aurehub/.wdk_password` | Inform: must be created via xaut-trade or wdk-trade setup first. Stop. |
+| 1 | `~/.aurehub/.wdk_vault` | Inform: must be created via xaut-trade setup first. Stop. |
+| 2 | `~/.aurehub/.wdk_password` | Inform: must be created via xaut-trade setup first. Stop. |
 | 3 | `~/.aurehub/.env` missing | Run: `cp <skill-dir>/.env.example ~/.aurehub/.env` |
 | 3 | `~/.aurehub/.env` exists, `POLYGON_RPC_URL` absent | Append `POLYGON_RPC_URL=https://polygon-rpc.com` to `~/.aurehub/.env` |
 | 4 | `~/.aurehub/polymarket.yaml` missing | Run: `cp <skill-dir>/config.example.yaml ~/.aurehub/polymarket.yaml` |

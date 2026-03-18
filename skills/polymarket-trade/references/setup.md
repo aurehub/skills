@@ -2,7 +2,7 @@
 
 ## First-Time Setup Checklist
 
-1. **WDK vault** — `~/.aurehub/.wdk_vault` must exist (created by xaut-trade or wdk-trade setup)
+1. **WDK vault** — `~/.aurehub/.wdk_vault` must exist (created by xaut-trade setup)
 2. **Vault password** — `~/.aurehub/.wdk_password` must exist
 3. **Environment** — `~/.aurehub/.env` with `POLYGON_RPC_URL=<url>` (copy from `.env.example`)
 4. **Config** — `~/.aurehub/polymarket.yaml` (copy from `config.example.yaml`)
