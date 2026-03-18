@@ -81,13 +81,21 @@ export function formatMarketOutput(market, orderbooks = {}, marketInfo = null) {
 
 async function fetchGamma(url, query) {
   const { default: axios } = await import('axios');
-  // Add active=true to keyword search to exclude resolved/closed markets
-  const endpoint = query.includes('/')
-    ? `${url}/markets/${query}`
-    : `${url}/markets?q=${encodeURIComponent(query)}&active=true`;
-  const res = await axios.get(endpoint, { timeout: 10_000 });
-  const data = res.data;
-  return Array.isArray(data) ? data : (data.markets ?? [data]);
+  if (query.includes('/')) {
+    // Direct conditionId/slug lookup — no filter params
+    const res = await axios.get(`${url}/markets/${query}`, { timeout: 10_000 });
+    const data = res.data;
+    return Array.isArray(data) ? data : (data.markets ?? [data]);
+  }
+  // Keyword search: use Events API for better relevance, then flatten markets.
+  // active=true&closed=false filters out resolved/archived events.
+  const res = await axios.get(
+    `${url}/events?q=${encodeURIComponent(query)}&active=true&closed=false`,
+    { timeout: 10_000 },
+  );
+  const events = Array.isArray(res.data) ? res.data : (res.data?.events ?? []);
+  // Each event has a markets array; flatten and filter to active, non-closed markets only
+  return events.flatMap(e => (e.markets ?? []).filter(m => m.active && !m.closed));
 }
 
 async function fetchOrderbook(clobUrl, tokenId) {

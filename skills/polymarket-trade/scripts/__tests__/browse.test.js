@@ -1,5 +1,5 @@
 import { vi, describe, it, expect, afterEach } from 'vitest';
-import { formatMarketOutput, extractTokenIds, resolveMarket } from '../browse.js';
+import { formatMarketOutput, extractTokenIds, resolveMarket, search } from '../browse.js';
 
 const mockMarket = {
   question: 'Will BTC reach $100k by Dec 2025?',
@@ -107,6 +107,41 @@ describe('formatMarketOutput with Gamma keyword format', () => {
     const out = formatMarketOutput(gammaMarket, {});
     expect(out).toContain('0.72');
     expect(out).toContain('0.28');
+  });
+});
+
+// ── search (Events API path) ───────────────────────────────────────────────────
+
+describe('search', () => {
+  afterEach(() => vi.clearAllMocks());
+
+  it('uses Events API for keyword search and flattens markets', async () => {
+    const { default: axios } = await import('axios');
+    const activeMarket = {
+      question: 'Will BTC hit 100k by end of 2025?',
+      active: true,
+      closed: false,
+      conditionId: 'cond123',
+      clobTokenIds: '["tokenA","tokenB"]',
+      outcomes: '["Yes","No"]',
+      outcomePrices: '["0.65","0.35"]',
+    };
+    const closedMarket = { ...activeMarket, question: 'Old closed market', active: true, closed: true };
+    axios.get.mockImplementation(url => {
+      if (url.includes('/events')) return Promise.resolve({ data: [{ markets: [activeMarket, closedMarket] }] });
+      // orderbook + marketInfo calls — return empty
+      return Promise.resolve({ data: {} });
+    });
+    const logSpy = vi.spyOn(console, 'log').mockImplementation(() => {});
+    await search('bitcoin', { yaml: {} });
+    const output = logSpy.mock.calls.map(c => c[0]).join('\n');
+    expect(output).toContain('Will BTC hit 100k');
+    expect(output).not.toContain('Old closed market');
+    expect(axios.get).toHaveBeenCalledWith(
+      expect.stringContaining('/events?q=bitcoin&active=true&closed=false'),
+      expect.any(Object),
+    );
+    logSpy.mockRestore();
   });
 });
 
