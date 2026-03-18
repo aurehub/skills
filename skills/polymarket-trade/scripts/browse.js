@@ -98,6 +98,37 @@ export async function search(query, cfg) {
   }
 }
 
+// ── Market resolution (slug-first, keyword fallback) ──────────────────────────
+
+export async function resolveMarket(query, cfg) {
+  const { default: axios } = await import('axios');
+  const gammaUrl = cfg.yaml?.polymarket?.gamma_url ?? DEFAULT_GAMMA_URL;
+
+  // Step 1: try exact slug via direct axios call.
+  // Do NOT use fetchGamma() here — it uses a query.includes('/') heuristic that
+  // misroutes slugs like 'bitcoin-100k-2025' (no '/') into keyword search.
+  try {
+    const res = await axios.get(`${gammaUrl}/markets/${query}`, { timeout: 10_000 });
+    return res.data;
+  } catch (e) {
+    if (e.response?.status !== 404) throw e;
+  }
+
+  // Step 2: keyword fallback via fetchGamma (issues GET /markets?q=<query>)
+  const markets = await fetchGamma(gammaUrl, query);
+  if (markets.length === 0) throw new Error(`Market not found: ${query}`);
+  if (markets.length === 1) return markets[0];
+
+  // Multiple results — print list and exit
+  console.error(`Found ${markets.length} markets matching "${query}":`);
+  markets.slice(0, 5).forEach((m, i) => {
+    const status = m.active ? 'ACTIVE' : 'CLOSED';
+    console.error(`  ${i + 1}. ${(m.slug ?? '(no slug)').padEnd(36)} "${m.question}"  ${status}`);
+  });
+  console.error(`\nSpecify the exact slug: node scripts/trade.js --buy --market <slug> --side YES|NO --amount <usd>`);
+  process.exit(1);
+}
+
 // ── CLI entry point ───────────────────────────────────────────────────────────
 if (process.argv[1] === fileURLToPath(import.meta.url)) {
   const query = process.argv[2];

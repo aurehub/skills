@@ -1,5 +1,5 @@
-import { describe, it, expect } from 'vitest';
-import { formatMarketOutput, extractTokenIds } from '../browse.js';
+import { vi, describe, it, expect, afterEach } from 'vitest';
+import { formatMarketOutput, extractTokenIds, resolveMarket } from '../browse.js';
 
 const mockMarket = {
   question: 'Will BTC reach $100k by Dec 2025?',
@@ -58,5 +58,72 @@ describe('extractTokenIds', () => {
     const ids = extractTokenIds(mockMarket);
     expect(ids.YES).toBe('712345');
     expect(ids.NO).toBe('523456');
+  });
+});
+
+// ── resolveMarket ─────────────────────────────────────────────────────────────
+
+vi.mock('axios', () => ({
+  default: { get: vi.fn() },
+}));
+
+// Use a different name to avoid collision with the existing mockMarket const above
+const mockSlugMarket = {
+  question: 'Will BTC reach $100k by Dec 2025?',
+  slug: 'bitcoin-100k-2025',
+  active: true,
+  tokens: [],
+};
+
+describe('resolveMarket', () => {
+  afterEach(() => vi.clearAllMocks());
+
+  it('returns market when exact slug found (200)', async () => {
+    const { default: axios } = await import('axios');
+    axios.get.mockResolvedValue({ data: mockSlugMarket });
+    const result = await resolveMarket('bitcoin-100k-2025', { yaml: {} });
+    expect(result).toEqual(mockSlugMarket);
+    expect(axios.get).toHaveBeenCalledWith(
+      expect.stringContaining('/markets/bitcoin-100k-2025'),
+      expect.any(Object),
+    );
+  });
+
+  it('falls back to keyword search on 404, returns single result', async () => {
+    const { default: axios } = await import('axios');
+    const err404 = Object.assign(new Error('Not Found'), { response: { status: 404 } });
+    axios.get
+      .mockRejectedValueOnce(err404)
+      .mockResolvedValueOnce({ data: [mockSlugMarket] });
+    const result = await resolveMarket('bitcoin 100k', { yaml: {} });
+    expect(result).toEqual(mockSlugMarket);
+  });
+
+  it('calls process.exit(1) when multiple results found', async () => {
+    const { default: axios } = await import('axios');
+    const err404 = Object.assign(new Error('Not Found'), { response: { status: 404 } });
+    const exitSpy = vi.spyOn(process, 'exit').mockImplementation(() => { throw new Error('process.exit'); });
+    axios.get
+      .mockRejectedValueOnce(err404)
+      .mockResolvedValueOnce({ data: [mockSlugMarket, { ...mockSlugMarket, slug: 'bitcoin-200k-2025' }] });
+    await expect(resolveMarket('bitcoin', { yaml: {} })).rejects.toThrow('process.exit');
+    expect(exitSpy).toHaveBeenCalledWith(1);
+    exitSpy.mockRestore();
+  });
+
+  it('throws Market not found when keyword search returns no results', async () => {
+    const { default: axios } = await import('axios');
+    const err404 = Object.assign(new Error('Not Found'), { response: { status: 404 } });
+    axios.get
+      .mockRejectedValueOnce(err404)
+      .mockResolvedValueOnce({ data: [] });
+    await expect(resolveMarket('nonexistent-market', { yaml: {} })).rejects.toThrow('Market not found: nonexistent-market');
+  });
+
+  it('rethrows non-404 errors from slug fetch', async () => {
+    const { default: axios } = await import('axios');
+    const err403 = Object.assign(new Error('Forbidden'), { response: { status: 403 } });
+    axios.get.mockRejectedValue(err403);
+    await expect(resolveMarket('some-slug', { yaml: {} })).rejects.toThrow('Forbidden');
   });
 });
