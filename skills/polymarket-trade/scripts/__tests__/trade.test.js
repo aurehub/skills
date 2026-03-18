@@ -1,5 +1,5 @@
 import { vi, describe, it, expect, afterEach } from 'vitest';
-import { getSafetyLevel, validateHardStops } from '../trade.js';
+import { getSafetyLevel, validateHardStops, checkRecentFill } from '../trade.js';
 
 vi.mock('../lib/swap.js', () => ({
   getSwapQuote: vi.fn(),
@@ -107,5 +107,45 @@ describe('checkAndSwapIfNeeded', () => {
     });
     expect(result).toBe('cancelled');
     expect(swapPolToUsdc).not.toHaveBeenCalled();
+  });
+});
+
+// ── checkRecentFill ───────────────────────────────────────────────────────────
+
+describe('checkRecentFill', () => {
+  afterEach(() => vi.clearAllMocks());
+
+  const tokenID = '0xabc123';
+  const makerAddress = '0xUser';
+  const nowSec = Math.floor(Date.now() / 1000);
+
+  it('returns matching trade when found within window', async () => {
+    const recentTrade = { id: 'trade-1', asset_id: tokenID, timestamp: String(nowSec - 10) };
+    const client = { getTrades: vi.fn().mockResolvedValue([recentTrade]) };
+    const result = await checkRecentFill(client, tokenID, makerAddress);
+    expect(result).toEqual(recentTrade);
+    expect(client.getTrades).toHaveBeenCalledWith(
+      { maker_address: makerAddress, asset_id: tokenID },
+      true,
+    );
+  });
+
+  it('returns null when trade is outside the time window', async () => {
+    const oldTrade = { id: 'trade-old', asset_id: tokenID, timestamp: String(nowSec - 300) };
+    const client = { getTrades: vi.fn().mockResolvedValue([oldTrade]) };
+    const result = await checkRecentFill(client, tokenID, makerAddress);
+    expect(result).toBeNull();
+  });
+
+  it('returns null when no trades found', async () => {
+    const client = { getTrades: vi.fn().mockResolvedValue([]) };
+    const result = await checkRecentFill(client, tokenID, makerAddress);
+    expect(result).toBeNull();
+  });
+
+  it('returns null (safe fallback) when getTrades throws', async () => {
+    const client = { getTrades: vi.fn().mockRejectedValue(new Error('Network error')) };
+    const result = await checkRecentFill(client, tokenID, makerAddress);
+    expect(result).toBeNull();
   });
 });

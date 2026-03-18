@@ -74,6 +74,34 @@ export async function checkAndSwapIfNeeded({
   return true;
 }
 
+// ── Post-submission fill verification (exported for testing) ─────────────────
+
+/**
+ * After a network error during postOrder, query recent trades to determine if
+ * the order actually filled. Returns the matching trade object, or null if not
+ * found (caller should treat the fill status as unknown and warn before retry).
+ *
+ * @param {object} client   - ClobClient with getTrades
+ * @param {string} tokenID  - token being traded
+ * @param {string} makerAddress - wallet address
+ * @param {number} [windowSec=120] - look-back window in seconds
+ */
+export async function checkRecentFill(client, tokenID, makerAddress, windowSec = 120) {
+  try {
+    const trades = await client.getTrades(
+      { maker_address: makerAddress, asset_id: tokenID },
+      true, // first page only — recent fills appear first
+    );
+    const cutoff = Math.floor(Date.now() / 1000) - windowSec;
+    return trades.find(t => {
+      const ts = parseInt(t.timestamp ?? t.match_time ?? '0', 10);
+      return ts >= cutoff;
+    }) ?? null;
+  } catch {
+    return null; // network also unavailable — conservative fallback
+  }
+}
+
 // ── Buy flow ──────────────────────────────────────────────────────────────────
 
 export async function buy({ market, side, amount, cfg, provider, wallet }) {
@@ -156,15 +184,33 @@ export async function buy({ market, side, amount, cfg, provider, wallet }) {
   await approveTx.wait();
   console.log(`Approval confirmed.`);
 
-  // Submit order
+  // Submit order — split create/post so a network exception can be disambiguated
+  // from a definitive server rejection (result.success === false).
   console.log(`Submitting FOK buy order...`);
-  const result = await client.createAndPostMarketOrder(
+  const order = await client.createMarketOrder(
     { tokenID, amount, side: Side.BUY },
     { tickSize, negRisk },
-    OrderType.FOK,
   );
+  let result;
+  try {
+    result = await client.postOrder(order, OrderType.FOK);
+  } catch (e) {
+    // Network/timeout — order may have been processed by the CLOB without us
+    // receiving the response. Query trade history to disambiguate.
+    const fill = await checkRecentFill(client, tokenID, wallet.address);
+    if (fill) {
+      console.log(`\n✅ Order filled (confirmed via trade history after network error)`);
+      console.log(`   Trade ID: ${fill.id ?? '—'}`);
+      return { success: true, orderID: fill.id ?? null, status: fill.status ?? 'matched' };
+    }
+    // Revoke the dangling approval before surfacing the error
+    try { await (await usdceSigned.approve(spender, 0)).wait(); } catch { /* best-effort */ }
+    throw new Error(
+      `Order submission error — fill status unknown. Check balance.js before retrying. (${e.message})`,
+    );
+  }
   if (!result.success) {
-    // Revoke the allowance we just set to avoid a dangling approval
+    // Definitive FOK rejection — revoke the allowance we just set
     try {
       const revokeTx = await usdceSigned.approve(spender, 0);
       await revokeTx.wait();
@@ -242,15 +288,31 @@ export async function sell({ market, side, amount, cfg, provider, wallet }) {
   await approveTx.wait();
   console.log(`Approval confirmed.`);
 
-  // Submit order
+  // Submit order — split create/post so a network exception can be disambiguated
+  // from a definitive server rejection (result.success === false).
   console.log(`Submitting FOK sell order...`);
-  const result = await client.createAndPostMarketOrder(
+  const order = await client.createMarketOrder(
     { tokenID, amount, side: Side.SELL },
     { tickSize, negRisk },
-    OrderType.FOK,
   );
+  let result;
+  try {
+    result = await client.postOrder(order, OrderType.FOK);
+  } catch (e) {
+    const fill = await checkRecentFill(client, tokenID, wallet.address);
+    if (fill) {
+      console.log(`\n✅ Order filled (confirmed via trade history after network error)`);
+      console.log(`   Trade ID: ${fill.id ?? '—'}`);
+      return { success: true, orderID: fill.id ?? null, status: fill.status ?? 'matched' };
+    }
+    // Revoke the dangling setApprovalForAll before surfacing the error
+    try { await (await ctfSigned.setApprovalForAll(operator, false)).wait(); } catch { /* best-effort */ }
+    throw new Error(
+      `Order submission error — fill status unknown. Check balance.js before retrying. (${e.message})`,
+    );
+  }
   if (!result.success) {
-    // Revoke the operator approval we just set to avoid a dangling setApprovalForAll
+    // Definitive FOK rejection — revoke the operator approval we just set
     try {
       const revokeTx = await ctfSigned.setApprovalForAll(operator, false);
       await revokeTx.wait();
