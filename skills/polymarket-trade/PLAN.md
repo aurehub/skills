@@ -28,43 +28,42 @@
 
 ## Pre-flight
 
-- [ ] **Confirm working directory**
+- [ ] **Confirm working directory and tests are green**
 
 ```bash
 cd skills/polymarket-trade/scripts
 npm test
 ```
-Expected: all tests pass (green). If any fail, stop and fix before proceeding.
+Expected: all existing tests pass. If any fail, stop and fix before proceeding.
 
 ---
 
 ## Task 1: Add `axios` as explicit dependency
 
-`axios` is currently installed as a transitive dep but not listed in `package.json`. Make it explicit so it won't break on a clean install.
+`axios` is currently installed as a transitive dep but not declared in `package.json`. Make it explicit.
 
 **Files:**
 - Modify: `scripts/package.json`
 
-- [ ] **Step 1: Add axios to dependencies**
+- [ ] **Step 1: Add axios**
 
 ```bash
 cd skills/polymarket-trade/scripts
 npm install axios
 ```
 
-Expected: `package.json` now lists `"axios": "^1.x.x"` under `dependencies`.
+Expected: `package.json` now lists `"axios"` under `dependencies`.
 
 - [ ] **Step 2: Verify tests still pass**
 
 ```bash
 npm test
 ```
-Expected: all tests pass.
 
 - [ ] **Step 3: Commit**
 
 ```bash
-cd ..  # back to skills/polymarket-trade
+cd ..
 git add scripts/package.json scripts/package-lock.json
 git commit -m "chore(polymarket-trade): add axios as explicit dependency"
 ```
@@ -76,17 +75,67 @@ git commit -m "chore(polymarket-trade): add axios as explicit dependency"
 **Files:**
 - Modify: `scripts/__tests__/balance.test.js`
 
-- [ ] **Step 1: Add failing tests for `fetchPositions`**
+Note: The existing file has a `toContain('100.000000')` assertion that will break when `formatBalances` is updated to use `toFixed(2)`. This task rewrites the whole file to fix that assertion and add the new tests — all in one go, before touching `balance.js`.
 
-Append to `scripts/__tests__/balance.test.js`:
+- [ ] **Step 1: Replace `balance.test.js` with merged content**
+
+Overwrite `scripts/__tests__/balance.test.js` with:
 
 ```js
 import { vi, describe, it, expect, afterEach } from 'vitest';
-import { fetchPositions, formatBalances } from '../balance.js';
+import { formatBalances, fetchPositions } from '../balance.js';
 
 vi.mock('axios', () => ({
   default: { get: vi.fn() },
 }));
+
+// ── formatBalances (existing tests, updated for toFixed(2) USDC.e) ────────────
+
+describe('formatBalances', () => {
+  it('formats address and all three balances', () => {
+    const result = { address: '0xABC', pol: '0.1234', usdce: '100.000000', clob: '50.00', positions: [] };
+    const out = formatBalances(result);
+    expect(out).toContain('0xABC');
+    expect(out).toContain('0.1234');
+    expect(out).toContain('$100.00');   // toFixed(2) — was '100.000000'
+    expect(out).toContain('50.00');
+  });
+
+  it('omits CLOB line when clob is null', () => {
+    const result = { address: '0xABC', pol: '0.1234', usdce: '100.000000', clob: null, positions: [] };
+    const out = formatBalances(result);
+    expect(out).not.toContain('CLOB');
+  });
+
+  it('renders Positions section when positions present', () => {
+    const b = {
+      address: '0xabc', pol: '0.1000', usdce: '100.500000', clob: null,
+      positions: [
+        { outcome: 'YES', slug: 'bitcoin-100k-2025', size: '42.5', curPrice: '0.72', currentValue: '30.60' },
+      ],
+    };
+    const out = formatBalances(b);
+    expect(out).toContain('Positions');
+    expect(out).toContain('YES');
+    expect(out).toContain('bitcoin-100k-2025');
+    expect(out).toContain('42.50');
+  });
+
+  it('omits Positions section when positions is empty', () => {
+    const b = { address: '0xabc', pol: '0.1000', usdce: '100.00', clob: null, positions: [] };
+    const out = formatBalances(b);
+    expect(out).not.toContain('Positions');
+  });
+
+  it('formats USDC.e to 2 decimal places', () => {
+    const b = { address: '0xabc', pol: '0.1000', usdce: '100.500000', clob: null, positions: [] };
+    const out = formatBalances(b);
+    expect(out).toContain('$100.50');
+    expect(out).not.toContain('100.500000');
+  });
+});
+
+// ── fetchPositions ────────────────────────────────────────────────────────────
 
 describe('fetchPositions', () => {
   afterEach(() => vi.clearAllMocks());
@@ -121,48 +170,16 @@ describe('fetchPositions', () => {
     );
   });
 });
-
-describe('formatBalances — positions', () => {
-  it('renders Positions section when positions present', () => {
-    const b = {
-      address: '0xabc',
-      pol: '0.1000',
-      usdce: '100.500000',
-      clob: null,
-      positions: [
-        { outcome: 'YES', slug: 'bitcoin-100k-2025', size: '42.5', curPrice: '0.72', currentValue: '30.60' },
-      ],
-    };
-    const out = formatBalances(b);
-    expect(out).toContain('Positions');
-    expect(out).toContain('YES');
-    expect(out).toContain('bitcoin-100k-2025');
-    expect(out).toContain('42.50');
-  });
-
-  it('omits Positions section when positions is empty', () => {
-    const b = { address: '0xabc', pol: '0.1000', usdce: '100.00', clob: null, positions: [] };
-    const out = formatBalances(b);
-    expect(out).not.toContain('Positions');
-  });
-
-  it('formats USDC.e to 2 decimal places', () => {
-    const b = { address: '0xabc', pol: '0.1000', usdce: '100.500000', clob: null, positions: [] };
-    const out = formatBalances(b);
-    expect(out).toContain('$100.50');
-    expect(out).not.toContain('100.500000');
-  });
-});
 ```
 
-- [ ] **Step 2: Run to verify tests fail**
+- [ ] **Step 2: Run to verify new tests fail (fetchPositions not yet exported)**
 
 ```bash
 cd skills/polymarket-trade/scripts
-npm test -- __tests__/balance.test.js
+npx vitest run __tests__/balance.test.js
 ```
 
-Expected: FAIL — `fetchPositions is not a function` (or similar). If tests pass unexpectedly, something is wrong.
+Expected: FAIL on `fetchPositions` tests — `fetchPositions is not a function`. The updated `formatBalances` tests may also fail since `positions` field doesn't exist yet.
 
 ---
 
@@ -171,9 +188,9 @@ Expected: FAIL — `fetchPositions is not a function` (or similar). If tests pas
 **Files:**
 - Modify: `scripts/balance.js`
 
-- [ ] **Step 1: Add `fetchPositions` export and update `getBalances` + `formatBalances`**
+- [ ] **Step 1: Rewrite `balance.js`**
 
-Replace the contents of `scripts/balance.js` with:
+Overwrite `scripts/balance.js` with:
 
 ```js
 import { fileURLToPath } from 'url';
@@ -279,16 +296,16 @@ if (process.argv[1] === fileURLToPath(import.meta.url)) {
 }
 ```
 
-- [ ] **Step 2: Run tests to verify they pass**
+- [ ] **Step 2: Run balance tests**
 
 ```bash
 cd skills/polymarket-trade/scripts
-npm test -- __tests__/balance.test.js
+npx vitest run __tests__/balance.test.js
 ```
 
-Expected: all balance tests pass (including the new ones).
+Expected: all balance tests pass.
 
-- [ ] **Step 3: Run full test suite**
+- [ ] **Step 3: Run full suite**
 
 ```bash
 npm test
@@ -311,19 +328,41 @@ git commit -m "feat(polymarket-trade): add position tracking to balance.js"
 **Files:**
 - Modify: `scripts/__tests__/browse.test.js`
 
-- [ ] **Step 1: Add failing tests for `resolveMarket`**
+Note: The existing file already declares `const mockMarket` and imports from vitest. This task replaces the import line and appends new tests using a different variable name (`mockSlugMarket`) to avoid re-declaration.
 
-Append to `scripts/__tests__/browse.test.js`:
+- [ ] **Step 1: Update imports, then append `resolveMarket` tests**
 
+In `scripts/__tests__/browse.test.js`, make these edits in order:
+
+**First** — replace line 1 (vitest import):
+```js
+import { describe, it, expect } from 'vitest';
+```
+With:
 ```js
 import { vi, describe, it, expect, afterEach } from 'vitest';
-import { resolveMarket } from '../browse.js';
+```
+
+**Second** — replace line 2 (browse.js import, add `resolveMarket`):
+```js
+import { formatMarketOutput, extractTokenIds } from '../browse.js';
+```
+With:
+```js
+import { formatMarketOutput, extractTokenIds, resolveMarket } from '../browse.js';
+```
+
+**Third** — append to the end of the file:
+
+```js
+// ── resolveMarket ─────────────────────────────────────────────────────────────
 
 vi.mock('axios', () => ({
   default: { get: vi.fn() },
 }));
 
-const mockMarket = {
+// Use a different name to avoid collision with the existing mockMarket const above
+const mockSlugMarket = {
   question: 'Will BTC reach $100k by Dec 2025?',
   slug: 'bitcoin-100k-2025',
   active: true,
@@ -335,10 +374,9 @@ describe('resolveMarket', () => {
 
   it('returns market when exact slug found (200)', async () => {
     const { default: axios } = await import('axios');
-    axios.get.mockResolvedValue({ data: mockMarket });
-    const cfg = { yaml: {} };
-    const result = await resolveMarket('bitcoin-100k-2025', cfg);
-    expect(result).toEqual(mockMarket);
+    axios.get.mockResolvedValue({ data: mockSlugMarket });
+    const result = await resolveMarket('bitcoin-100k-2025', { yaml: {} });
+    expect(result).toEqual(mockSlugMarket);
     expect(axios.get).toHaveBeenCalledWith(
       expect.stringContaining('/markets/bitcoin-100k-2025'),
       expect.any(Object),
@@ -350,21 +388,19 @@ describe('resolveMarket', () => {
     const err404 = Object.assign(new Error('Not Found'), { response: { status: 404 } });
     axios.get
       .mockRejectedValueOnce(err404)
-      .mockResolvedValueOnce({ data: [mockMarket] });
-    const cfg = { yaml: {} };
-    const result = await resolveMarket('bitcoin 100k', cfg);
-    expect(result).toEqual(mockMarket);
+      .mockResolvedValueOnce({ data: [mockSlugMarket] });
+    const result = await resolveMarket('bitcoin 100k', { yaml: {} });
+    expect(result).toEqual(mockSlugMarket);
   });
 
-  it('calls process.exit(1) and prints list when multiple results found', async () => {
+  it('calls process.exit(1) when multiple results found', async () => {
     const { default: axios } = await import('axios');
     const err404 = Object.assign(new Error('Not Found'), { response: { status: 404 } });
     const exitSpy = vi.spyOn(process, 'exit').mockImplementation(() => { throw new Error('process.exit'); });
     axios.get
       .mockRejectedValueOnce(err404)
-      .mockResolvedValueOnce({ data: [mockMarket, { ...mockMarket, slug: 'bitcoin-200k-2025' }] });
-    const cfg = { yaml: {} };
-    await expect(resolveMarket('bitcoin', cfg)).rejects.toThrow('process.exit');
+      .mockResolvedValueOnce({ data: [mockSlugMarket, { ...mockSlugMarket, slug: 'bitcoin-200k-2025' }] });
+    await expect(resolveMarket('bitcoin', { yaml: {} })).rejects.toThrow('process.exit');
     expect(exitSpy).toHaveBeenCalledWith(1);
     exitSpy.mockRestore();
   });
@@ -375,28 +411,26 @@ describe('resolveMarket', () => {
     axios.get
       .mockRejectedValueOnce(err404)
       .mockResolvedValueOnce({ data: [] });
-    const cfg = { yaml: {} };
-    await expect(resolveMarket('nonexistent-market', cfg)).rejects.toThrow('Market not found: nonexistent-market');
+    await expect(resolveMarket('nonexistent-market', { yaml: {} })).rejects.toThrow('Market not found: nonexistent-market');
   });
 
   it('rethrows non-404 errors from slug fetch', async () => {
     const { default: axios } = await import('axios');
     const err403 = Object.assign(new Error('Forbidden'), { response: { status: 403 } });
     axios.get.mockRejectedValue(err403);
-    const cfg = { yaml: {} };
-    await expect(resolveMarket('some-slug', cfg)).rejects.toThrow('Forbidden');
+    await expect(resolveMarket('some-slug', { yaml: {} })).rejects.toThrow('Forbidden');
   });
 });
 ```
 
-- [ ] **Step 2: Run to verify tests fail**
+- [ ] **Step 2: Run to verify new tests fail**
 
 ```bash
 cd skills/polymarket-trade/scripts
-npm test -- __tests__/browse.test.js
+npx vitest run __tests__/browse.test.js
 ```
 
-Expected: FAIL — `resolveMarket is not a function`.
+Expected: existing tests pass, new `resolveMarket` tests FAIL — `resolveMarket is not a function`.
 
 ---
 
@@ -405,9 +439,9 @@ Expected: FAIL — `resolveMarket is not a function`.
 **Files:**
 - Modify: `scripts/browse.js`
 
-- [ ] **Step 1: Add `resolveMarket` export to `browse.js`**
+- [ ] **Step 1: Add `resolveMarket` before the CLI entry point**
 
-Add the following function before the CLI entry point in `scripts/browse.js`:
+In `scripts/browse.js`, add the following function before the line `// ── CLI entry point`:
 
 ```js
 // ── Market resolution (slug-first, keyword fallback) ──────────────────────────
@@ -416,8 +450,9 @@ export async function resolveMarket(query, cfg) {
   const { default: axios } = await import('axios');
   const gammaUrl = cfg.yaml?.polymarket?.gamma_url ?? DEFAULT_GAMMA_URL;
 
-  // Step 1: try exact slug directly (do NOT use fetchGamma — it uses a '/' heuristic
-  // that would misroute slugs like 'bitcoin-100k-2025' into keyword search)
+  // Step 1: try exact slug via direct axios call.
+  // Do NOT use fetchGamma() here — it uses a query.includes('/') heuristic that
+  // misroutes slugs like 'bitcoin-100k-2025' (no '/') into keyword search.
   try {
     const res = await axios.get(`${gammaUrl}/markets/${query}`, { timeout: 10_000 });
     return res.data;
@@ -425,12 +460,12 @@ export async function resolveMarket(query, cfg) {
     if (e.response?.status !== 404) throw e;
   }
 
-  // Step 2: keyword fallback
+  // Step 2: keyword fallback via fetchGamma (issues GET /markets?q=<query>)
   const markets = await fetchGamma(gammaUrl, query);
   if (markets.length === 0) throw new Error(`Market not found: ${query}`);
   if (markets.length === 1) return markets[0];
 
-  // Multiple results — print and exit
+  // Multiple results — print list and exit
   console.error(`Found ${markets.length} markets matching "${query}":`);
   markets.slice(0, 5).forEach((m, i) => {
     const status = m.active ? 'ACTIVE' : 'CLOSED';
@@ -441,16 +476,16 @@ export async function resolveMarket(query, cfg) {
 }
 ```
 
-- [ ] **Step 2: Run browse tests to verify they pass**
+- [ ] **Step 2: Run browse tests**
 
 ```bash
 cd skills/polymarket-trade/scripts
-npm test -- __tests__/browse.test.js
+npx vitest run __tests__/browse.test.js
 ```
 
 Expected: all browse tests pass.
 
-- [ ] **Step 3: Run full test suite**
+- [ ] **Step 3: Run full suite**
 
 ```bash
 npm test
@@ -473,9 +508,9 @@ git commit -m "feat(polymarket-trade): add resolveMarket with keyword fallback t
 **Files:**
 - Modify: `scripts/trade.js`
 
-- [ ] **Step 1: Update the import line and replace the inline market IIFE**
+- [ ] **Step 1: Update the import line**
 
-In `scripts/trade.js`, find line 9:
+Find line 9 in `scripts/trade.js`:
 ```js
 import { extractTokenIds } from './browse.js';
 ```
@@ -484,7 +519,9 @@ Replace with:
 import { extractTokenIds, resolveMarket } from './browse.js';
 ```
 
-Then find the inline market fetch IIFE (lines ~218-224):
+- [ ] **Step 2: Replace the inline market fetch block**
+
+Find this block (starts around line 217 — search for the comment):
 ```js
       // Browse to get market + token IDs
       const markets = await (async () => {
@@ -497,13 +534,14 @@ Then find the inline market fetch IIFE (lines ~218-224):
       const market = markets[0];
       if (!market) throw new Error(`Market not found: ${query}`);
 ```
+
 Replace with:
 ```js
-      // Resolve market by slug or keyword (see browse.js resolveMarket)
+      // Resolve market by exact slug or keyword fallback (see browse.js resolveMarket)
       const market = await resolveMarket(query, cfg);
 ```
 
-- [ ] **Step 2: Run full test suite**
+- [ ] **Step 3: Run full test suite**
 
 ```bash
 cd skills/polymarket-trade/scripts
@@ -512,7 +550,7 @@ npm test
 
 Expected: all tests pass.
 
-- [ ] **Step 3: Commit**
+- [ ] **Step 4: Commit**
 
 ```bash
 cd ..
@@ -530,14 +568,15 @@ git commit -m "feat(polymarket-trade): use resolveMarket in trade.js CLI"
 
 - [ ] **Step 1: Add `data_url` to `config.example.yaml`**
 
-In `config.example.yaml`, find the `polymarket:` section:
+Find the `polymarket:` block:
 ```yaml
 polymarket:
   clob_url: "https://clob.polymarket.com"
   gamma_url: "https://gamma-api.polymarket.com"
   chain_id: 137              # 137 = Polygon mainnet, 80002 = Amoy testnet
 ```
-Add `data_url` as the first entry:
+
+Replace with:
 ```yaml
 polymarket:
   clob_url: "https://clob.polymarket.com"
@@ -548,8 +587,13 @@ polymarket:
 
 - [ ] **Step 2: Add two test cases to `SKILL.tests.yaml`**
 
-In `SKILL.tests.yaml`, append to the `full:` suite tests (before the final line):
+Find this block near the end of the `full:` suite (use it as anchor):
+```yaml
+      - id: full-setup-no-relay
+        description: Setup — CLOB credential derivation, no relay
+```
 
+Insert the two new cases immediately before it:
 ```yaml
       - id: full-balance-positions
         description: Balance — shows open positions when held
@@ -566,6 +610,7 @@ In `SKILL.tests.yaml`, append to the `full:` suite tests (before the final line)
         expect:
           - pattern: "trade\\.js.*--buy.*--side YES"
             type: command
+
 ```
 
 - [ ] **Step 3: Run full test suite one final time**
@@ -589,13 +634,13 @@ git commit -m "chore(polymarket-trade): add data_url config and new SKILL test c
 
 ## Done
 
-All tasks complete. Verify final state:
+Verify the final state:
 
 ```bash
 git log --oneline -6
 ```
 
-Expected output (4 new commits on top of existing):
+Expected (5 new commits):
 ```
 <hash> chore(polymarket-trade): add data_url config and new SKILL test cases
 <hash> feat(polymarket-trade): use resolveMarket in trade.js CLI
