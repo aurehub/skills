@@ -146,8 +146,15 @@ export async function search(query, cfg) {
 export async function resolveMarket(query, cfg) {
   const { default: axios } = await import('axios');
   const gammaUrl = cfg.yaml?.polymarket?.gamma_url ?? DEFAULT_GAMMA_URL;
+  const clobUrl  = cfg.yaml?.polymarket?.clob_url  ?? DEFAULT_CLOB_URL;
 
-  // Step 1: try exact slug via direct axios call.
+  // Step 1a: conditionId (0x + 64 hex chars) — look up directly from CLOB, not Gamma
+  if (/^0x[0-9a-fA-F]{64}$/.test(query)) {
+    const res = await axios.get(`${clobUrl}/markets/${query}`, { timeout: 10_000 });
+    return res.data;
+  }
+
+  // Step 1b: try exact slug via Gamma.
   // Do NOT use fetchGamma() here — it uses a query.includes('/') heuristic that
   // misroutes slugs like 'bitcoin-100k-2025' (no '/') into keyword search.
   try {
@@ -161,7 +168,7 @@ export async function resolveMarket(query, cfg) {
 
   // Step 2: keyword fallback — call keyword endpoint directly to bypass fetchGamma's
   // query.includes('/') heuristic (which would misroute queries like "US/election")
-  const kwRes = await axios.get(`${gammaUrl}/markets?q=${encodeURIComponent(query)}`, { timeout: 10_000 });
+  const kwRes = await axios.get(`${gammaUrl}/markets?q=${encodeURIComponent(query)}&active=true&closed=false`, { timeout: 10_000 });
   const markets = Array.isArray(kwRes.data) ? kwRes.data : (kwRes.data?.markets ?? []);
   if (markets.length === 0) throw new Error(`Market not found: ${query}`);
   if (markets.length === 1) return markets[0];
