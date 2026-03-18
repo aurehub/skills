@@ -250,6 +250,11 @@ export async function sell({ market, side, amount, cfg, provider, wallet }) {
     OrderType.FOK,
   );
   if (!result.success) {
+    // Revoke the operator approval we just set to avoid a dangling setApprovalForAll
+    try {
+      const revokeTx = await ctfSigned.setApprovalForAll(operator, false);
+      await revokeTx.wait();
+    } catch { /* best-effort: warn if revoke itself fails */ }
     throw new Error(`Order not filled: ${result.errorMsg || result.status || 'insufficient liquidity'}`);
   }
   console.log(`\n✅ Order filled`);
