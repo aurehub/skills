@@ -7,7 +7,7 @@ Trade on Polymarket prediction markets on Polygon. Non-custodial — private key
 - Node.js 18+
 - A WDK wallet vault (`~/.aurehub/.wdk_vault`) — set up via the `xaut-trade` skill
 - Polygon RPC URL (e.g. from Alchemy, Infura, or a public endpoint)
-- POL for gas (>= 0.01 POL) and USDC.e for trading
+- POL for gas and trading (>= 0.01 POL for gas; auto-swapped to USDC.e when needed)
 
 ## Installation
 
@@ -51,11 +51,13 @@ node scripts/browse.js "bitcoin 100k"
 node scripts/browse.js "will trump"
 ```
 
-### Check balance
+### Check balance and positions
 
 ```bash
 node scripts/balance.js
 ```
+
+Shows POL, USDC.e, CLOB balance, and any open YES/NO positions with current value.
 
 ### Buy shares
 
@@ -81,7 +83,9 @@ Polymarket blocks users in the US and some other regions. If you see a **403 For
 | $50-$499 | Single confirmation required |
 | >= $500 | Double confirmation required |
 
-Hard-stops: insufficient USDC.e, POL gas < 0.01, market CLOSED, amount below minimum order size.
+If USDC.e is insufficient, an auto-swap from POL is offered before the trade proceeds.
+
+Hard-stops: POL gas < 0.01, market CLOSED, amount below minimum order size.
 
 ## Troubleshooting
 
