@@ -10,6 +10,21 @@ import { checkEnvFile, checkVaultFile, checkPasswordFile, checkConfigFile } from
 
 const ERC20_ABI = ['function balanceOf(address) view returns (uint256)'];
 const AUREHUB_DIR = join(homedir(), '.aurehub');
+const DEFAULT_DATA_URL = 'https://data-api.polymarket.com';
+
+export async function fetchPositions(address, cfg) {
+  try {
+    const { default: axios } = await import('axios');
+    const dataUrl = cfg.yaml?.polymarket?.data_url ?? DEFAULT_DATA_URL;
+    const res = await axios.get(
+      `${dataUrl}/positions?user=${address}&sizeThreshold=.1`,
+      { timeout: 10_000 },
+    );
+    return res.data ?? [];
+  } catch {
+    return [];
+  }
+}
 
 export async function getBalances(cfg) {
   const rpcUrl = resolveRpcUrl(cfg);
@@ -26,9 +41,10 @@ export async function getBalances(cfg) {
 
   const result = {
     address,
-    pol:   parseFloat(ethers.utils.formatEther(polBal)).toFixed(4),
-    usdce: ethers.utils.formatUnits(usdceBal, 6),
-    clob:  null,
+    pol:       parseFloat(ethers.utils.formatEther(polBal)).toFixed(4),
+    usdce:     ethers.utils.formatUnits(usdceBal, 6),
+    clob:      null,
+    positions: [],
   };
 
   const credsPath = join(AUREHUB_DIR, '.polymarket_clob');
@@ -41,12 +57,30 @@ export async function getBalances(cfg) {
     } catch { /* CLOB balance optional */ }
   }
 
+  result.positions = await fetchPositions(address, cfg);
+
   return result;
 }
 
 export function formatBalances(b) {
-  const lines = [`💰 ${b.address}`, `   POL:    ${b.pol}`, `   USDC.e: $${b.usdce}  ← trading token`];
+  const lines = [
+    `💰 ${b.address}`,
+    `   POL:    ${b.pol}`,
+    `   USDC.e: $${parseFloat(b.usdce).toFixed(2)}  ← trading token`,
+  ];
   if (b.clob !== null) lines.push(`   CLOB:   $${b.clob}  ← available for orders`);
+
+  if (b.positions?.length > 0) {
+    lines.push('');
+    lines.push('   Positions:');
+    for (const p of b.positions) {
+      const size  = parseFloat(p.size).toFixed(2);
+      const price = parseFloat(p.curPrice).toFixed(2);
+      const value = parseFloat(p.currentValue).toFixed(2);
+      lines.push(`     ${p.outcome.padEnd(4)} ${p.slug.padEnd(32)} ${size} shares  $${price}/share  ~$${value}`);
+    }
+  }
+
   lines.push('');
   return lines.join('\n');
 }
