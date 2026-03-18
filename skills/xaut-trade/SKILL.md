@@ -249,6 +249,8 @@ Determine the operation from the user's message:
 - **Cancel limit order**: contains "cancel order", "cancel limit" -> run cancel flow
 - **Setup / Create wallet**: contains "setup", "create wallet", "initialize", "init wallet" -> skip environment readiness check, go to Setup / Create Wallet Flow below.
 - **XAUT knowledge query**: contains "troy ounce", "grams", "conversion", "what is XAUT" -> answer directly, no on-chain operations or environment checks needed
+- **Delegation (non-xaut intents)**: intent does not match any xaut-trade operation above
+  -> load [references/skill-delegation.md](references/skill-delegation.md), match intent against registry; if a match is found, run Skill Delegation Flow; if no match, inform user this skill only handles XAUT/USDT trading
 
 ## Setup / Create Wallet Flow
 
