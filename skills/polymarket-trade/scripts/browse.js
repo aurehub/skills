@@ -100,7 +100,7 @@ async function fetchGamma(url, query) {
 
 async function fetchOrderbook(clobUrl, tokenId) {
   const { default: axios } = await import('axios');
-  const res = await axios.get(`${clobUrl}/orderbook/${tokenId}`, { timeout: 10_000 });
+  const res = await axios.get(`${clobUrl}/book?token_id=${tokenId}`, { timeout: 10_000 });
   return res.data;
 }
 
