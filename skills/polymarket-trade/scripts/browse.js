@@ -69,7 +69,7 @@ export function formatMarketOutput(market, orderbooks = {}, marketInfo = null) {
       `bid/ask: ${bestBid(obYes)}/${bestAsk(obYes)}   liquidity: ${liq(obYes)}`,
     `NO:  ${fmtPrice(noPrice)} ($${fmtPrice(noPrice)})   ` +
       `bid/ask: ${bestBid(obNo)}/${bestAsk(obNo)}   liquidity: ${liq(obNo)}`,
-    `Min order: $${marketInfo?.min_order_size ?? market.min_incentive_size ?? '—'}`,
+    `Min order: $${marketInfo?.minimum_order_size ?? marketInfo?.min_order_size ?? market.min_incentive_size ?? '—'}`,
     `Token IDs:`,
     `  YES: ${ids.YES ?? '(not found)'}`,
     `  NO:  ${ids.NO  ?? '(not found)'}`,
