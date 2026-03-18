@@ -41,14 +41,14 @@ suites:
             type: command
 
       - id: smoke-missing-env
-        description: Environment check — missing .env
+        description: Environment check — missing .env, agent auto-creates it
         setup:
           files:
             ~/.aurehub/.env: null
         prompt: "Buy $10 YES on bitcoin"
         expect:
-          - pattern: "missing|not found|\\.env"
-            type: error
+          - pattern: "cp.*\\.env\\.example|\\.env"
+            type: command
 
       - id: smoke-missing-vault
         description: Environment check — missing .wdk_vault
