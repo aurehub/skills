@@ -94,6 +94,7 @@ export async function swapPolToUsdc({ polAmountMax, usdceTarget, cfg, wallet, pr
   const refundCalldata = routerIface.encodeFunctionData('refundETH', []);
 
   const tx = await routerSigned.multicall([swapCalldata, refundCalldata], { value: polAmountMax });
+  console.log(`Swap tx submitted (${tx.hash?.slice(0, 12) ?? 'pending'}...), waiting for confirmation...`);
   const receipt = await tx.wait();
 
   // Parse actual USDC.e received from Transfer event (to=wallet)

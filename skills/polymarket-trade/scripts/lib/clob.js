@@ -7,11 +7,19 @@ const DEFAULT_CHAIN_ID = 137;
 const DEFAULT_CREDS_PATH = join(homedir(), '.aurehub', '.polymarket_clob');
 
 export function loadClobCreds(credsPath = DEFAULT_CREDS_PATH) {
+  let raw;
   try {
-    return JSON.parse(readFileSync(credsPath, 'utf8'));
-  } catch (e) {
+    raw = readFileSync(credsPath, 'utf8');
+  } catch {
     throw new Error(
       `CLOB credentials not found at "${credsPath}". Run: node scripts/setup.js`,
+    );
+  }
+  try {
+    return JSON.parse(raw);
+  } catch (e) {
+    throw new Error(
+      `CLOB credentials corrupted at "${credsPath}": ${e.message}. Delete the file and re-run: node scripts/setup.js`,
     );
   }
 }

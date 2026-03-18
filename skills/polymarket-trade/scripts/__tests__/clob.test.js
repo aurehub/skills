@@ -55,7 +55,17 @@ describe('loadClobCreds', () => {
   });
 
   it('throws with clear error when creds file is missing', () => {
-    expect(() => loadClobCreds('/nonexistent/.polymarket_clob')).toThrow('CLOB credentials');
+    expect(() => loadClobCreds('/nonexistent/.polymarket_clob')).toThrow('not found');
+  });
+
+  it('throws with corruption error when creds file contains invalid JSON', () => {
+    const dir = mkdtempSync(join(tmpdir(), 'pm-creds-'));
+    try {
+      writeFileSync(join(dir, '.polymarket_clob'), '{ bad json }');
+      expect(() => loadClobCreds(join(dir, '.polymarket_clob'))).toThrow('corrupted');
+    } finally {
+      rmSync(dir, { recursive: true });
+    }
   });
 });
 

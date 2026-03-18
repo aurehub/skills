@@ -60,17 +60,19 @@ export async function checkAndSwapIfNeeded({
     );
   }
 
-  console.log(`\nWarning: Insufficient USDC.e: have $${usdceBalance.toFixed(2)}, need $${amount.toFixed(2)}`);
-  console.log(`  Will swap ~${polAmountMaxF.toFixed(2)} POL for ~$${target.toFixed(2)} USDC.e (110%)`);
-  console.log(`  Est. rate: 1 POL ≈ $${rate.toFixed(2)} USDC.e  |  Slippage protection: 2%`);
+  console.log(`\n⚠️  Insufficient USDC.e: have $${usdceBalance.toFixed(2)}, need $${amount.toFixed(2)}`);
+  console.log(`  A POL → USDC.e swap is required to proceed with this buy.`);
+  console.log(`  Will swap ~${polAmountMaxF.toFixed(2)} POL → ~$${target.toFixed(2)} USDC.e (10% buffer + 2% slippage protection)`);
+  console.log(`  Est. rate: 1 POL ≈ $${rate.toFixed(2)} USDC.e`);
 
-  const ans = await confirmFn('Confirm swap? (yes/no): ');
+  const ans = await confirmFn('Proceed with swap and continue buy? (yes/no): ');
   if (ans !== 'yes') {
-    console.log('Cancelled.');
+    console.log('Swap declined. Buy cancelled — insufficient USDC.e to proceed.');
     return 'cancelled';
   }
 
-  await swapPolToUsdc({ polAmountMax, usdceTarget: target, cfg, wallet, provider });
+  const received = await swapPolToUsdc({ polAmountMax, usdceTarget: target, cfg, wallet, provider });
+  console.log(`✅ Swap completed: received $${received} USDC.e. Proceeding with buy...`);
   return true;
 }
 
@@ -129,7 +131,11 @@ export async function buy({ market, side, amount, cfg, provider, wallet }) {
   const estShares = (amount / estPrice).toFixed(2);
   console.log(`\nPreview:`);
   console.log(`  Spending:       $${amount} USDC.e`);
-  console.log(`  Est. price:     ~$${estPrice.toFixed(4)} per share (market order — actual fill may differ)`);
+  if (!ob.asks?.[0]) {
+    console.log(`  Est. price:     ~$0.50/share ⚠️  (no asks in orderbook — estimate may be inaccurate)`);
+  } else {
+    console.log(`  Est. price:     ~$${estPrice.toFixed(4)}/share (market order — actual fill may differ)`);
+  }
   console.log(`  Est. shares:    ~${estShares}`);
 
   // Hard stops — part 1: market and size (always run)
@@ -181,6 +187,7 @@ export async function buy({ market, side, amount, cfg, provider, wallet }) {
   console.log(`\nApproving ${spender.slice(0, 10)}... to spend ${amount} USDC.e...`);
   const usdceSigned = usdce.connect(wallet);
   const approveTx = await usdceSigned.approve(spender, exactAmount);
+  console.log(`Approval tx submitted, waiting for confirmation...`);
   await approveTx.wait();
   console.log(`Approval confirmed.`);
 
@@ -241,7 +248,7 @@ export async function sell({ market, side, amount, cfg, provider, wallet }) {
   const tokenBalance = await ctf.balanceOf(wallet.address, ethers.BigNumber.from(tokenID));
   const sharesHeld = parseFloat(ethers.utils.formatUnits(tokenBalance, 6));
   if (sharesHeld < amount) {
-    throw new Error(`Insufficient ${side} tokens: have ${sharesHeld}, want to sell ${amount}.`);
+    throw new Error(`Insufficient ${side} shares: have ${sharesHeld}, need ${amount} to sell.`);
   }
 
   // Preview
@@ -252,8 +259,12 @@ export async function sell({ market, side, amount, cfg, provider, wallet }) {
   const estUsdce = (amount * bestBid).toFixed(2);
   console.log(`\nPreview:`);
   console.log(`  Selling:        ${amount} ${side} shares`);
-  console.log(`  Best bid:       $${bestBid.toFixed(4)} per share`);
-  console.log(`  Est. receive:   ~$${estUsdce} USDC.e`);
+  if (!ob.bids?.[0]) {
+    console.log(`  Best bid:       ~$0.50/share ⚠️  (no bids in orderbook — estimate may be inaccurate)`);
+  } else {
+    console.log(`  Best bid:       $${bestBid.toFixed(4)}/share`);
+  }
+  console.log(`  Est. receive:   ~$${estUsdce} USDC.e (actual fill may differ)`);
 
   // Hard stops (gas + market active)
   const polRaw = await provider.getBalance(wallet.address);
@@ -286,6 +297,7 @@ export async function sell({ market, side, amount, cfg, provider, wallet }) {
   console.log(`\nApproving exchange operator...`);
   const ctfSigned = ctf.connect(wallet);
   const approveTx = await ctfSigned.setApprovalForAll(operator, true);
+  console.log(`Approval tx submitted, waiting for confirmation...`);
   await approveTx.wait();
   console.log(`Approval confirmed.`);
 
