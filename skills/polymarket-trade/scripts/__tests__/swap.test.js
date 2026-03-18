@@ -96,7 +96,11 @@ describe('swapPolToUsdc', () => {
     ethers.Contract.mockImplementation(function() { return { connect: () => ({ multicall: mockMulticall }) }; });
 
     const polAmountMax = ethers.utils.parseEther('12.75'); // polNeeded × 1.02
-    const mockProvider = { getBalance: vi.fn().mockResolvedValue(ethers.utils.parseEther('100')) };
+    const highTip = ethers.utils.parseUnits('50', 'gwei');
+    const mockProvider = {
+      getBalance: vi.fn().mockResolvedValue(ethers.utils.parseEther('100')),
+      getFeeData: vi.fn().mockResolvedValue({ maxPriorityFeePerGas: highTip, maxFeePerGas: highTip }),
+    };
     await swapPolToUsdc({
       polAmountMax,
       usdceTarget: 27.5,
@@ -105,10 +109,10 @@ describe('swapPolToUsdc', () => {
       provider: mockProvider,
     });
 
-    // multicall called with [swapCalldata, refundCalldata] and { value: polAmountMax }
+    // multicall called with [swapCalldata, refundCalldata], value, and gas overrides
     expect(mockMulticall).toHaveBeenCalledWith(
       [expect.stringMatching(/^0x/), expect.stringMatching(/^0x/)],
-      { value: polAmountMax },
+      expect.objectContaining({ value: polAmountMax }),
     );
   });
 
