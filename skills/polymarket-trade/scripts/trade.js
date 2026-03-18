@@ -6,7 +6,7 @@ import { loadConfig, resolveRpcUrl } from './lib/config.js';
 import { createSigner } from './lib/signer.js';
 import { createL2Client } from './lib/clob.js';
 import { runTradeEnvCheck } from './setup.js';
-import { extractTokenIds } from './browse.js';
+import { extractTokenIds, resolveMarket } from './browse.js';
 
 const AUREHUB_DIR = join(homedir(), '.aurehub');
 const ERC20_ABI  = ['function balanceOf(address) view returns (uint256)',
@@ -214,16 +214,8 @@ if (process.argv[1] === fileURLToPath(import.meta.url)) {
       const provider = new ethers.providers.JsonRpcProvider(rpcUrl);
       const wallet = (await createSigner(cfg)).connect(provider);
 
-      // Browse to get market + token IDs
-      const markets = await (async () => {
-        // Re-use browse search but return raw market object
-        const { default: axios } = await import('axios');
-        const gammaUrl = cfg.yaml?.polymarket?.gamma_url ?? 'https://gamma-api.polymarket.com';
-        const res = await axios.get(`${gammaUrl}/markets/${query}`, { timeout: 10_000 });
-        return [res.data];
-      })();
-      const market = markets[0];
-      if (!market) throw new Error(`Market not found: ${query}`);
+      // Resolve market by exact slug or keyword fallback (see browse.js resolveMarket)
+      const market = await resolveMarket(query, cfg);
 
       const fn = mode === 'sell' ? sell : buy;
       await fn({ market, side, amount, cfg, provider, wallet });
