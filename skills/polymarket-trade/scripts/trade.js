@@ -15,6 +15,18 @@ const ERC20_ABI  = ['function balanceOf(address) view returns (uint256)',
 const ERC1155_ABI = ['function balanceOf(address,uint256) view returns (uint256)',
                      'function setApprovalForAll(address,bool)'];
 
+// ── Gas helpers ───────────────────────────────────────────────────────────────
+
+// Polygon requires a minimum 25 Gwei tip; some public RPCs return stale low estimates.
+const MIN_GAS_TIP = ethers.utils.parseUnits('30', 'gwei');
+
+async function polyGasOverrides(provider) {
+  const feeData = await provider.getFeeData();
+  const tip = feeData.maxPriorityFeePerGas?.lt(MIN_GAS_TIP) ? MIN_GAS_TIP : feeData.maxPriorityFeePerGas;
+  const fee = feeData.maxFeePerGas?.lt(MIN_GAS_TIP)         ? MIN_GAS_TIP : feeData.maxFeePerGas;
+  return { maxPriorityFeePerGas: tip, maxFeePerGas: fee };
+}
+
 // ── Exported pure helpers (tested) ───────────────────────────────────────────
 
 export function getSafetyLevel(amount, safety) {
@@ -186,7 +198,7 @@ export async function buy({ market, side, amount, cfg, provider, wallet }) {
   const exactAmount = ethers.utils.parseUnits(amount.toString(), 6);
   console.log(`\nApproving ${spender.slice(0, 10)}... to spend ${amount} USDC.e...`);
   const usdceSigned = usdce.connect(wallet);
-  const approveTx = await usdceSigned.approve(spender, exactAmount);
+  const approveTx = await usdceSigned.approve(spender, exactAmount, await polyGasOverrides(provider));
   console.log(`Approval tx submitted, waiting for confirmation...`);
   await approveTx.wait();
   console.log(`Approval confirmed.`);
@@ -211,7 +223,7 @@ export async function buy({ market, side, amount, cfg, provider, wallet }) {
       return { success: true, orderID: fill.id ?? null, status: fill.status ?? 'matched' };
     }
     // Revoke the dangling approval before surfacing the error
-    try { await (await usdceSigned.approve(spender, 0)).wait(); } catch { /* best-effort */ }
+    try { await (await usdceSigned.approve(spender, 0, await polyGasOverrides(provider))).wait(); } catch { /* best-effort */ }
     throw new Error(
       `Order submission error — fill status unknown. Check balance.js before retrying. (${e.message})`,
     );
@@ -219,7 +231,7 @@ export async function buy({ market, side, amount, cfg, provider, wallet }) {
   if (!result.success) {
     // Definitive FOK rejection — revoke the allowance we just set
     try {
-      const revokeTx = await usdceSigned.approve(spender, 0);
+      const revokeTx = await usdceSigned.approve(spender, 0, await polyGasOverrides(provider));
       await revokeTx.wait();
     } catch { /* best-effort: warn if revoke itself fails */ }
     throw new Error(`Order not filled: ${result.errorMsg || result.status || 'insufficient liquidity'}.`);
@@ -296,7 +308,7 @@ export async function sell({ market, side, amount, cfg, provider, wallet }) {
   if (!ethers.utils.isAddress(operator)) throw new Error(`Invalid contract address in config: ${negRisk ? 'neg_risk_exchange' : 'ctf_exchange'} = "${operator}"`);
   console.log(`\nApproving exchange operator...`);
   const ctfSigned = ctf.connect(wallet);
-  const approveTx = await ctfSigned.setApprovalForAll(operator, true);
+  const approveTx = await ctfSigned.setApprovalForAll(operator, true, await polyGasOverrides(provider));
   console.log(`Approval tx submitted, waiting for confirmation...`);
   await approveTx.wait();
   console.log(`Approval confirmed.`);
@@ -319,7 +331,7 @@ export async function sell({ market, side, amount, cfg, provider, wallet }) {
       return { success: true, orderID: fill.id ?? null, status: fill.status ?? 'matched' };
     }
     // Revoke the dangling setApprovalForAll before surfacing the error
-    try { await (await ctfSigned.setApprovalForAll(operator, false)).wait(); } catch { /* best-effort */ }
+    try { await (await ctfSigned.setApprovalForAll(operator, false, await polyGasOverrides(provider))).wait(); } catch { /* best-effort */ }
     throw new Error(
       `Order submission error — fill status unknown. Check balance.js before retrying. (${e.message})`,
     );
@@ -327,7 +339,7 @@ export async function sell({ market, side, amount, cfg, provider, wallet }) {
   if (!result.success) {
     // Definitive FOK rejection — revoke the operator approval we just set
     try {
-      const revokeTx = await ctfSigned.setApprovalForAll(operator, false);
+      const revokeTx = await ctfSigned.setApprovalForAll(operator, false, await polyGasOverrides(provider));
       await revokeTx.wait();
     } catch { /* best-effort: warn if revoke itself fails */ }
     throw new Error(`Order not filled: ${result.errorMsg || result.status || 'insufficient liquidity'}`);
