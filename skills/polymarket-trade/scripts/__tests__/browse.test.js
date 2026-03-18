@@ -99,16 +99,20 @@ describe('resolveMarket', () => {
     expect(result).toEqual(mockSlugMarket);
   });
 
-  it('calls process.exit(1) when multiple results found', async () => {
+  it('calls process.exit(1) and prints list when multiple results found', async () => {
     const { default: axios } = await import('axios');
     const err404 = Object.assign(new Error('Not Found'), { response: { status: 404 } });
     const exitSpy = vi.spyOn(process, 'exit').mockImplementation(() => { throw new Error('process.exit'); });
+    const errSpy = vi.spyOn(console, 'error').mockImplementation(() => {});
     axios.get
       .mockRejectedValueOnce(err404)
       .mockResolvedValueOnce({ data: [mockSlugMarket, { ...mockSlugMarket, slug: 'bitcoin-200k-2025' }] });
     await expect(resolveMarket('bitcoin', { yaml: {} })).rejects.toThrow('process.exit');
     expect(exitSpy).toHaveBeenCalledWith(1);
+    expect(errSpy).toHaveBeenCalledWith(expect.stringContaining('Found 2 markets matching "bitcoin"'));
+    expect(errSpy).toHaveBeenCalledWith(expect.stringContaining('Specify the exact slug'));
     exitSpy.mockRestore();
+    errSpy.mockRestore();
   });
 
   it('throws Market not found when keyword search returns no results', async () => {
