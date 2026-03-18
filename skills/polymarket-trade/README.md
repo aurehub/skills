@@ -21,7 +21,6 @@ npx skills add aurehub/skills
 ### 1. Configure `~/.aurehub/.env`
 
 ```
-WALLET_MODE=wdk
 POLYGON_RPC_URL=https://polygon-rpc.com
 ```
 
@@ -86,7 +85,7 @@ Hard-stops: insufficient USDC.e, POL gas < 0.01, market CLOSED, amount below min
 
 ## Troubleshooting
 
-- **"Missing ~/.aurehub/.env"** — create the file with `WALLET_MODE=wdk`
+- **"Missing ~/.aurehub/.env"** — run: `cp <skill-dir>/.env.example ~/.aurehub/.env`
 - **"POLYGON_RPC_URL not set"** — add it to `~/.aurehub/.env` and update `rpc_env` in `polymarket.yaml`
 - **"Run: node scripts/setup.js"** — CLOB credentials not derived yet; run setup
 - **"node_modules not found"** — run `npm install` in the scripts directory
