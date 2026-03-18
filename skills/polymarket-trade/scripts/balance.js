@@ -53,7 +53,8 @@ export async function getBalances(cfg) {
       const client = await createL2Client(cfg, wallet, credsPath);
       await client.updateBalanceAllowance({ asset_type: 'COLLATERAL' });
       const bal = await client.getBalanceAllowance({ asset_type: 'COLLATERAL' });
-      result.clob = (parseFloat(bal.balance) / 1e6).toFixed(2);
+      const raw = parseFloat(bal.balance);
+      if (!isNaN(raw)) result.clob = (raw / 1e6).toFixed(2);
     } catch { /* CLOB balance optional */ }
   }
 

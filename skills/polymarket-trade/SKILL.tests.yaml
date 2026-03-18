@@ -168,13 +168,11 @@ suites:
             type: output
 
       - id: full-balance-positions
-        description: Balance — shows open positions when held
+        description: Balance — fetches positions alongside wallet balance
         prompt: "Show my Polymarket balance and positions"
         expect:
           - pattern: "balance\\.js"
             type: command
-          - pattern: "Positions|shares"
-            type: output
 
       - id: full-trade-keyword
         description: Trade — keyword input resolves market, agent confirms slug

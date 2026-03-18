@@ -62,7 +62,7 @@ export async function buy({ market, side, amount, cfg, provider, wallet }) {
   const estShares = (amount / estPrice).toFixed(2);
   console.log(`\nPreview:`);
   console.log(`  Spending:       $${amount} USDC.e`);
-  console.log(`  Est. price:     $${estPrice.toFixed(4)} per share`);
+  console.log(`  Est. price:     ~$${estPrice.toFixed(4)} per share (market order — actual fill may differ)`);
   console.log(`  Est. shares:    ~${estShares}`);
 
   // Hard stops
@@ -105,7 +105,7 @@ export async function buy({ market, side, amount, cfg, provider, wallet }) {
     OrderType.FOK,
   );
   if (!result.success) {
-    throw new Error(`Order not filled: ${result.errorMsg || result.status || 'insufficient liquidity'}`);
+    throw new Error(`Order not filled: ${result.errorMsg || result.status || 'insufficient liquidity'}. USDC.e allowance was set — re-run trade to retry.`);
   }
   console.log(`\n✅ Order filled`);
   console.log(`   Status:   ${result.status}`);
@@ -157,13 +157,14 @@ export async function sell({ market, side, amount, cfg, provider, wallet }) {
   // Safety gates (on estimated USD value)
   const safety = cfg.yaml?.safety ?? { warn_threshold_usd: 50, confirm_threshold_usd: 500 };
   const level = getSafetyLevel(parseFloat(estUsdce), safety);
-  if (level !== 'proceed') {
+  if (level === 'warn') {
     const ans = await confirm(`⚠️  Selling ${amount} ${side} shares (~$${estUsdce}). Confirm? (yes/no): `);
     if (ans !== 'yes') { console.log('Cancelled.'); return; }
-    if (level === 'confirm') {
-      const ans2 = await confirm(`⚠️  Confirm again. (yes/no): `);
-      if (ans2 !== 'yes') { console.log('Cancelled.'); return; }
-    }
+  } else if (level === 'confirm') {
+    const ans1 = await confirm(`⚠️  Large order: ~$${estUsdce}. Are you sure? (yes/no): `);
+    if (ans1 !== 'yes') { console.log('Cancelled.'); return; }
+    const ans2 = await confirm(`⚠️  Confirm again — selling ${amount} ${side} shares. (yes/no): `);
+    if (ans2 !== 'yes') { console.log('Cancelled.'); return; }
   }
 
   // setApprovalForAll

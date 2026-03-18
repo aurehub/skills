@@ -114,8 +114,10 @@ export async function resolveMarket(query, cfg) {
     if (e.response?.status !== 404) throw e;
   }
 
-  // Step 2: keyword fallback via fetchGamma (issues GET /markets?q=<query>)
-  const markets = await fetchGamma(gammaUrl, query);
+  // Step 2: keyword fallback — call keyword endpoint directly to bypass fetchGamma's
+  // query.includes('/') heuristic (which would misroute queries like "US/election")
+  const kwRes = await axios.get(`${gammaUrl}/markets?q=${encodeURIComponent(query)}`, { timeout: 10_000 });
+  const markets = Array.isArray(kwRes.data) ? kwRes.data : (kwRes.data?.markets ?? []);
   if (markets.length === 0) throw new Error(`Market not found: ${query}`);
   if (markets.length === 1) return markets[0];
 
