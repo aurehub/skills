@@ -114,7 +114,7 @@ export async function deriveClobCreds(aurehubDir = AUREHUB_DIR) {
     walletAddress: wallet.address,
   };
   writeFileSync(credsPath, JSON.stringify(data, null, 2));
-  try { chmodSync(credsPath, 0o600); } catch {}
+  try { chmodSync(credsPath, 0o600); } catch { console.warn(`⚠️  Could not restrict permissions on ${credsPath} — file may be readable by other users`); }
   // Write SCRIPTS_DIR for runtime resolution by other scripts
   writeFileSync(SETUP_PATH_FILE, SCRIPTS_DIR);
   console.log(`✅ CLOB credentials saved to ${credsPath}`);

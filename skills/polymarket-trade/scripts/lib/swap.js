@@ -32,6 +32,7 @@ export async function getSwapQuote({ usdceNeeded, provider, cfg }) {
     throw new Error(`Invalid usdceNeeded: ${usdceNeeded}`);
   }
   const quoterAddr = cfg.yaml?.contracts?.uniswap_quoter ?? DEFAULT_QUOTER;
+  if (!ethers.utils.isAddress(quoterAddr)) throw new Error(`Invalid contract address in config: uniswap_quoter = "${quoterAddr}"`);
   const quoter = new ethers.Contract(quoterAddr, QUOTER_ABI, provider);
   const amountOut = ethers.utils.parseUnits(usdceNeeded.toFixed(6), 6);
 
@@ -70,6 +71,7 @@ export async function swapPolToUsdc({ polAmountMax, usdceTarget, cfg, wallet, pr
   }
 
   const routerAddr = cfg.yaml?.contracts?.uniswap_router ?? DEFAULT_ROUTER;
+  if (!ethers.utils.isAddress(routerAddr)) throw new Error(`Invalid contract address in config: uniswap_router = "${routerAddr}"`);
   const router = new ethers.Contract(routerAddr, ROUTER_ABI, provider);
   const routerSigned = router.connect(wallet);
   const routerIface = new ethers.utils.Interface(ROUTER_ABI);

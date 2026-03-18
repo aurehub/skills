@@ -60,10 +60,11 @@ describe('getSwapQuote', () => {
     const mockQuote = vi.fn().mockResolvedValue(ethers.utils.parseEther('10'));
     ethers.Contract.mockImplementation(function(addr) { return { callStatic: { quoteExactOutputSingle: mockQuote }, _address: addr }; });
 
-    const cfg = { yaml: { contracts: { uniswap_quoter: '0xCustomQuoter' } } };
+    const customAddr = '0x2222222222222222222222222222222222222222';
+    const cfg = { yaml: { contracts: { uniswap_quoter: customAddr } } };
     await getSwapQuote({ usdceNeeded: 25, provider: {}, cfg });
 
-    expect(ethers.Contract).toHaveBeenCalledWith('0xCustomQuoter', expect.any(Array), {});
+    expect(ethers.Contract).toHaveBeenCalledWith(customAddr, expect.any(Array), {});
   });
 
   it('throws on Quoter call failure', async () => {

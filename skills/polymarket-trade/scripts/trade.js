@@ -90,6 +90,8 @@ export async function buy({ market, side, amount, cfg, provider, wallet }) {
     ? (contracts.neg_risk_exchange ?? '0xC5d563A36AE78145C45a50134d48A1215220f80a')
     : (contracts.ctf_exchange      ?? '0x4bFb41d5B3570DeFd03C39a9A4D8dE6Bd8B8982E');
   const usdceAddr = contracts.usdc_e ?? '0x2791Bca1f2de4661ED88A30C99A7a9449Aa84174';
+  if (!ethers.utils.isAddress(spender))   throw new Error(`Invalid contract address in config: ${negRisk ? 'neg_risk_exchange' : 'ctf_exchange'} = "${spender}"`);
+  if (!ethers.utils.isAddress(usdceAddr)) throw new Error(`Invalid contract address in config: usdc_e = "${usdceAddr}"`);
 
   // Preview
   const tickSize = await client.getTickSize(tokenID);
@@ -162,7 +164,12 @@ export async function buy({ market, side, amount, cfg, provider, wallet }) {
     OrderType.FOK,
   );
   if (!result.success) {
-    throw new Error(`Order not filled: ${result.errorMsg || result.status || 'insufficient liquidity'}. USDC.e allowance was set — re-run trade to retry.`);
+    // Revoke the allowance we just set to avoid a dangling approval
+    try {
+      const revokeTx = await usdceSigned.approve(spender, 0);
+      await revokeTx.wait();
+    } catch { /* best-effort: warn if revoke itself fails */ }
+    throw new Error(`Order not filled: ${result.errorMsg || result.status || 'insufficient liquidity'}.`);
   }
   console.log(`\n✅ Order filled`);
   console.log(`   Status:   ${result.status}`);
@@ -183,6 +190,7 @@ export async function sell({ market, side, amount, cfg, provider, wallet }) {
   // Check CTF token balance
   const contracts = cfg.yaml?.contracts ?? {};
   const ctfAddr = contracts.ctf_contract ?? '0x4D97DCd97eC945f40cF65F87097ACe5EA0476045';
+  if (!ethers.utils.isAddress(ctfAddr)) throw new Error(`Invalid contract address in config: ctf_contract = "${ctfAddr}"`);
   const ctf = new ethers.Contract(ctfAddr, ERC1155_ABI, provider);
   const tokenBalance = await ctf.balanceOf(wallet.address, ethers.BigNumber.from(tokenID));
   const sharesHeld = parseFloat(ethers.utils.formatUnits(tokenBalance, 6));
@@ -259,7 +267,7 @@ if (process.argv[1] === fileURLToPath(import.meta.url)) {
   const side    = (getArg('--side') ?? 'YES').toUpperCase();
   const amount  = parseFloat(getArg('--amount') ?? '0');
 
-  if (!query || !amount || amount <= 0) {
+  if (!query || !amount || amount <= 0 || !Number.isFinite(amount) || amount > 1_000_000) {
     console.error('Usage: node scripts/trade.js [--buy|--sell] --market <slug> --side YES|NO --amount <usd>');
     process.exit(1);
   }

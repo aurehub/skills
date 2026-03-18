@@ -34,6 +34,7 @@ export async function getBalances(cfg) {
 
   const contracts = cfg.yaml?.contracts ?? {};
   const usdceAddr = contracts.usdc_e ?? '0x2791Bca1f2de4661ED88A30C99A7a9449Aa84174';
+  if (!ethers.utils.isAddress(usdceAddr)) throw new Error(`Invalid contract address in config: usdc_e = "${usdceAddr}"`);
 
   const polBal   = await provider.getBalance(address);
   const usdce    = new ethers.Contract(usdceAddr, ERC20_ABI, provider);
