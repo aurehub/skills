@@ -11,7 +11,7 @@ node scripts/balance.js
 ```
 0x1234...abcd
    POL:    0.1234
-   USDC.e: $100.500000  <- trading token
+   USDC.e: $100.50  <- trading token
    CLOB:   $50.00  <- available for orders
 ```
 

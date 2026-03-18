@@ -20,7 +20,7 @@ export async function fetchPositions(address, cfg) {
       `${dataUrl}/positions?user=${address}&sizeThreshold=.1`,
       { timeout: 10_000 },
     );
-    return res.data ?? [];
+    return Array.isArray(res.data) ? res.data : [];
   } catch {
     return [];
   }
