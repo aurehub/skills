@@ -154,7 +154,9 @@ export async function resolveMarket(query, cfg) {
     const res = await axios.get(`${gammaUrl}/markets/${query}`, { timeout: 10_000 });
     return res.data;
   } catch (e) {
-    if (e.response?.status !== 404) throw e;
+    // 404 = not found; 422 = slug format unrecognized — both fall through to keyword search
+    const status = e.response?.status;
+    if (status !== 404 && status !== 422) throw e;
   }
 
   // Step 2: keyword fallback — call keyword endpoint directly to bypass fetchGamma's
