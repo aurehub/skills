@@ -8,6 +8,7 @@ import { createL2Client } from './lib/clob.js';
 import { runTradeEnvCheck } from './setup.js';
 import { extractTokenIds, resolveMarket } from './browse.js';
 import { getSwapQuote, swapPolToUsdc } from './lib/swap.js';
+import { polyGasOverrides } from './lib/gas.js';
 
 const AUREHUB_DIR = join(homedir(), '.aurehub');
 const ERC20_ABI  = ['function balanceOf(address) view returns (uint256)',
@@ -16,18 +17,6 @@ const ERC20_ABI  = ['function balanceOf(address) view returns (uint256)',
 const ERC1155_ABI = ['function balanceOf(address,uint256) view returns (uint256)',
                      'function isApprovedForAll(address,address) view returns (bool)',
                      'function setApprovalForAll(address,bool)'];
-
-// ── Gas helpers ───────────────────────────────────────────────────────────────
-
-// Polygon requires a minimum 25 Gwei tip; some public RPCs return stale low estimates.
-const MIN_GAS_TIP = ethers.utils.parseUnits('30', 'gwei');
-
-async function polyGasOverrides(provider) {
-  const feeData = await provider.getFeeData();
-  const tip = feeData.maxPriorityFeePerGas?.lt(MIN_GAS_TIP) ? MIN_GAS_TIP : feeData.maxPriorityFeePerGas;
-  const fee = feeData.maxFeePerGas?.lt(MIN_GAS_TIP)         ? MIN_GAS_TIP : feeData.maxFeePerGas;
-  return { maxPriorityFeePerGas: tip, maxFeePerGas: fee };
-}
 
 // ── Exported pure helpers (tested) ───────────────────────────────────────────
 
