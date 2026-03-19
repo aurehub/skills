@@ -42,7 +42,7 @@ export function resolveRpcUrl(cfg) {
   const url = cfg.env[name] ?? process.env[name];
   if (!url) throw new Error(
     `${name} not set in ~/.aurehub/.env (referenced by rpc_env in polymarket.yaml).\n` +
-    `Add: ${name}=https://polygon-rpc.com`,
+    `Add: ${name}=https://polygon.drpc.org`,
   );
   return url;
 }

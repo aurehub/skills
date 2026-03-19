@@ -63,12 +63,17 @@ export function formatMarketOutput(market, orderbooks = {}, marketInfo = null) {
   };
 
   const fmtPrice = p => (p != null && Number.isFinite(p)) ? p.toFixed(2) : '—';
+  // conditionId comes as camelCase from Gamma, snake_case from CLOB
+  const conditionId = market.conditionId ?? market.condition_id ?? marketInfo?.condition_id ?? null;
+  const slug = market.slug ?? null;
   const lines = [
     `Market: "${market.question}"`,
     `Status: ${market.active ? 'ACTIVE' : 'CLOSED'} | neg_risk: ${!!market.neg_risk}`,
     `YES: ${fmtPrice(yesPrice)}   bid/ask: ${bestBid(obYes)}/${bestAsk(obYes)}   liquidity: ${liq(obYes)}`,
     `NO:  ${fmtPrice(noPrice)}   bid/ask: ${bestBid(obNo)}/${bestAsk(obNo)}   liquidity: ${liq(obNo)}`,
     `Min order: $${marketInfo?.minimum_order_size ?? marketInfo?.min_order_size ?? market.min_incentive_size ?? '—'}`,
+    ...(slug        ? [`Slug: ${slug}`]                : []),
+    ...(conditionId ? [`ConditionId: ${conditionId}`]  : []),
     `Token IDs:`,
     `  YES: ${ids.YES ?? '(not found)'}`,
     `  NO:  ${ids.NO  ?? '(not found)'}`,
@@ -153,17 +158,18 @@ export async function resolveMarket(query, cfg) {
     return res.data;
   }
 
-  // Step 1b: try exact slug via Gamma.
-  // Do NOT use fetchGamma() here — it uses a query.includes('/') heuristic that
-  // misroutes slugs like 'bitcoin-100k-2025' (no '/') into keyword search.
+  // Step 1b: try exact slug via Gamma ?slug= filter.
+  // Gamma /markets/<id> expects a numeric ID; passing a slug returns 422.
+  // ?slug=<slug> returns an array and supports exact slug match.
   try {
-    const res = await axios.get(`${gammaUrl}/markets/${query}`, { timeout: 10_000 });
-    return res.data;
-  } catch (e) {
-    // 404 = not found; 422 = slug format unrecognized — both fall through to keyword search
-    const status = e.response?.status;
-    if (status !== 404 && status !== 422) throw e;
-  }
+    const res = await axios.get(`${gammaUrl}/markets?slug=${encodeURIComponent(query)}`, { timeout: 10_000 });
+    const results = Array.isArray(res.data) ? res.data : (res.data?.markets ?? []);
+    if (results.length === 1) return results[0];
+    if (results.length > 1) {
+      const exact = results.find(m => m.slug === query);
+      if (exact) return exact;
+    }
+  } catch { /* fall through to keyword search */ }
 
   // Step 2: keyword fallback — call keyword endpoint directly to bypass fetchGamma's
   // query.includes('/') heuristic (which would misroute queries like "US/election")

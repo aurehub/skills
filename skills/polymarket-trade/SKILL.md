@@ -35,7 +35,7 @@ Step types:
 | 1 | `~/.aurehub/.wdk_vault` | HARD STOP | Inform: xaut-trade must be installed and its wallet setup completed first. Stop. |
 | 2 | `~/.aurehub/.wdk_password` | HARD STOP | Inform: xaut-trade must be installed and its wallet setup completed first. Stop. |
 | 3 | `~/.aurehub/.env` missing | AUTO-FIX | Run: `cp <skill-dir>/.env.example ~/.aurehub/.env` |
-| 3 | `~/.aurehub/.env` exists, `POLYGON_RPC_URL` absent | AUTO-FIX | Append `POLYGON_RPC_URL=https://polygon-rpc.com` to `~/.aurehub/.env` |
+| 3 | `~/.aurehub/.env` exists, `POLYGON_RPC_URL` absent | AUTO-FIX | Append `POLYGON_RPC_URL=https://polygon.drpc.org` to `~/.aurehub/.env` |
 | 4 | `~/.aurehub/polymarket.yaml` missing | AUTO-FIX | Run: `cp <skill-dir>/config.example.yaml ~/.aurehub/polymarket.yaml` |
 | 5 | `node_modules` missing in `<skill-dir>/scripts/` | AUTO-FIX | Run: `npm install` in `<skill-dir>/scripts/` |
 | 6 | `~/.aurehub/.polymarket_clob` missing | INTERACTIVE | Run: `node <skill-dir>/scripts/setup.js` (only after steps 3–5 pass) |
@@ -61,7 +61,11 @@ Run environment check (no wallet, no RPC, no CLOB credentials needed):
 ```
 node scripts/browse.js "<keyword or market slug>"
 ```
-Show the output to the user. Token IDs from this output are used for buy/sell.
+Show the output to the user. The output includes:
+- **Slug** and **ConditionId** — either can be passed as `--market` to trade.js
+- **Token IDs** — for reference
+
+Prefer passing ConditionId to `--market` when trading (more reliable than slug).
 
 ## Balance Flow
 
