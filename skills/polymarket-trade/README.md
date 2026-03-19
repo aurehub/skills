@@ -84,7 +84,7 @@ Polymarket blocks users in the US, UK, Singapore, and [other regions](https://do
 
 | Variable | Description | Example |
 |----------|-------------|---------|
-| `POLYGON_RPC_URL` | Polygon JSON-RPC endpoint | `https://polygon-bor-rpc.publicnode.com` |
+| `POLYGON_RPC_URL` | Polygon JSON-RPC endpoint | `https://polygon-rpc.com` |
 
 ### `~/.aurehub/polymarket.yaml`
 

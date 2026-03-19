@@ -19,7 +19,7 @@ export function checkEnvFile(aurehubDir = AUREHUB_DIR) {
     throw new Error(
       `Missing ~/.aurehub/.env. Copy the example file from the skill directory:\n` +
       `  cp <skill-dir>/.env.example ~/.aurehub/.env\n` +
-      `Then set POLYGON_RPC_URL to a Polygon JSON-RPC endpoint (e.g. https://polygon-bor-rpc.publicnode.com).`,
+      `Then set POLYGON_RPC_URL to a Polygon JSON-RPC endpoint (e.g. https://polygon-rpc.com).`,
     );
   }
 }
@@ -70,9 +70,9 @@ export function checkNodeModules(scriptsDir) {
 
 /** Run all checks for trade flows (steps 1-8). Throws on first failure. */
 export function runTradeEnvCheck(aurehubDir = AUREHUB_DIR) {
-  checkEnvFile(aurehubDir);
   checkVaultFile(aurehubDir);
   checkPasswordFile(aurehubDir);
+  checkEnvFile(aurehubDir);
   checkConfigFile(aurehubDir);
   // step 5 (RPC URL resolvable) and step 6 (POL balance) are checked in trade.js
   // after provider is created
@@ -91,9 +91,9 @@ export function runTradeEnvCheck(aurehubDir = AUREHUB_DIR) {
 
 /** Run env checks for setup flow (steps 1-5 — needs wallet but no CLOB creds yet). */
 export function runSetupEnvCheck(aurehubDir = AUREHUB_DIR) {
-  checkEnvFile(aurehubDir);
   checkVaultFile(aurehubDir);
   checkPasswordFile(aurehubDir);
+  checkEnvFile(aurehubDir);
   checkConfigFile(aurehubDir);
   // step 5: verify RPC URL env var is configured
   const cfg = loadConfig(aurehubDir);
