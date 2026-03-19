@@ -5,7 +5,7 @@ license: MIT
 compatibility: "Requires Node.js >= 18, ~/.aurehub/ config directory, Ethereum RPC (HTTPS), and UniswapX API access. Reads/writes encrypted wallet vault and password files under ~/.aurehub/. Foundry (cast) required only for foundry wallet mode."
 metadata:
   author: aurehub
-  version: "2.1.2"
+  version: "2.2.0"
 ---
 
 # xaut-trade
