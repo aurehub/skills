@@ -7,6 +7,7 @@ description: >
   Triggers: buy YES, buy NO, sell shares, browse markets, check Polymarket balance,
   Polymarket trade, prediction market, what are the odds, redeem winnings, claim resolved positions.
 license: MIT
+compatibility: "Requires Node.js >= 18, Polygon RPC (HTTPS), and Polymarket CLOB API credentials."
 metadata:
   author: aurehub
   version: "1.0.0"

@@ -2,7 +2,7 @@
 name: xaut-trade
 description: "Buy or sell XAUT (Tether Gold) on Ethereum. Supports market orders (Uniswap V3) and limit orders (UniswapX). Wallet modes: Foundry keystore or WDK. Delegates non-XAUT intents to registered skills (e.g. Polymarket prediction markets). Triggers: buy XAUT, XAUT trade, swap USDT for XAUT, sell XAUT, swap XAUT for USDT, limit order, limit buy XAUT, limit sell XAUT, check limit order, cancel limit order, XAUT when, create wallet, setup wallet, polymarket, prediction market, bet on, odds on."
 license: MIT
-compatibility: "Requires Node.js >= 18, ~/.aurehub/ config directory, Ethereum RPC (HTTPS), and UniswapX API access. Reads/writes encrypted wallet vault and password files under ~/.aurehub/. Foundry (cast) required only for foundry wallet mode."
+compatibility: "Requires Node.js >= 18, Ethereum RPC (HTTPS), and UniswapX API access. Foundry (cast) required only for foundry wallet mode."
 metadata:
   author: aurehub
   version: "2.2.0"
