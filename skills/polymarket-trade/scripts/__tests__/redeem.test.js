@@ -1,11 +1,34 @@
 // scripts/__tests__/redeem.test.js
-import { vi, describe, it, expect, afterEach } from 'vitest';
+import { vi, describe, it, expect, afterEach, beforeEach } from 'vitest';
 import { filterRedeemable, buildIndexSets, formatRedeemPreview, redeem } from '../redeem.js';
 
 vi.mock('axios', () => ({
   default: { get: vi.fn() },
 }));
 import axios from 'axios';
+
+vi.mock('../lib/prompt.js', () => ({
+  confirm: vi.fn(),
+}));
+import { confirm } from '../lib/prompt.js';
+
+vi.mock('../lib/gas.js', () => ({
+  polyGasOverrides: vi.fn().mockResolvedValue({ maxFeePerGas: 30n, maxPriorityFeePerGas: 30n }),
+}));
+
+// Partial mock of ethers — keep real utils (isAddress, formatEther, formatUnits, constants),
+// replace only Contract constructor so we can control CTF and ERC20 instances.
+vi.mock('ethers', async (importOriginal) => {
+  const real = await importOriginal();
+  return {
+    ...real,
+    ethers: {
+      ...real.ethers,
+      Contract: vi.fn(),
+    },
+  };
+});
+import { ethers } from 'ethers';
 
 const makePos = (overrides) => ({
   slug: 'test-market',
@@ -164,6 +187,189 @@ describe('redeem() — insufficient POL', () => {
     await expect(
       redeem({ cfg: makeCfg(), provider, wallet, marketFilter: null, dryRun: false }),
     ).rejects.toThrow('POL');
+    expect(axios.get).not.toHaveBeenCalled();
+  });
+});
+
+// ── Integration tests (non-dry-run, with CTF contract mock) ───────────────────
+
+describe('redeem() — successful single redeem', () => {
+  let mockCtfInstance;
+  let mockUsdceInstance;
+
+  beforeEach(() => {
+    const mockTx = { hash: '0xtxhash', wait: vi.fn().mockResolvedValue({}) };
+    mockCtfInstance = {
+      redeemPositions: vi.fn().mockResolvedValue(mockTx),
+    };
+    // USDC.e balanceOf returns 5 USDC.e (6 decimals)
+    mockUsdceInstance = {
+      balanceOf: vi.fn().mockResolvedValue('5000000'),
+    };
+    // First call → CTF (redeemPositions), second call → ERC20 (balanceOf).
+    // Must use regular functions (not arrows) so they work as constructors with `new`.
+    // eslint-disable-next-line prefer-arrow-callback
+    ethers.Contract.mockImplementationOnce(function () { return mockCtfInstance; })
+                   // eslint-disable-next-line prefer-arrow-callback
+                   .mockImplementationOnce(function () { return mockUsdceInstance; });
+    confirm.mockResolvedValue(true);
+  });
+
+  it('calls CTF.redeemPositions with correct args and returns result', async () => {
+    const pos = makePos({ slug: 'win-market', conditionId: '0xcond1', outcomeIndex: 0 });
+    axios.get.mockResolvedValue({ data: [pos] });
+    const wallet = { address: '0xUser' };
+
+    const results = await redeem({
+      cfg: makeCfg(), provider: makeProvider(), wallet, marketFilter: null, dryRun: false,
+    });
+
+    expect(mockCtfInstance.redeemPositions).toHaveBeenCalledOnce();
+    expect(mockCtfInstance.redeemPositions).toHaveBeenCalledWith(
+      '0x2791Bca1f2de4661ED88A30C99A7a9449Aa84174', // usdceAddr
+      ethers.constants.HashZero,
+      '0xcond1',
+      [1], // buildIndexSets(0)
+      expect.any(Object), // gasOverrides
+    );
+    expect(results).toHaveLength(1);
+    expect(results[0]).toMatchObject({ slug: 'win-market', txHash: '0xtxhash', success: true });
+  });
+});
+
+describe('redeem() — successful multi-position redeem', () => {
+  let mockCtfInstance;
+  let mockUsdceInstance;
+
+  beforeEach(() => {
+    const makeTx = (hash) => ({ hash, wait: vi.fn().mockResolvedValue({}) });
+    mockCtfInstance = {
+      redeemPositions: vi.fn()
+        .mockResolvedValueOnce(makeTx('0xtx1'))
+        .mockResolvedValueOnce(makeTx('0xtx2')),
+    };
+    mockUsdceInstance = {
+      balanceOf: vi.fn().mockResolvedValue('10000000'),
+    };
+    // eslint-disable-next-line prefer-arrow-callback
+    ethers.Contract.mockImplementationOnce(function () { return mockCtfInstance; })
+                   // eslint-disable-next-line prefer-arrow-callback
+                   .mockImplementationOnce(function () { return mockUsdceInstance; });
+    confirm.mockResolvedValue(true);
+  });
+
+  it('redeems both positions in sequence and returns 2 results', async () => {
+    axios.get.mockResolvedValue({
+      data: [
+        makePos({ slug: 'market-a', conditionId: '0xcondA', outcomeIndex: 0 }),
+        makePos({ slug: 'market-b', conditionId: '0xcondB', outcomeIndex: 1 }),
+      ],
+    });
+    const wallet = { address: '0xUser' };
+
+    const results = await redeem({
+      cfg: makeCfg(), provider: makeProvider(), wallet, marketFilter: null, dryRun: false,
+    });
+
+    expect(mockCtfInstance.redeemPositions).toHaveBeenCalledTimes(2);
+    expect(results).toHaveLength(2);
+    expect(results[0]).toMatchObject({ slug: 'market-a', txHash: '0xtx1', success: true });
+    expect(results[1]).toMatchObject({ slug: 'market-b', txHash: '0xtx2', success: true });
+  });
+});
+
+describe('redeem() — user cancels at confirm prompt', () => {
+  it('returns undefined and does not call CTF when user declines', async () => {
+    axios.get.mockResolvedValue({ data: [makePos()] });
+    confirm.mockResolvedValue(false);
+
+    // Set up Contract mock — it should NOT be called in this path (no ctf instantiation
+    // happens before the confirm check, but ethers.Contract is called after confirm).
+    // We track whether redeemPositions was called by providing a spy CTF mock.
+    const mockCtf = { redeemPositions: vi.fn() };
+    // eslint-disable-next-line prefer-arrow-callback
+    ethers.Contract.mockImplementation(function () { return mockCtf; });
+
+    const wallet = { address: '0xUser' };
+    const result = await redeem({
+      cfg: makeCfg(), provider: makeProvider(), wallet, marketFilter: null, dryRun: false,
+    });
+
+    expect(result).toBeUndefined();
+    expect(mockCtf.redeemPositions).not.toHaveBeenCalled();
+  });
+});
+
+describe('redeem() — mixed standard + negRisk', () => {
+  let mockCtfInstance;
+  let mockUsdceInstance;
+
+  beforeEach(() => {
+    const mockTx = { hash: '0xtxStd', wait: vi.fn().mockResolvedValue({}) };
+    mockCtfInstance = { redeemPositions: vi.fn().mockResolvedValue(mockTx) };
+    mockUsdceInstance = { balanceOf: vi.fn().mockResolvedValue('3000000') };
+    // eslint-disable-next-line prefer-arrow-callback
+    ethers.Contract.mockImplementationOnce(function () { return mockCtfInstance; })
+                   // eslint-disable-next-line prefer-arrow-callback
+                   .mockImplementationOnce(function () { return mockUsdceInstance; });
+    confirm.mockResolvedValue(true);
+  });
+
+  it('prints negRisk notice AND redeems the standard position', async () => {
+    axios.get.mockResolvedValue({
+      data: [
+        makePos({ slug: 'std-market',     negativeRisk: false, conditionId: '0xstd' }),
+        makePos({ slug: 'negrisk-market', negativeRisk: true  }),
+      ],
+    });
+    const wallet = { address: '0xUser' };
+    const logSpy = vi.spyOn(console, 'log').mockImplementation(() => {});
+
+    try {
+      const results = await redeem({
+        cfg: makeCfg(), provider: makeProvider(), wallet, marketFilter: null, dryRun: false,
+      });
+
+      const output = logSpy.mock.calls.map(c => c.join(' ')).join('\n');
+      expect(output).toContain('negrisk-market');
+      expect(output).toContain('Skipped');
+      expect(mockCtfInstance.redeemPositions).toHaveBeenCalledOnce();
+      expect(results).toHaveLength(1);
+      expect(results[0]).toMatchObject({ slug: 'std-market', success: true });
+    } finally {
+      logSpy.mockRestore();
+    }
+  });
+});
+
+describe('redeem() — positions API returns non-array', () => {
+  it('throws "Positions API returned unexpected response" when data is an object', async () => {
+    axios.get.mockResolvedValue({ data: { error: 'bad' } });
+    const wallet = { address: '0xUser' };
+
+    await expect(
+      redeem({ cfg: makeCfg(), provider: makeProvider(), wallet, marketFilter: null, dryRun: false }),
+    ).rejects.toThrow('Positions API returned unexpected response');
+  });
+});
+
+describe('redeem() — invalid CTF address in config', () => {
+  it('throws before any API call when ctf_contract is not a valid address', async () => {
+    const badCfg = {
+      yaml: {
+        contracts: {
+          usdc_e: '0x2791Bca1f2de4661ED88A30C99A7a9449Aa84174',
+          ctf_contract: 'not-an-address',
+        },
+        polymarket: { data_url: 'https://data-api.polymarket.com' },
+      },
+    };
+    const wallet = { address: '0xUser' };
+
+    await expect(
+      redeem({ cfg: badCfg, provider: makeProvider(), wallet, marketFilter: null, dryRun: false }),
+    ).rejects.toThrow(/Invalid ctf_contract/i);
+
     expect(axios.get).not.toHaveBeenCalled();
   });
 });
