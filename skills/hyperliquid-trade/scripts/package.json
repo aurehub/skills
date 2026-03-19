@@ -1,0 +1,21 @@
+{
+  "name": "hyperliquid-trade-scripts",
+  "version": "1.0.0",
+  "description": "Helper scripts for hyperliquid-trade skill",
+  "type": "module",
+  "engines": { "node": ">=20.19.0" },
+  "scripts": {
+    "test": "vitest run --globals __tests__/config.test.js __tests__/trade-cli.test.js"
+  },
+  "dependencies": {
+    "@nktkas/hyperliquid": "^0.32.1",
+    "b4a": "^1.6.7",
+    "bip39-mnemonic": "^2.5.0",
+    "ethers": "^6",
+    "js-yaml": "^4",
+    "sodium-native": "^5.0.8"
+  },
+  "devDependencies": {
+    "vitest": "^4.1.0"
+  }
+}

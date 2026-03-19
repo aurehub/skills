@@ -1,0 +1,10 @@
+# Hyperliquid network configuration
+# Copy this file to ~/.aurehub/hyperliquid.yaml
+
+network: mainnet                          # mainnet | testnet
+api_url: https://api.hyperliquid.xyz      # override for testnet: https://api.hyperliquid-testnet.xyz
+
+risk:
+  confirm_trade_usd: 100    # below: execute without prompting user
+  large_trade_usd: 1000     # at or above: double confirmation required
+  leverage_warn: 20         # leverage at or above this triggers extra warning
