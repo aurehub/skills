@@ -125,14 +125,20 @@ describe('redeem() — market filter', () => {
   it('only passes matching slug to preview', async () => {
     axios.get.mockResolvedValue({
       data: [
-        makePos({ slug: 'target-market' }),
-        makePos({ slug: 'other-market'  }),
+        makePos({ slug: 'target-market', conditionId: '0xTARGET' }),
+        makePos({ slug: 'other-market',  conditionId: '0xOTHER'  }),
       ],
     });
     const wallet = { address: '0xUser' };
-    // dry-run so no confirm needed; if filter works, only 1 position reaches formatRedeemPreview
-    await redeem({ cfg: makeCfg(), provider: makeProvider(), wallet, marketFilter: 'target-market', dryRun: true });
-    // No error = filter did not throw; stdout would show only target-market (verified manually)
+    const logSpy = vi.spyOn(console, 'log').mockImplementation(() => {});
+    try {
+      await redeem({ cfg: makeCfg(), provider: makeProvider(), wallet, marketFilter: 'target-market', dryRun: true });
+      const output = logSpy.mock.calls.map(c => c.join(' ')).join('\n');
+      expect(output).toContain('target-market');
+      expect(output).not.toContain('other-market');
+    } finally {
+      logSpy.mockRestore();
+    }
   });
 });
 

@@ -110,15 +110,21 @@ export async function redeem({ cfg, provider, wallet, marketFilter, dryRun }) {
 
   const { standard, negRisk } = filterRedeemable(filtered);
 
-  // Handle negRisk skip notice
+  // Handle negRisk skip notice and empty standard bucket
+  if (standard.length === 0) {
+    if (negRisk.length > 0) {
+      console.log(`\n⚠️  Skipped ${negRisk.length} negRisk position(s) (not supported in v1):`);
+      for (const p of negRisk) console.log(`    ${p.slug} → redeem at polymarket.com`);
+      return;
+    }
+    console.log('\nNo redeemable positions found.');
+    return;
+  }
+
+  // Print negRisk notice when there are also standard positions to process
   if (negRisk.length > 0) {
     console.log(`\n⚠️  Skipped ${negRisk.length} negRisk position(s) (not supported in v1):`);
     for (const p of negRisk) console.log(`    ${p.slug} → redeem at polymarket.com`);
-  }
-
-  if (standard.length === 0) {
-    console.log('\nNo redeemable positions found.');
-    return;
   }
 
   // Preview
