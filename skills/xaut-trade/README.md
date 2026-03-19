@@ -1,8 +1,24 @@
 # xaut-trade
 
-Our skills are developed by Duncan.Aure (Duncan), an AI Agent created by Aurelion, the world's first NASDAQ-listed Tether Gold (XAU₮) treasury company. Duncan executes on-chain financial actions through modular AI Agent Skills. Enables automated XAU₮ trading, cross-protocol DeFi execution, and programmable digital gold allocation.
-
 Buy and sell XAUT (Tether Gold) on Ethereum mainnet via AI Agent, using Uniswap V3 + Node.js (ethers.js) under the hood.
+
+## Quick Start
+
+**Prerequisites:** Node.js ≥ 18 · ETH ≥ 0.005 (gas) · USDT or XAUT to trade
+
+**1. Install**
+
+```bash
+npx skills add aurehub/skills
+```
+
+**2. Start trading** — if setup is needed, the Agent will guide you through it automatically:
+
+```
+buy XAUT with 100 USDT
+```
+
+---
 
 ## Supported Pairs
 
@@ -10,174 +26,6 @@ Buy and sell XAUT (Tether Gold) on Ethereum mainnet via AI Agent, using Uniswap 
 |-----------|------|-------------|
 | Buy | USDT → XAUT | Swap USDT for gold token |
 | Sell | XAUT → USDT | Swap gold token back to USDT |
-
-## Setup
-
-### Automated (recommended)
-
-Run the setup script — it handles wallet creation, config file generation, and optional Foundry installation interactively:
-
-```bash
-_saved=$(cat ~/.aurehub/.setup_path 2>/dev/null); [ -f "$_saved" ] && SETUP_PATH="$_saved"
-[ -z "$SETUP_PATH" ] && { GIT_ROOT=$(git rev-parse --show-toplevel 2>/dev/null); [ -n "$GIT_ROOT" ] && [ -f "$GIT_ROOT/skills/xaut-trade/scripts/setup.sh" ] && SETUP_PATH="$GIT_ROOT/skills/xaut-trade/scripts/setup.sh"; }
-[ -z "$SETUP_PATH" ] && SETUP_PATH=$(find "$HOME" -maxdepth 6 -type f -path "*/xaut-trade/scripts/setup.sh" 2>/dev/null | head -1)
-if [ -n "$SETUP_PATH" ] && [ -f "$SETUP_PATH" ]; then
-  bash "$SETUP_PATH"
-else
-  echo "setup.sh not found. Run:"
-  echo '  find "$HOME" -maxdepth 6 -type f -path "*/xaut-trade/scripts/setup.sh" 2>/dev/null | head -1'
-  exit 1
-fi
-```
-
-If the command above cannot find setup.sh (first-time install with a non-standard agent), locate it manually:
-
-```bash
-find "$HOME" -maxdepth 6 -type f -path "*/xaut-trade/scripts/setup.sh" 2>/dev/null | head -1
-```
-
-The script walks you through each step, clearly marks actions that require manual intervention, and explains the reason for each one.
-
-After the script completes, follow the manual steps it prints at the end (fund wallet, get API key if needed).
-
-For a chat-first real-mainnet walkthrough (Agent-driven, minimal manual steps), see:
-- `references/live-trading-runbook.md`
-
-### Manual (fallback)
-
-If you prefer to configure everything yourself, or if the script fails at a specific step:
-
-First choose a wallet mode: **WDK (recommended)** or **Foundry**.
-
-#### Option A: WDK mode (recommended)
-
-**1. Create password file**
-
-```bash
-mkdir -p ~/.aurehub
-bash -c 'read -rsp "WDK password (min 12 chars): " p </dev/tty; echo; printf "%s" "$p" > ~/.aurehub/.wdk_password; chmod 600 ~/.aurehub/.wdk_password; echo "Password saved."'
-```
-
-**2. Create WDK wallet** (requires Node.js >= 18)
-
-```bash
-SETUP_PATH=$(cat ~/.aurehub/.setup_path 2>/dev/null)
-if [ -f "$SETUP_PATH" ]; then
-  SCRIPTS_DIR=$(dirname "$SETUP_PATH")
-elif GIT_ROOT=$(git rev-parse --show-toplevel 2>/dev/null) && [ -d "$GIT_ROOT/skills/xaut-trade/scripts" ]; then
-  SCRIPTS_DIR="$GIT_ROOT/skills/xaut-trade/scripts"
-else
-  SCRIPTS_DIR=$(dirname "$(find "$HOME" -maxdepth 6 -type f -path "*/xaut-trade/scripts/setup.sh" 2>/dev/null | head -1)")
-fi
-cd "$SCRIPTS_DIR" && npm install
-node "$SCRIPTS_DIR/lib/create-wallet.js" --password-file ~/.aurehub/.wdk_password
-```
-
-**3. Create .env**
-
-```bash
-cat > ~/.aurehub/.env << EOF
-WALLET_MODE=wdk
-ETH_RPC_URL=https://eth.llamarpc.com
-ETH_RPC_URL_FALLBACK=https://eth.merkle.io,https://rpc.flashbots.net/fast,https://eth.drpc.org,https://ethereum.publicnode.com
-WDK_PASSWORD_FILE=~/.aurehub/.wdk_password
-# UNISWAPX_API_KEY=your_key_here   # required for limit orders only
-EOF
-chmod 600 ~/.aurehub/.env
-```
-
-#### Option B: Foundry mode
-
-**1. Install Foundry**
-
-```bash
-curl -L https://foundry.paradigm.xyz | bash
-foundryup
-source ~/.zshrc   # or ~/.bashrc
-```
-
-**2. Create password file and configure wallet**
-
-```bash
-mkdir -p ~/.aurehub
-bash -c 'read -rsp "Keystore password: " p </dev/tty; echo; printf "%s" "$p" > ~/.aurehub/.wallet.password; chmod 600 ~/.aurehub/.wallet.password; echo "Password saved."'
-```
-
-Then choose one initialization method:
-
-```bash
-# Import existing private key (interactive)
-cast wallet import aurehub-wallet --interactive
-
-# Or create a new wallet
-mkdir -p ~/.foundry/keystores
-cast wallet new ~/.foundry/keystores aurehub-wallet \
-  --password-file ~/.aurehub/.wallet.password
-```
-
-**3. Create .env**
-
-```bash
-cat > ~/.aurehub/.env << EOF
-WALLET_MODE=foundry
-ETH_RPC_URL=https://eth.llamarpc.com
-ETH_RPC_URL_FALLBACK=https://eth.merkle.io,https://rpc.flashbots.net/fast,https://eth.drpc.org,https://ethereum.publicnode.com
-FOUNDRY_ACCOUNT=aurehub-wallet
-KEYSTORE_PASSWORD_FILE=~/.aurehub/.wallet.password
-# UNISWAPX_API_KEY=your_key_here   # required for limit orders only
-EOF
-chmod 600 ~/.aurehub/.env
-```
-
-#### Common steps (both modes)
-
-**4. Copy config and install dependencies**
-
-```bash
-SETUP_PATH=$(cat ~/.aurehub/.setup_path 2>/dev/null)
-if [ -f "$SETUP_PATH" ]; then
-  SKILL_DIR=$(cd "$(dirname "$SETUP_PATH")/.." && pwd)
-elif GIT_ROOT=$(git rev-parse --show-toplevel 2>/dev/null) && [ -f "$GIT_ROOT/skills/xaut-trade/config.example.yaml" ]; then
-  SKILL_DIR="$GIT_ROOT/skills/xaut-trade"
-else
-  SKILL_DIR=$(cd "$(dirname "$(find "$HOME" -maxdepth 6 -type f -path "*/xaut-trade/scripts/setup.sh" 2>/dev/null | head -1)")/.." && pwd)
-fi
-cp "$SKILL_DIR/config.example.yaml" ~/.aurehub/config.yaml
-```
-
-**5. Install runtime dependencies (required for market and limit orders)**
-
-```bash
-node --version   # requires >= 18; install from https://nodejs.org if missing
-SETUP_PATH=$(cat ~/.aurehub/.setup_path 2>/dev/null)
-if [ -f "$SETUP_PATH" ]; then
-  SCRIPTS_DIR=$(dirname "$SETUP_PATH")
-elif GIT_ROOT=$(git rev-parse --show-toplevel 2>/dev/null) && [ -d "$GIT_ROOT/skills/xaut-trade/scripts" ]; then
-  SCRIPTS_DIR="$GIT_ROOT/skills/xaut-trade/scripts"
-else
-  SCRIPTS_DIR=$(dirname "$(find "$HOME" -maxdepth 6 -type f -path "*/xaut-trade/scripts/setup.sh" 2>/dev/null | head -1)")
-fi
-cd "$SCRIPTS_DIR" && npm install
-```
-
-**6. Get a UniswapX API Key (limit orders only)**
-
-How to obtain (about 5 minutes, free):
-1. Visit [developers.uniswap.org/dashboard](https://developers.uniswap.org/dashboard)
-2. Sign in with Google or GitHub
-3. Generate a Token (Free tier)
-
-```bash
-echo 'UNISWAPX_API_KEY=your_key_here' >> ~/.aurehub/.env
-```
-
-Market orders do not require an API Key.
-
-**7. Fund the wallet**
-
-- A small amount of ETH (≥ 0.005) for gas
-- USDT (for buying XAUT)
-- XAUT (for selling)
 
 ## Usage
 
