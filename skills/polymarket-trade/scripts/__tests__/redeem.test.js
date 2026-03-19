@@ -36,7 +36,7 @@ const makePos = (overrides) => ({
   outcomeIndex: 0,
   size: '2.0',
   curPrice: '1.0',
-  conditionId: '0xdeadbeef',
+  conditionId: '0x00000000000000000000000000000000000000000000000000000000deadbeef',
   redeemable: true,
   negativeRisk: false,
   ...overrides,
@@ -58,8 +58,8 @@ const makeProvider = (polEther = '0.1') => ({
     String(BigInt(Math.floor(parseFloat(polEther) * 1e18)))
   ),
   getFeeData: vi.fn().mockResolvedValue({
-    maxPriorityFeePerGas: { lt: () => false, toString: () => '30000000000' },
-    maxFeePerGas:         { lt: () => false, toString: () => '30000000000' },
+    maxPriorityFeePerGas: ethers.BigNumber.from('30000000000'),
+    maxFeePerGas:         ethers.BigNumber.from('30000000000'),
   }),
 });
 
@@ -151,8 +151,8 @@ describe('redeem() — market filter', () => {
   it('only passes matching slug to preview', async () => {
     axios.get.mockResolvedValue({
       data: [
-        makePos({ slug: 'target-market', conditionId: '0xTARGET' }),
-        makePos({ slug: 'other-market',  conditionId: '0xOTHER'  }),
+        makePos({ slug: 'target-market', conditionId: '0x0000000000000000000000000000000000000000000000000000000000001234' }),
+        makePos({ slug: 'other-market',  conditionId: '0x0000000000000000000000000000000000000000000000000000000000005678' }),
       ],
     });
     const wallet = { address: '0xUser' };
@@ -216,7 +216,7 @@ describe('redeem() — successful single redeem', () => {
   });
 
   it('calls CTF.redeemPositions with correct args and returns result', async () => {
-    const pos = makePos({ slug: 'win-market', conditionId: '0xcond1', outcomeIndex: 0 });
+    const pos = makePos({ slug: 'win-market', conditionId: '0x000000000000000000000000000000000000000000000000000000000000c0d1', outcomeIndex: 0 });
     axios.get.mockResolvedValue({ data: [pos] });
     const wallet = { address: '0xUser' };
 
@@ -228,7 +228,7 @@ describe('redeem() — successful single redeem', () => {
     expect(mockCtfInstance.redeemPositions).toHaveBeenCalledWith(
       '0x2791Bca1f2de4661ED88A30C99A7a9449Aa84174', // usdceAddr
       ethers.constants.HashZero,
-      '0xcond1',
+      ethers.utils.hexZeroPad('0x000000000000000000000000000000000000000000000000000000000000c0d1', 32),
       [1], // buildIndexSets(0)
       expect.any(Object), // gasOverrides
     );
@@ -261,8 +261,8 @@ describe('redeem() — successful multi-position redeem', () => {
   it('redeems both positions in sequence and returns 2 results', async () => {
     axios.get.mockResolvedValue({
       data: [
-        makePos({ slug: 'market-a', conditionId: '0xcondA', outcomeIndex: 0 }),
-        makePos({ slug: 'market-b', conditionId: '0xcondB', outcomeIndex: 1 }),
+        makePos({ slug: 'market-a', conditionId: '0x000000000000000000000000000000000000000000000000000000000000aaaa', outcomeIndex: 0 }),
+        makePos({ slug: 'market-b', conditionId: '0x000000000000000000000000000000000000000000000000000000000000bbbb', outcomeIndex: 1 }),
       ],
     });
     const wallet = { address: '0xUser' };
@@ -318,7 +318,7 @@ describe('redeem() — mixed standard + negRisk', () => {
   it('prints negRisk notice AND redeems the standard position', async () => {
     axios.get.mockResolvedValue({
       data: [
-        makePos({ slug: 'std-market',     negativeRisk: false, conditionId: '0xstd' }),
+        makePos({ slug: 'std-market',     negativeRisk: false, conditionId: '0x000000000000000000000000000000000000000000000000000000000000abcd' }),
         makePos({ slug: 'negrisk-market', negativeRisk: true  }),
       ],
     });

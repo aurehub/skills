@@ -151,7 +151,7 @@ export async function redeem({ cfg, provider, wallet, marketFilter, dryRun }) {
       const tx = await ctf.redeemPositions(
         usdceAddr,
         ethers.constants.HashZero,
-        p.conditionId,
+        ethers.utils.hexZeroPad(p.conditionId, 32),
         buildIndexSets(p.outcomeIndex),
         gasOverrides,
       );
@@ -164,11 +164,13 @@ export async function redeem({ cfg, provider, wallet, marketFilter, dryRun }) {
     }
   }
 
-  // Post-redeem balance
-  const usdce = new ethers.Contract(usdceAddr, ERC20_ABI, provider);
-  const usdceBal = await usdce.balanceOf(wallet.address);
-  const usdceFormatted = parseFloat(ethers.utils.formatUnits(usdceBal, 6)).toFixed(2);
-  console.log(`\nUpdated balance: $${usdceFormatted} USDC.e`);
+  // Post-redeem balance (only when at least one redemption succeeded)
+  if (results.some(r => r.success)) {
+    const usdce = new ethers.Contract(usdceAddr, ERC20_ABI, provider);
+    const usdceBal = await usdce.balanceOf(wallet.address);
+    const usdceFormatted = parseFloat(ethers.utils.formatUnits(usdceBal, 6)).toFixed(2);
+    console.log(`\nUpdated balance: $${usdceFormatted} USDC.e`);
+  }
 
   return results;
 }
