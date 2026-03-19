@@ -46,6 +46,7 @@ After all fixes succeed, re-run the relevant checks and proceed.
 | "sell my YES shares", "sell X shares" | sell flow |
 | "browse X", "what markets", "what are the odds on X" | browse flow |
 | "my polymarket balance", "how much USDC" | balance flow |
+| "redeem", "claim winnings", "collect" | redeem flow |
 
 ## Browse Flow
 
@@ -61,6 +62,13 @@ Run environment check:
 ```
 node scripts/balance.js
 ```
+
+## Redeem Flow
+
+Run environment check (no CLOB credentials needed), then:
+  node scripts/redeem.js
+
+Show output. If negRisk positions are skipped, tell the user to visit polymarket.com.
 
 ## Buy Flow
 
