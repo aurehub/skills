@@ -15,6 +15,7 @@ export function parseArgs(args) {
   if (!mode || !action) throw new Error('Usage: trade.js <spot|perp> <buy|sell|open|close> ...');
 
   if (mode === 'spot') {
+    if (!['buy', 'sell'].includes(action)) throw new Error(`Unknown spot action: ${action}. Use buy or sell`);
     const [coin, sizeStr] = rest;
     if (!coin) throw new Error('Missing coin argument');
     const size = parseFloat(sizeStr);
@@ -45,6 +46,7 @@ export function parseArgs(args) {
         if (flags[i] === '--cross') isCross = true;
         if (flags[i] === '--isolated') isCross = false;
       }
+      if (leverage !== null && (leverage < 1 || leverage > 100)) throw new Error(`Leverage must be between 1 and 100, got: ${leverage}`);
       return { mode: 'perp', action: 'open', coin, size, direction, leverage, isCross };
     }
   }
