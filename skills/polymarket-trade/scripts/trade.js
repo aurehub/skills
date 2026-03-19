@@ -138,7 +138,7 @@ export async function buy({ market, side, amount, cfg, provider, wallet }) {
   console.log(`  Est. shares:    ~${estShares}`);
 
   // Hard stops — part 1: market and size (always run)
-  const minOrderSize = parseFloat(market.min_incentive_size ?? '0');
+  const minOrderSize = parseFloat(market.min_incentive_size ?? market.minimum_order_size ?? market.minIncentiveSize ?? '0');
   if (!market.active) throw new Error('Market is CLOSED — cannot trade.');
   if (amount < minOrderSize) throw new Error(`Amount $${amount} is below min order size $${minOrderSize}.`);
 
@@ -277,7 +277,7 @@ export async function sell({ market, side, amount, cfg, provider, wallet }) {
     usdceBalance: 999999, // USDC.e check not applicable for sell — bypassed intentionally
     polBalance:   parseFloat(ethers.utils.formatEther(polRaw)),
     marketActive: market.active,
-    minOrderSize: parseFloat(market.min_incentive_size ?? '0'),
+    minOrderSize: parseFloat(market.min_incentive_size ?? market.minimum_order_size ?? market.minIncentiveSize ?? '0'),
   });
 
   // Safety gates (on estimated USD value)
@@ -297,6 +297,7 @@ export async function sell({ market, side, amount, cfg, provider, wallet }) {
   if (!ethers.utils.isAddress(operator)) throw new Error(`Invalid contract address in config: ${negRisk ? 'neg_risk_exchange' : 'ctf_exchange'} = "${operator}"`);
   const ctfSigned = ctf.connect(wallet);
   const alreadyApproved = await ctf.isApprovedForAll(wallet.address, operator);
+  const approvalSetByThisCall = !alreadyApproved;
   if (!alreadyApproved) {
     console.log(`\nApproving exchange operator...`);
     const approveTx = await ctfSigned.setApprovalForAll(operator, true, await polyGasOverrides(provider));
@@ -324,18 +325,22 @@ export async function sell({ market, side, amount, cfg, provider, wallet }) {
       console.log(`   Trade ID: ${fill.id ?? '—'}`);
       return { success: true, orderID: fill.id ?? null, status: fill.status ?? 'matched' };
     }
-    // Revoke the dangling setApprovalForAll before surfacing the error
-    try { await (await ctfSigned.setApprovalForAll(operator, false, await polyGasOverrides(provider))).wait(); } catch { /* best-effort */ }
+    // Revoke the dangling setApprovalForAll before surfacing the error (only if we set it)
+    if (approvalSetByThisCall) {
+      try { await (await ctfSigned.setApprovalForAll(operator, false, await polyGasOverrides(provider))).wait(); } catch { /* best-effort */ }
+    }
     throw new Error(
       `Order submission error — fill status unknown. Check balance.js before retrying. (${e.message})`,
     );
   }
   if (!result.success) {
-    // Definitive FOK rejection — revoke the operator approval we just set
-    try {
-      const revokeTx = await ctfSigned.setApprovalForAll(operator, false, await polyGasOverrides(provider));
-      await revokeTx.wait();
-    } catch { /* best-effort: warn if revoke itself fails */ }
+    // Definitive FOK rejection — revoke the operator approval we just set (only if we set it)
+    if (approvalSetByThisCall) {
+      try {
+        const revokeTx = await ctfSigned.setApprovalForAll(operator, false, await polyGasOverrides(provider));
+        await revokeTx.wait();
+      } catch { /* best-effort: warn if revoke itself fails */ }
+    }
     throw new Error(`Order not filled: ${result.errorMsg || result.status || 'insufficient liquidity'}`);
   }
   console.log(`\n✅ Order filled`);
