@@ -139,7 +139,7 @@ export async function buy({ market, side, amount, cfg, provider, wallet }) {
   console.log(`  Est. shares:    ~${estShares}`);
 
   // Hard stops — part 1: market and size (always run)
-  const minOrderSize = parseFloat(market.orderMinSize ?? market.minimum_order_size ?? market.min_incentive_size ?? market.minIncentiveSize ?? '0');
+  const minOrderSize = parseFloat(market.orderMinSize ?? market.min_incentive_size ?? market.minIncentiveSize ?? '0');
   if (!market.active) throw new Error('Market is CLOSED — cannot trade.');
   if (amount < minOrderSize) throw new Error(`Amount $${amount} is below min order size $${minOrderSize}.`);
 
@@ -278,7 +278,7 @@ export async function sell({ market, side, amount, cfg, provider, wallet }) {
     usdceBalance: 999999, // USDC.e check not applicable for sell — bypassed intentionally
     polBalance:   parseFloat(ethers.utils.formatEther(polRaw)),
     marketActive: market.active,
-    minOrderSize: parseFloat(market.orderMinSize ?? market.minimum_order_size ?? market.min_incentive_size ?? market.minIncentiveSize ?? '0'),
+    minOrderSize: parseFloat(market.orderMinSize ?? market.min_incentive_size ?? market.minIncentiveSize ?? '0'),
   });
 
   // Safety gates (on estimated USD value)
