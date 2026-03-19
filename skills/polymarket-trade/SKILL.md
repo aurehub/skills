@@ -88,6 +88,18 @@ node scripts/balance.js
 
 Polymarket API blocks US and some other regions. If you see a 403 error, tell the user to enable a VPN and retry.
 
+## Polymarket Knowledge Base
+
+- **Chain**: Polygon mainnet (chain_id: 137)
+- **Settlement currency**: USDC.e (bridged USDC, `0x2791Bca1f2de4661ED88A30C99A7a9449Aa84174`)
+- **Share price scale**: 0.00–1.00, where price = implied probability (e.g. $0.70 YES = 70% market probability of YES outcome)
+- **Minimum share price**: $0.01; maximum: $0.99
+- **Settlement**: winning shares redeem for $1.00 USDC.e each; losing shares expire worthless
+- **Order type**: FOK (Fill-Or-Kill) — market orders fill immediately or cancel atomically; no partial fills left open
+- **Restricted regions**: United States, United Kingdom, Singapore, and [others](https://docs.polymarket.com/polymarket-learn/FAQ/geoblocking) — use a VPN with a supported country node if blocked
+
+Answer knowledge queries directly using the data above — no API calls needed.
+
 ## References
 
 Load these on demand:
