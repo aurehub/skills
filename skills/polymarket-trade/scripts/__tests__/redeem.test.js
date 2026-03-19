@@ -76,6 +76,9 @@ describe('buildIndexSets', () => {
   it('outcomeIndex=1 → [2]', () => {
     expect(buildIndexSets(1)).toEqual([2]);
   });
+  it('outcomeIndex=31 throws out-of-range error', () => {
+    expect(() => buildIndexSets(31)).toThrow('out of supported range');
+  });
 });
 
 describe('formatRedeemPreview', () => {
@@ -161,5 +164,6 @@ describe('redeem() — insufficient POL', () => {
     await expect(
       redeem({ cfg: makeCfg(), provider, wallet, marketFilter: null, dryRun: false }),
     ).rejects.toThrow('POL');
+    expect(axios.get).not.toHaveBeenCalled();
   });
 });

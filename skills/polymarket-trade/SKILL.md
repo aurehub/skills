@@ -66,7 +66,9 @@ node scripts/balance.js
 ## Redeem Flow
 
 Run environment check (no CLOB credentials needed), then:
-  node scripts/redeem.js
+```
+node scripts/redeem.js
+```
 
 Show output. If negRisk positions are skipped, tell the user to visit polymarket.com.
 

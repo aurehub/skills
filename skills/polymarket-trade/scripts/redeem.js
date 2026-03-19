@@ -9,6 +9,7 @@ import {
   checkEnvFile, checkVaultFile, checkPasswordFile,
   checkConfigFile, checkNodeModules,
 } from './setup.js';
+import { confirm } from './lib/prompt.js';
 
 const AUREHUB_DIR = join(homedir(), '.aurehub');
 const DEFAULT_DATA_URL = 'https://data-api.polymarket.com';
@@ -37,6 +38,9 @@ export function filterRedeemable(positions) {
  * outcomeIndex=0 → [1] (bit 0), outcomeIndex=1 → [2] (bit 1).
  */
 export function buildIndexSets(outcomeIndex) {
+  if (outcomeIndex < 0 || outcomeIndex > 30) {
+    throw new Error(`outcomeIndex ${outcomeIndex} out of supported range (0–30)`);
+  }
   return [1 << outcomeIndex];
 }
 
@@ -49,17 +53,18 @@ export function formatRedeemPreview(positions) {
   lines.push(`  ${'Market'.padEnd(40)}  ${'Outcome'.padEnd(7)}  ${'Shares'.padStart(7)}  Receive`);
   lines.push(`  ${'─'.repeat(40)}  ${'─'.repeat(7)}  ${'─'.repeat(7)}  ${'─'.repeat(7)}`);
 
-  let total = 0;
+  let totalCents = 0;
   for (const p of positions) {
     const shares  = parseFloat(p.size).toFixed(2);
     const receive = (parseFloat(p.size) * 1).toFixed(2); // 1 share = $1 at resolution
-    total += parseFloat(p.size);
+    totalCents += Math.round(parseFloat(p.size) * 100);
     lines.push(
       `  ${p.slug.padEnd(40)}  ${p.outcome.padEnd(7)}  ${shares.padStart(7)}  ~$${receive}`
     );
   }
+  const total = (totalCents / 100).toFixed(2);
   lines.push('');
-  lines.push(`  Total: ~$${total.toFixed(2)} USDC.e`);
+  lines.push(`  Total: ~$${total} USDC.e`);
   return lines.join('\n');
 }
 
@@ -77,12 +82,6 @@ async function fetchRedeemablePositions(address, cfg) {
     throw new Error('Positions API returned unexpected response — cannot determine redeemable positions');
   }
   return res.data;
-}
-
-async function confirm(question) {
-  const { createInterface } = await import('readline');
-  const rl = createInterface({ input: process.stdin, output: process.stdout });
-  return new Promise(resolve => rl.question(question, ans => { rl.close(); resolve(ans.trim().toLowerCase()); }));
 }
 
 export async function redeem({ cfg, provider, wallet, marketFilter, dryRun }) {
@@ -136,8 +135,8 @@ export async function redeem({ cfg, provider, wallet, marketFilter, dryRun }) {
   }
 
   // Single confirmation
-  const ans = await confirm('\nRedeem all? (yes/no): ');
-  if (ans !== 'yes') { console.log('Cancelled.'); return; }
+  const confirmed = await confirm('\nRedeem all? (yes/no):');
+  if (!confirmed) { console.log('Cancelled.'); return; }
 
   // Execute
   const ctf = new ethers.Contract(ctfAddr, CTF_ABI, wallet);

@@ -9,6 +9,7 @@ import { runTradeEnvCheck } from './setup.js';
 import { extractTokenIds, resolveMarket } from './browse.js';
 import { getSwapQuote, swapPolToUsdc } from './lib/swap.js';
 import { polyGasOverrides } from './lib/gas.js';
+import { confirm } from './lib/prompt.js';
 
 const AUREHUB_DIR = join(homedir(), '.aurehub');
 const ERC20_ABI  = ['function balanceOf(address) view returns (uint256)',
@@ -31,14 +32,6 @@ export function validateHardStops(amount, { usdceBalance, polBalance, marketActi
   if (amount < minOrderSize) throw new Error(`Amount $${amount} is below min order size $${minOrderSize}.`);
   if (usdceBalance < amount) throw new Error(`Insufficient USDC.e: have $${usdceBalance}, need $${amount}.`);
   if (polBalance < 0.01) throw new Error(`Insufficient POL gas: have ${polBalance} POL, need ≥ 0.01.`);
-}
-
-// ── Readline helper ───────────────────────────────────────────────────────────
-
-async function confirm(question) {
-  const { createInterface } = await import('readline');
-  const rl = createInterface({ input: process.stdin, output: process.stdout });
-  return new Promise(resolve => rl.question(question, ans => { rl.close(); resolve(ans.trim().toLowerCase()); }));
 }
 
 // ── Swap offer helper (exported for testing) ──────────────────────────────────
@@ -68,8 +61,8 @@ export async function checkAndSwapIfNeeded({
   console.log(`  Will swap ~${polAmountMaxF.toFixed(2)} POL → ~$${target.toFixed(2)} USDC.e (10% buffer + 2% slippage protection)`);
   console.log(`  Est. rate: 1 POL ≈ $${rate.toFixed(2)} USDC.e`);
 
-  const ans = await confirmFn('Proceed with swap and continue buy? (yes/no): ');
-  if (ans !== 'yes') {
+  const swapConfirmed = await confirmFn('Proceed with swap and continue buy? (yes/no):');
+  if (!swapConfirmed) {
     console.log('Swap declined. Buy cancelled — insufficient USDC.e to proceed.');
     return 'cancelled';
   }
@@ -179,13 +172,10 @@ export async function buy({ market, side, amount, cfg, provider, wallet }) {
   const safety = cfg.yaml?.safety ?? { warn_threshold_usd: 50, confirm_threshold_usd: 500 };
   const level = getSafetyLevel(amount, safety);
   if (level === 'warn') {
-    const ans = await confirm(`⚠️  Buying ${side} at ~$${estPrice.toFixed(4)} for $${amount}. Confirm? (yes/no): `);
-    if (ans !== 'yes') { console.log('Cancelled.'); return; }
+    if (!await confirm(`⚠️  Buying ${side} at ~$${estPrice.toFixed(4)} for $${amount}. Confirm? (yes/no):`)) { console.log('Cancelled.'); return; }
   } else if (level === 'confirm') {
-    const ans1 = await confirm(`⚠️  Large order: $${amount}. Are you sure? (yes/no): `);
-    if (ans1 !== 'yes') { console.log('Cancelled.'); return; }
-    const ans2 = await confirm(`⚠️  Confirm again — this will spend $${amount} USDC.e. (yes/no): `);
-    if (ans2 !== 'yes') { console.log('Cancelled.'); return; }
+    if (!await confirm(`⚠️  Large order: $${amount}. Are you sure? (yes/no):`)) { console.log('Cancelled.'); return; }
+    if (!await confirm(`⚠️  Confirm again — this will spend $${amount} USDC.e. (yes/no):`)) { console.log('Cancelled.'); return; }
   }
 
   // Approve if current allowance is insufficient
@@ -294,13 +284,10 @@ export async function sell({ market, side, amount, cfg, provider, wallet }) {
   const safety = cfg.yaml?.safety ?? { warn_threshold_usd: 50, confirm_threshold_usd: 500 };
   const level = getSafetyLevel(parseFloat(estUsdce), safety);
   if (level === 'warn') {
-    const ans = await confirm(`⚠️  Selling ${amount} ${side} shares (~$${estUsdce}). Confirm? (yes/no): `);
-    if (ans !== 'yes') { console.log('Cancelled.'); return; }
+    if (!await confirm(`⚠️  Selling ${amount} ${side} shares (~$${estUsdce}). Confirm? (yes/no):`)) { console.log('Cancelled.'); return; }
   } else if (level === 'confirm') {
-    const ans1 = await confirm(`⚠️  Large order: ~$${estUsdce}. Are you sure? (yes/no): `);
-    if (ans1 !== 'yes') { console.log('Cancelled.'); return; }
-    const ans2 = await confirm(`⚠️  Confirm again — selling ${amount} ${side} shares. (yes/no): `);
-    if (ans2 !== 'yes') { console.log('Cancelled.'); return; }
+    if (!await confirm(`⚠️  Large order: ~$${estUsdce}. Are you sure? (yes/no):`)) { console.log('Cancelled.'); return; }
+    if (!await confirm(`⚠️  Confirm again — selling ${amount} ${side} shares. (yes/no):`)) { console.log('Cancelled.'); return; }
   }
 
   // setApprovalForAll

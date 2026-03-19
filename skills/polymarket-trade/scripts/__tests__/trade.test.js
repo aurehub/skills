@@ -57,7 +57,7 @@ describe('checkAndSwapIfNeeded', () => {
     cfg: { yaml: {} },
     wallet: { address: '0xUser' },
     provider: {},
-    confirmFn: vi.fn().mockResolvedValue('yes'),
+    confirmFn: vi.fn().mockResolvedValue(true),
   };
 
   it('returns false (no swap) when USDC.e is sufficient', async () => {
@@ -103,7 +103,7 @@ describe('checkAndSwapIfNeeded', () => {
       ...baseParams,
       usdceBalance: 3,
       polBalance: 5,
-      confirmFn: vi.fn().mockResolvedValue('no'),
+      confirmFn: vi.fn().mockResolvedValue(false),
     });
     expect(result).toBe('cancelled');
     expect(swapPolToUsdc).not.toHaveBeenCalled();
