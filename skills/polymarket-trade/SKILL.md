@@ -5,7 +5,7 @@ description: >
   checking wallet/CLOB balance, and buying or selling YES/NO shares with safety gates.
   Wallet: WDK vault (~/.aurehub/.wdk_vault). Config: ~/.aurehub/polymarket.yaml.
   Triggers: buy YES, buy NO, sell shares, browse markets, check Polymarket balance,
-  Polymarket trade, prediction market, what are the odds.
+  Polymarket trade, prediction market, what are the odds, redeem winnings, claim resolved positions.
 license: MIT
 metadata:
   author: aurehub

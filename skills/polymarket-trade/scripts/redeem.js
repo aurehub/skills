@@ -18,6 +18,8 @@ const CTF_ABI = [
   'function redeemPositions(address collateralToken, bytes32 parentCollectionId, bytes32 conditionId, uint256[] indexSets)',
 ];
 
+const ERC20_ABI = ['function balanceOf(address) view returns (uint256)'];
+
 // ── Exported pure helpers (tested) ───────────────────────────────────────────
 
 /**
@@ -140,7 +142,6 @@ export async function redeem({ cfg, provider, wallet, marketFilter, dryRun }) {
 
   // Execute
   const ctf = new ethers.Contract(ctfAddr, CTF_ABI, wallet);
-  const ERC20_ABI = ['function balanceOf(address) view returns (uint256)'];
   const results = [];
 
   for (const p of standard) {
