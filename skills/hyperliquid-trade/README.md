@@ -5,7 +5,7 @@ Trade spot and perpetual futures on [Hyperliquid](https://hyperliquid.xyz) direc
 ## Prerequisites
 
 - Node.js >= 20.19.0
-- An aurehub WDK wallet (shared with xaut-trade) **or** a Foundry keystore
+- xaut-trade installed with WDK wallet setup completed (`~/.aurehub/.wdk_vault`)
 - USDC deposited on Hyperliquid (via [app.hyperliquid.xyz](https://app.hyperliquid.xyz))
 
 ## Installation
@@ -17,13 +17,18 @@ npx skills add aurehub/skills
 
 ## First-time setup
 
-Say to your AI assistant:
+hyperliquid-trade shares your WDK wallet with xaut-trade — no separate wallet creation needed.
 
-> "Set up my Hyperliquid wallet"
+Install xaut-trade first if you haven't already:
+```bash
+npx skills add aurehub/skills   # select xaut-trade, complete wallet setup
+```
 
-The assistant will guide you through wallet configuration and creating `~/.aurehub/hyperliquid.yaml`.
+Then install hyperliquid-trade and say to your AI assistant:
 
-If you already use xaut-trade, your WDK wallet is shared — no additional wallet setup needed.
+> "Set up Hyperliquid"
+
+The assistant will configure `~/.aurehub/hyperliquid.yaml` and verify your wallet.
 
 ## Usage examples
 

@@ -26,16 +26,15 @@ This skill connects to the Hyperliquid API (`api_url` in `hyperliquid.yaml`, def
 
 ### Required config files
 
-| File | Purpose | Required |
-|------|---------|----------|
-| `~/.aurehub/.env` | `WALLET_MODE`, password file paths | Yes |
-| `~/.aurehub/hyperliquid.yaml` | Network, API URL, risk thresholds | Yes |
-| `~/.aurehub/.wdk_vault` | Encrypted WDK vault | When `WALLET_MODE=wdk` |
-| `~/.aurehub/.wdk_password` | Vault password (mode 0600) | When `WALLET_MODE=wdk` |
+| File | Purpose |
+|------|---------|
+| `~/.aurehub/.wdk_vault` | WDK encrypted vault (created by xaut-trade setup) |
+| `~/.aurehub/.wdk_password` | Vault password (mode 0600, created by xaut-trade setup) |
+| `~/.aurehub/hyperliquid.yaml` | Network, API URL, risk thresholds |
 
 ### Security safeguards
 
-- Runtime `PRIVATE_KEY` is rejected — only file-based wallet modes supported
+- Private key is decrypted from vault in memory only, never stored
 - Decrypted key material zeroed from memory after use
 - All external API responses treated as untrusted numeric data
 - Every trade requires explicit user confirmation per thresholds in `hyperliquid.yaml`
@@ -49,14 +48,12 @@ Run these checks before handling any intent (except knowledge queries):
 
 | Step | Check | Type | Action |
 |------|-------|------|--------|
-| 1 | `~/.aurehub/.env` exists | AUTO-FIX | `cp <skill-dir>/.env.example ~/.aurehub/.env` |
-| 2 | `WALLET_MODE` set in `.env` | INTERACTIVE | Ask user: WDK (recommended) or Foundry? |
+| 1 | `~/.aurehub/.wdk_vault` exists | HARD STOP | Inform: xaut-trade must be installed and its wallet setup completed first. Stop. |
+| 2 | `~/.aurehub/.wdk_password` exists | HARD STOP | Inform: xaut-trade must be installed and its wallet setup completed first. Stop. |
 | 3 | `~/.aurehub/hyperliquid.yaml` exists | AUTO-FIX | `cp <skill-dir>/config.example.yaml ~/.aurehub/hyperliquid.yaml` |
 | 4 | `node -e "if(+process.version.slice(1).split('.')[0]<20)process.exit(1)"` passes | HARD STOP | "Node.js >= 20.19.0 is required. Please upgrade." |
 | 5 | `<scripts-dir>/node_modules` exists | AUTO-FIX | `cd <scripts-dir> && npm install` |
-| 6a | If `WALLET_MODE=wdk`: `~/.aurehub/.wdk_vault` exists | HARD STOP | Wallet not set up → load [references/onboarding.md](references/onboarding.md) |
-| 6b | If `WALLET_MODE=foundry`: `FOUNDRY_ACCOUNT` set and keystore exists at `~/.foundry/keystores/$FOUNDRY_ACCOUNT` | HARD STOP | Wallet not set up → load [references/onboarding.md](references/onboarding.md) |
-| 7 | `node <scripts-dir>/balance.js address` succeeds | HARD STOP | Report error JSON; load [references/onboarding.md](references/onboarding.md) |
+| 6 | `node <scripts-dir>/balance.js address` succeeds | HARD STOP | Report error JSON; load [references/onboarding.md](references/onboarding.md) |
 
 If all pass: proceed to intent detection.
 
@@ -70,7 +67,7 @@ If all pass: proceed to intent detection.
 | short BTC / open short ETH / go short | `trade.js perp open ... short` |
 | close position / close ETH / flat / exit | `trade.js perp close` (auto-detects direction) |
 | balance / holdings / positions / how much | `balance.js spot` + `balance.js perp` |
-| setup / create wallet / initialize | Skip env check → [references/onboarding.md](references/onboarding.md) |
+| setup / onboarding / first time | Load [references/onboarding.md](references/onboarding.md) |
 | Insufficient info (no coin or amount) | Ask for the missing details before proceeding |
 
 ## Resolving SCRIPTS_DIR
