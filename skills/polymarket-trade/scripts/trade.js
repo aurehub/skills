@@ -179,7 +179,7 @@ export async function buy({ market, side, amount, cfg, provider, wallet }) {
   }
 
   // Approve if current allowance is insufficient
-  const exactAmount = ethers.utils.parseUnits(amount.toString(), 6);
+  const exactAmount = ethers.utils.parseUnits(amount.toFixed(6), 6);
   const usdceSigned = usdce.connect(wallet);
   const currentAllowance = await usdce.allowance(wallet.address, spender);
   if (currentAllowance.lt(exactAmount)) {
@@ -359,7 +359,7 @@ if (process.argv[1] === fileURLToPath(import.meta.url)) {
   const amount  = parseFloat(getArg('--amount') ?? '0');
 
   if (!query || !amount || amount <= 0 || !Number.isFinite(amount) || amount > 1_000_000) {
-    console.error('Usage: node scripts/trade.js --market <slug> --side YES|NO --amount <usd>          # buy');
+    console.error('Usage: node scripts/trade.js --buy  --market <slug> --side YES|NO --amount <usd>     # buy');
     console.error('       node scripts/trade.js --sell --market <slug> --side YES|NO --amount <shares>  # sell');
     process.exit(1);
   }

@@ -189,3 +189,17 @@ suites:
             type: command
           - pattern: "clob\\.polymarket\\.com"
             type: output
+
+      - id: full-redeem-intent
+        description: Redeem — intent detection maps to redeem.js
+        prompt: "Redeem my Polymarket winnings"
+        expect:
+          - pattern: "redeem\\.js"
+            type: command
+
+      - id: full-redeem-claim-intent
+        description: Redeem — alternate trigger phrase maps to redeem.js
+        prompt: "Claim my resolved Polymarket positions"
+        expect:
+          - pattern: "redeem\\.js"
+            type: command

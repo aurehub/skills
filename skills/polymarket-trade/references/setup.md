@@ -6,8 +6,8 @@
 2. **Vault password** — `~/.aurehub/.wdk_password` must exist
 3. **Environment** — `~/.aurehub/.env` with `POLYGON_RPC_URL=<url>` (copy from `.env.example`)
 4. **Config** — `~/.aurehub/polymarket.yaml` (copy from `config.example.yaml`)
-5. **CLOB credentials** — `~/.aurehub/.polymarket_clob` (derived via `node scripts/setup.js`)
-6. **Dependencies** — `npm install` in `scripts/` directory
+5. **Dependencies** — `npm install` in `scripts/` directory
+6. **CLOB credentials** — `~/.aurehub/.polymarket_clob` (derived via `node scripts/setup.js`)
 
 ## Deriving CLOB Credentials
 
