@@ -2,95 +2,108 @@
 
 Trade on Polymarket prediction markets on Polygon. Non-custodial — private key stays in your WDK vault.
 
-## Prerequisites
+## Quick Start
 
-- Node.js 18+
-- A WDK wallet vault (`~/.aurehub/.wdk_vault`) — set up via the `xaut-trade` skill
-- Polygon RPC URL (e.g. from Alchemy, Infura, or a public endpoint)
-- POL for gas and trading (>= 0.01 POL for gas; auto-swapped to USDC.e when needed)
+**Prerequisites:** Node.js ≥ 18 · WDK wallet vault (set up via `xaut-trade`) · POL for gas (≥ 0.01)
 
-## Installation
+**1. Install**
 
 ```bash
 npx skills add aurehub/skills
-# Select: polymarket-trade
 ```
 
-## Initial Setup
-
-### 1. Configure `~/.aurehub/.env`
+**2. Start trading** — if setup is needed, the Agent will guide you through it automatically:
 
 ```
-POLYGON_RPC_URL=https://polygon-rpc.com
+What are the current odds on bitcoin markets?
 ```
 
-### 2. Configure `~/.aurehub/polymarket.yaml`
-
-```bash
-cp <skill-dir>/config.example.yaml ~/.aurehub/polymarket.yaml
-```
-
-Edit the file and set `rpc_env: POLYGON_RPC_URL` (or whatever env var name you used).
-
-### 3. Derive CLOB credentials
-
-```bash
-cd skills/polymarket-trade/scripts
-npm install
-node setup.js
-```
-
-This signs an EIP-712 message to derive API credentials from your wallet and saves them to `~/.aurehub/.polymarket_clob`.
+---
 
 ## Usage
 
-### Browse markets
+Just talk to the Agent in natural language:
 
-```bash
-node scripts/browse.js "bitcoin 100k"
-node scripts/browse.js "will trump"
+### Browse Markets
+
+```
+What are the current odds on bitcoin markets?
+Browse prediction markets about the US election
+What are the odds on Trump winning?
 ```
 
-### Check balance and positions
+### Buy Shares
 
-```bash
-node scripts/balance.js
+```
+Buy $10 of YES on the bitcoin 100k market
+Buy $5 of NO on will Trump win
 ```
 
-Shows POL, USDC.e, CLOB balance, and any open YES/NO positions with current value.
+### Sell Shares
 
-### Buy shares
-
-```bash
-node scripts/trade.js --buy --market bitcoin-100k-2025 --side YES --amount 25
+```
+Sell my YES shares on the bitcoin market
+Sell 5 NO shares on the election market
 ```
 
-### Sell shares
+### Check Balance & Positions
 
-```bash
-node scripts/trade.js --sell --market bitcoin-100k-2025 --side YES --amount 10
+```
+Check my Polymarket balance
+Show my open positions
 ```
 
-## Geo-restriction
+## Trade Flow
 
-Polymarket blocks users in the US and some other regions. If you see a **403 Forbidden** error, enable a VPN and retry.
+```
+Browse market → Preview (price, shares, cost) → [Confirmation if needed] → Auto-swap POL→USDC.e if required → Submit order → Result
+```
+
+If your USDC.e balance is insufficient, the Agent will offer to auto-swap POL → USDC.e before placing the order.
 
 ## Safety Gates
 
 | Amount | Action |
 |--------|--------|
 | < $50 | Proceeds automatically |
-| $50-$499 | Single confirmation required |
-| >= $500 | Double confirmation required |
-
-If USDC.e is insufficient, an auto-swap from POL is offered before the trade proceeds.
+| $50–$499 | Single confirmation required |
+| ≥ $500 | Double confirmation required |
 
 Hard-stops: POL gas < 0.01, market CLOSED, amount below minimum order size.
 
-## Troubleshooting
+## Geo-restriction
 
-- **"Missing ~/.aurehub/.env"** — run: `cp <skill-dir>/.env.example ~/.aurehub/.env`
-- **"POLYGON_RPC_URL not set"** — add it to `~/.aurehub/.env` and update `rpc_env` in `polymarket.yaml`
-- **"Run: node scripts/setup.js"** — CLOB credentials not derived yet; run setup
-- **"node_modules not found"** — run `npm install` in the scripts directory
-- **"decryption failed"** — wrong password in `~/.aurehub/.wdk_password`
+Polymarket blocks users in the US, UK, Singapore, and [other regions](https://docs.polymarket.com/polymarket-learn/FAQ/geoblocking). If you see a **403 Forbidden** error, enable a VPN with a supported country node and retry.
+
+## Configuration
+
+### `~/.aurehub/.env`
+
+| Variable | Description | Example |
+|----------|-------------|---------|
+| `POLYGON_RPC_URL` | Polygon JSON-RPC endpoint | `https://polygon-bor-rpc.publicnode.com` |
+
+### `~/.aurehub/polymarket.yaml`
+
+Key adjustable parameters:
+
+```yaml
+polymarket:
+  clob_url: https://clob.polymarket.com
+  gamma_url: https://gamma-api.polymarket.com
+
+safety:
+  warn_threshold_usd: 50       # Single-confirm threshold (USD)
+  confirm_threshold_usd: 500   # Double-confirm threshold (USD)
+```
+
+## Security & Privacy
+
+| Service | When | Data Sent |
+|---------|------|-----------|
+| Polymarket Gamma API | Browse / resolve markets | Search query |
+| Polymarket CLOB API | Order submission | Signed order, wallet address |
+| Polygon RPC | Balance checks, on-chain txs | Wallet address, transaction data |
+| Uniswap V3 (Polygon) | POL → USDC.e swap | Transaction data |
+
+All API calls use HTTPS. Private key never leaves the local WDK vault.

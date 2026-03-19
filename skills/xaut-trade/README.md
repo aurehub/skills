@@ -181,6 +181,14 @@ Market orders do not require an API Key.
 
 ## Usage
 
+xaut-trade handles XAUT/USDT trades natively and delegates other intents to specialized skills:
+
+| Intent | Handled by | Example |
+|--------|-----------|---------|
+| Buy / sell XAUT | xaut-trade (built-in) | `buy XAUT with 100 USDT` |
+| Limit order XAUT | xaut-trade (built-in) | `buy 0.01 XAUT when price drops to 3000` |
+| Prediction markets | polymarket-trade | `bet on Bitcoin above 100k` |
+
 Just talk to the Agent in natural language:
 
 ### Buy
@@ -460,6 +468,15 @@ The current Skill is designed for a single wallet per instance. For multi-wallet
 **Q: Do I need to reinstall after a Skill update?**
 
 Yes. Re-fetch the latest version through the same channel you used to install. Updates will not overwrite your local config (`.env`, `config.yaml`).
+
+## Skill Delegation
+
+When a non-XAUT intent is detected, xaut-trade automatically delegates to the appropriate skill.
+If the required skill is not installed, the Agent will output the install command.
+
+| Skill | Triggers | Install |
+|-------|---------|---------|
+| `polymarket-trade` | polymarket, prediction market, bet on, odds on, will X happen, chances of | `npx skills add aurehub/skills` |
 
 ## Stay Connected
 
