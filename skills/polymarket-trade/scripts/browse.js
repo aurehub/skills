@@ -183,7 +183,7 @@ export async function resolveMarket(query, cfg) {
 }
 
 // ── CLI entry point ───────────────────────────────────────────────────────────
-if (realpathSync(process.argv[1]) === fileURLToPath(import.meta.url)) {
+if (process.argv[1] && realpathSync(process.argv[1]) === fileURLToPath(import.meta.url)) {
   const query = process.argv[2];
   if (!query) { console.error('Usage: node scripts/browse.js <keyword|slug>'); process.exit(1); }
   (async () => {

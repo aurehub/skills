@@ -88,7 +88,7 @@ export function formatBalances(b) {
 }
 
 // ── CLI entry point ───────────────────────────────────────────────────────────
-if (realpathSync(process.argv[1]) === fileURLToPath(import.meta.url)) {
+if (process.argv[1] && realpathSync(process.argv[1]) === fileURLToPath(import.meta.url)) {
   (async () => {
     try {
       runSetupEnvCheck();

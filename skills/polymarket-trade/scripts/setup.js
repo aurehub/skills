@@ -142,7 +142,7 @@ export async function deriveClobCreds(aurehubDir = AUREHUB_DIR) {
 }
 
 // ── CLI entry point ───────────────────────────────────────────────────────────
-if (realpathSync(process.argv[1]) === fileURLToPath(import.meta.url)) {
+if (process.argv[1] && realpathSync(process.argv[1]) === fileURLToPath(import.meta.url)) {
   (async () => {
     try {
       runSetupEnvCheck();  // steps 1-5 including vault + password (needed for L1 signing)

@@ -351,7 +351,7 @@ export async function sell({ market, side, amount, cfg, provider, wallet }) {
 }
 
 // ── CLI entry point ───────────────────────────────────────────────────────────
-if (realpathSync(process.argv[1]) === fileURLToPath(import.meta.url)) {
+if (process.argv[1] && realpathSync(process.argv[1]) === fileURLToPath(import.meta.url)) {
   const args = process.argv.slice(2);
   const getArg = f => { const i = args.indexOf(f); return i >= 0 ? args[i + 1] : null; };
   const mode    = args.includes('--sell') ? 'sell' : 'buy';
