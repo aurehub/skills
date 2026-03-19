@@ -143,17 +143,18 @@ export async function redeem({ cfg, provider, wallet, marketFilter, dryRun }) {
   const ctf = new ethers.Contract(ctfAddr, CTF_ABI, wallet);
   const ERC20_ABI = ['function balanceOf(address) view returns (uint256)'];
   const results = [];
+  const gasOverrides = await polyGasOverrides(provider);
 
   for (const p of standard) {
     try {
+      console.log(`\nSubmitting redeem for ${p.slug}...`);
       const tx = await ctf.redeemPositions(
         usdceAddr,
         ethers.constants.HashZero,
         p.conditionId,
         buildIndexSets(p.outcomeIndex),
-        await polyGasOverrides(provider),
+        gasOverrides,
       );
-      console.log(`\nSubmitting redeem for ${p.slug}...`);
       await tx.wait();
       console.log(`✅ Redeemed ${p.slug} — tx: ${tx.hash}`);
       results.push({ slug: p.slug, txHash: tx.hash, success: true });
