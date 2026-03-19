@@ -4,15 +4,18 @@ Trade on Polymarket prediction markets on Polygon. Non-custodial — private key
 
 ## Quick Start
 
-**Prerequisites:** Node.js ≥ 18 · WDK wallet vault (set up via `xaut-trade`) · POL for gas (≥ 0.01)
+**Prerequisites:**
+- Node.js ≥ 18
+- **xaut-trade skill installed and set up first** — it creates the WDK wallet vault (`~/.aurehub/.wdk_vault`) that this skill requires. Run `npx skills add aurehub/skills` and select `xaut-trade`, then complete its setup before using polymarket-trade.
+- POL on Polygon for gas (≥ 0.01 POL)
 
 **1. Install**
 
 ```bash
-npx skills add aurehub/skills
+npx skills add aurehub/skills   # select both xaut-trade and polymarket-trade
 ```
 
-**2. Start trading** — if setup is needed, the Agent will guide you through it automatically:
+**2. Start trading** — the Agent will check prerequisites and prompt you to run any missing setup steps:
 
 ```
 What are the current odds on bitcoin markets?

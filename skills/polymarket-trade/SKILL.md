@@ -25,15 +25,20 @@ Before any action, check prerequisites for the current flow and auto-fix what yo
 **Redeem flow** (no CLOB needed): check steps 1–5 in order.
 **Balance / Trade / Setup flow**: check all steps 1–6 in order.
 
-| Step | Missing item | Agent action |
-|------|---|---|
-| 1 | `~/.aurehub/.wdk_vault` | Inform: must be created via xaut-trade setup first. Stop. |
-| 2 | `~/.aurehub/.wdk_password` | Inform: must be created via xaut-trade setup first. Stop. |
-| 3 | `~/.aurehub/.env` missing | Run: `cp <skill-dir>/.env.example ~/.aurehub/.env` |
-| 3 | `~/.aurehub/.env` exists, `POLYGON_RPC_URL` absent | Append `POLYGON_RPC_URL=https://polygon-rpc.com` to `~/.aurehub/.env` |
-| 4 | `~/.aurehub/polymarket.yaml` missing | Run: `cp <skill-dir>/config.example.yaml ~/.aurehub/polymarket.yaml` |
-| 5 | `node_modules` missing in `<skill-dir>/scripts/` | Run: `npm install` in `<skill-dir>/scripts/` |
-| 6 | `~/.aurehub/.polymarket_clob` missing | Run: `node <skill-dir>/scripts/setup.js` (only after steps 3–5 pass) |
+Step types:
+- **HARD STOP** — cannot proceed; inform user and stop (these require prior xaut-trade setup).
+- **AUTO-FIX** — run the command automatically, then continue.
+- **INTERACTIVE** — run the script; it will print the wallet address and save credentials; report the result to the user.
+
+| Step | Missing item | Type | Agent action |
+|------|---|---|---|
+| 1 | `~/.aurehub/.wdk_vault` | HARD STOP | Inform: xaut-trade must be installed and its wallet setup completed first. Stop. |
+| 2 | `~/.aurehub/.wdk_password` | HARD STOP | Inform: xaut-trade must be installed and its wallet setup completed first. Stop. |
+| 3 | `~/.aurehub/.env` missing | AUTO-FIX | Run: `cp <skill-dir>/.env.example ~/.aurehub/.env` |
+| 3 | `~/.aurehub/.env` exists, `POLYGON_RPC_URL` absent | AUTO-FIX | Append `POLYGON_RPC_URL=https://polygon-rpc.com` to `~/.aurehub/.env` |
+| 4 | `~/.aurehub/polymarket.yaml` missing | AUTO-FIX | Run: `cp <skill-dir>/config.example.yaml ~/.aurehub/polymarket.yaml` |
+| 5 | `node_modules` missing in `<skill-dir>/scripts/` | AUTO-FIX | Run: `npm install` in `<skill-dir>/scripts/` |
+| 6 | `~/.aurehub/.polymarket_clob` missing | INTERACTIVE | Run: `node <skill-dir>/scripts/setup.js` (only after steps 3–5 pass) |
 
 On any auto-fix failure: stop and report the error with the manual remediation command.
 After all fixes succeed, re-run the relevant checks and proceed.

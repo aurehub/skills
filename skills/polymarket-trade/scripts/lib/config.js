@@ -34,8 +34,15 @@ export function loadConfig(configDir) {
 
 export function resolveRpcUrl(cfg) {
   const name = cfg.yaml?.rpc_env;
-  if (!name) throw new Error('rpc_env not set in polymarket.yaml');
+  if (!name) throw new Error(
+    `rpc_env not set in ~/.aurehub/polymarket.yaml.\n` +
+    `Add: rpc_env: POLYGON_RPC_URL\n` +
+    `(rpc_env names the env variable that holds your Polygon RPC URL.)`,
+  );
   const url = cfg.env[name] ?? process.env[name];
-  if (!url) throw new Error(`${name} not set in .env (referenced by rpc_env)`);
+  if (!url) throw new Error(
+    `${name} not set in ~/.aurehub/.env (referenced by rpc_env in polymarket.yaml).\n` +
+    `Add: ${name}=https://polygon-bor-rpc.publicnode.com`,
+  );
   return url;
 }

@@ -6,7 +6,7 @@ import { ethers } from 'ethers';
 import { loadConfig, resolveRpcUrl } from './lib/config.js';
 import { createSigner } from './lib/signer.js';
 import { createL2Client } from './lib/clob.js';
-import { checkEnvFile, checkVaultFile, checkPasswordFile, checkConfigFile } from './setup.js';
+import { runSetupEnvCheck } from './setup.js';
 
 const ERC20_ABI = ['function balanceOf(address) view returns (uint256)'];
 const AUREHUB_DIR = join(homedir(), '.aurehub');
@@ -91,7 +91,7 @@ export function formatBalances(b) {
 if (process.argv[1] === fileURLToPath(import.meta.url)) {
   (async () => {
     try {
-      checkEnvFile(); checkVaultFile(); checkPasswordFile(); checkConfigFile();
+      runSetupEnvCheck();
       const cfg = loadConfig();
       const b = await getBalances(cfg);
       console.log(formatBalances(b));

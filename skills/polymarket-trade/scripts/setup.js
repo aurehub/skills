@@ -16,21 +16,31 @@ const SCRIPTS_DIR = fileURLToPath(new URL('.', import.meta.url));
 export function checkEnvFile(aurehubDir = AUREHUB_DIR) {
   const path = join(aurehubDir, '.env');
   if (!existsSync(path)) {
-    throw new Error(`Missing ~/.aurehub/.env. Create it with POLYGON_RPC_URL=<your-polygon-rpc-url>`);
+    throw new Error(
+      `Missing ~/.aurehub/.env. Copy the example file from the skill directory:\n` +
+      `  cp <skill-dir>/.env.example ~/.aurehub/.env\n` +
+      `Then set POLYGON_RPC_URL to a Polygon JSON-RPC endpoint (e.g. https://polygon-bor-rpc.publicnode.com).`,
+    );
   }
 }
 
 export function checkVaultFile(aurehubDir = AUREHUB_DIR) {
   const path = join(aurehubDir, '.wdk_vault');
   if (!existsSync(path)) {
-    throw new Error(`Missing ~/.aurehub/.wdk_vault. Run the WDK wallet setup first.`);
+    throw new Error(
+      `Missing ~/.aurehub/.wdk_vault. This file is created by the xaut-trade skill setup.\n` +
+      `Install xaut-trade first (npx skills add aurehub/skills → select xaut-trade) and complete its wallet setup, then return here.`,
+    );
   }
 }
 
 export function checkPasswordFile(aurehubDir = AUREHUB_DIR) {
   const path = join(aurehubDir, '.wdk_password');
   if (!existsSync(path)) {
-    throw new Error(`Missing ~/.aurehub/.wdk_password.`);
+    throw new Error(
+      `Missing ~/.aurehub/.wdk_password. This file is created by the xaut-trade skill setup.\n` +
+      `Complete the xaut-trade wallet setup first, then return here.`,
+    );
   }
 }
 
@@ -104,7 +114,11 @@ export async function deriveClobCreds(aurehubDir = AUREHUB_DIR) {
   const client = await createL1Client(cfg, wallet);
   const creds = await client.createApiKey(0);
   if (!creds.key || !creds.secret || !creds.passphrase) {
-    throw new Error(`CLOB key derivation failed — API returned incomplete credentials (key=${!!creds.key}, secret=${!!creds.secret}, passphrase=${!!creds.passphrase}). Try again or check your nonce.`);
+    throw new Error(
+      `CLOB key derivation failed — Polymarket API returned incomplete credentials.\n` +
+      `Wait a moment and re-run: node scripts/setup.js\n` +
+      `If the problem persists, check that your wallet address is not geo-blocked (403 error = VPN required).`,
+    );
   }
   const credsPath = join(aurehubDir, '.polymarket_clob');
   const data = {
