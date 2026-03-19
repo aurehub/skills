@@ -1,5 +1,5 @@
 import { fileURLToPath } from 'url';
-import { existsSync } from 'fs';
+import { existsSync, realpathSync } from 'fs';
 import { join } from 'path';
 import { homedir } from 'os';
 import { ethers } from 'ethers';
@@ -88,7 +88,7 @@ export function formatBalances(b) {
 }
 
 // ── CLI entry point ───────────────────────────────────────────────────────────
-if (process.argv[1] === fileURLToPath(import.meta.url)) {
+if (realpathSync(process.argv[1]) === fileURLToPath(import.meta.url)) {
   (async () => {
     try {
       runSetupEnvCheck();

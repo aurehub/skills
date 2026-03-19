@@ -1,4 +1,5 @@
 import { fileURLToPath } from 'url';
+import { realpathSync } from 'fs';
 import { loadConfig } from './lib/config.js';
 import { runBrowseEnvCheck } from './setup.js';
 
@@ -182,7 +183,7 @@ export async function resolveMarket(query, cfg) {
 }
 
 // ── CLI entry point ───────────────────────────────────────────────────────────
-if (process.argv[1] === fileURLToPath(import.meta.url)) {
+if (realpathSync(process.argv[1]) === fileURLToPath(import.meta.url)) {
   const query = process.argv[2];
   if (!query) { console.error('Usage: node scripts/browse.js <keyword|slug>'); process.exit(1); }
   (async () => {

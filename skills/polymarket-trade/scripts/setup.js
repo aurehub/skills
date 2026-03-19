@@ -1,4 +1,4 @@
-import { existsSync, readFileSync, writeFileSync, chmodSync } from 'fs';
+import { existsSync, readFileSync, writeFileSync, chmodSync, realpathSync } from 'fs';
 import { join } from 'path';
 import { homedir } from 'os';
 import { fileURLToPath } from 'url';
@@ -142,7 +142,7 @@ export async function deriveClobCreds(aurehubDir = AUREHUB_DIR) {
 }
 
 // ── CLI entry point ───────────────────────────────────────────────────────────
-if (process.argv[1] === fileURLToPath(import.meta.url)) {
+if (realpathSync(process.argv[1]) === fileURLToPath(import.meta.url)) {
   (async () => {
     try {
       runSetupEnvCheck();  // steps 1-5 including vault + password (needed for L1 signing)

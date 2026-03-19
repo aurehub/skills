@@ -1,5 +1,5 @@
 import { fileURLToPath } from 'url';
-import { existsSync, readFileSync } from 'fs';
+import { existsSync, readFileSync, realpathSync } from 'fs';
 import { join } from 'path';
 import { homedir } from 'os';
 import { ethers } from 'ethers';
@@ -177,7 +177,7 @@ export async function redeem({ cfg, provider, wallet, marketFilter, dryRun }) {
 }
 
 // ── CLI entry point ───────────────────────────────────────────────────────────
-if (process.argv[1] === fileURLToPath(import.meta.url)) {
+if (realpathSync(process.argv[1]) === fileURLToPath(import.meta.url)) {
   const args = process.argv.slice(2);
   const getArg = f => { const i = args.indexOf(f); return i >= 0 ? args[i + 1] : null; };
   const dryRun      = args.includes('--dry-run');
