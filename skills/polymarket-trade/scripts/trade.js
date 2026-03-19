@@ -121,11 +121,14 @@ export async function checkRecentFill(client, tokenID, makerAddress, windowSec =
 // ── Buy flow ──────────────────────────────────────────────────────────────────
 
 export async function buy({ market, side, amount, cfg, provider, wallet }) {
+  if (side !== 'YES' && side !== 'NO') throw new Error(`Invalid side "${side}": must be YES or NO`);
+  if (!Number.isFinite(amount) || amount <= 0 || amount > 1_000_000) throw new Error(`Invalid amount: ${amount}`);
+
   const { Side, OrderType } = await import('@polymarket/clob-client');
   const client = await createL2Client(cfg, wallet, join(AUREHUB_DIR, '.polymarket_clob'));
 
   const ids = extractTokenIds(market);
-  const tokenID = side === 'YES' ? ids.YES : ids.NO;
+  const tokenID = ids[side];
   if (!tokenID) throw new Error(`No ${side} token ID found for this market.`);
 
   const negRisk = await client.getNegRisk(tokenID);
@@ -252,11 +255,14 @@ export async function buy({ market, side, amount, cfg, provider, wallet }) {
 // ── Sell flow ─────────────────────────────────────────────────────────────────
 
 export async function sell({ market, side, amount, cfg, provider, wallet }) {
+  if (side !== 'YES' && side !== 'NO') throw new Error(`Invalid side "${side}": must be YES or NO`);
+  if (!Number.isFinite(amount) || amount <= 0 || amount > 1_000_000) throw new Error(`Invalid amount: ${amount}`);
+
   const { Side, OrderType } = await import('@polymarket/clob-client');
   const client = await createL2Client(cfg, wallet, join(AUREHUB_DIR, '.polymarket_clob'));
 
   const ids = extractTokenIds(market);
-  const tokenID = side === 'YES' ? ids.YES : ids.NO;
+  const tokenID = ids[side];
   if (!tokenID) throw new Error(`No ${side} token ID found for this market.`);
 
   // Check CTF token balance
