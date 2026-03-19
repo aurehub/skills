@@ -65,10 +65,8 @@ export function formatMarketOutput(market, orderbooks = {}, marketInfo = null) {
   const lines = [
     `Market: "${market.question}"`,
     `Status: ${market.active ? 'ACTIVE' : 'CLOSED'} | neg_risk: ${!!market.neg_risk}`,
-    `YES: ${fmtPrice(yesPrice)} ($${fmtPrice(yesPrice)})   ` +
-      `bid/ask: ${bestBid(obYes)}/${bestAsk(obYes)}   liquidity: ${liq(obYes)}`,
-    `NO:  ${fmtPrice(noPrice)} ($${fmtPrice(noPrice)})   ` +
-      `bid/ask: ${bestBid(obNo)}/${bestAsk(obNo)}   liquidity: ${liq(obNo)}`,
+    `YES: ${fmtPrice(yesPrice)}   bid/ask: ${bestBid(obYes)}/${bestAsk(obYes)}   liquidity: ${liq(obYes)}`,
+    `NO:  ${fmtPrice(noPrice)}   bid/ask: ${bestBid(obNo)}/${bestAsk(obNo)}   liquidity: ${liq(obNo)}`,
     `Min order: $${marketInfo?.minimum_order_size ?? marketInfo?.min_order_size ?? market.min_incentive_size ?? '—'}`,
     `Token IDs:`,
     `  YES: ${ids.YES ?? '(not found)'}`,

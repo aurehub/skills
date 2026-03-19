@@ -90,10 +90,9 @@ export function runSetupEnvCheck(aurehubDir = AUREHUB_DIR) {
   resolveRpcUrl(cfg);
 }
 
-/** Run env checks for browse flows (steps 1, 4 — no wallet, no gas, no CLOB needed).
- *  Browse uses only public HTTP APIs (Gamma + CLOB); no RPC connection required. */
+/** Run env checks for browse flows (step 4 only — no wallet, no RPC, no CLOB needed).
+ *  Browse uses only public HTTP APIs (Gamma + CLOB); no env file or RPC URL required. */
 export function runBrowseEnvCheck(aurehubDir = AUREHUB_DIR) {
-  checkEnvFile(aurehubDir);
   checkConfigFile(aurehubDir);
 }
 
@@ -104,6 +103,9 @@ export async function deriveClobCreds(aurehubDir = AUREHUB_DIR) {
   const wallet = await createSigner(cfg);
   const client = await createL1Client(cfg, wallet);
   const creds = await client.createApiKey(0);
+  if (!creds.key || !creds.secret || !creds.passphrase) {
+    throw new Error(`CLOB key derivation failed — API returned incomplete credentials (key=${!!creds.key}, secret=${!!creds.secret}, passphrase=${!!creds.passphrase}). Try again or check your nonce.`);
+  }
   const credsPath = join(aurehubDir, '.polymarket_clob');
   const data = {
     key: creds.key,

@@ -117,14 +117,14 @@ suites:
             type: output
 
       - id: full-buy-no-usdc
-        description: Buy — insufficient USDC.e, swap offer triggered
+        description: Buy — insufficient USDC.e, swap offer triggered (not an error — a prompt)
         setup:
           mock:
             usdce_balance: 0
         prompt: "Buy $100 YES on bitcoin 100k"
         expect:
-          - pattern: "insufficient|USDC"
-            type: error
+          - pattern: "swap|POL.*USDC|Insufficient USDC"
+            type: output
 
       - id: full-buy-closed
         description: Buy — market CLOSED, hard-stop

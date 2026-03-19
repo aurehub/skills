@@ -1,4 +1,5 @@
 import { fileURLToPath } from 'url';
+import { existsSync, readFileSync } from 'fs';
 import { join } from 'path';
 import { homedir } from 'os';
 import { ethers } from 'ethers';
@@ -187,7 +188,6 @@ if (process.argv[1] === fileURLToPath(import.meta.url)) {
       // Lighter env check — no CLOB credentials needed for on-chain redeem
       checkEnvFile(); checkVaultFile(); checkPasswordFile(); checkConfigFile();
       const setupPath = join(AUREHUB_DIR, '.polymarket_setup_path');
-      const { existsSync, readFileSync } = await import('fs');
       const scriptsDir = existsSync(setupPath)
         ? readFileSync(setupPath, 'utf8').trim()
         : fileURLToPath(new URL('.', import.meta.url));

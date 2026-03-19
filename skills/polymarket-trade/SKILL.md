@@ -21,7 +21,8 @@ Trade on Polymarket prediction markets. Non-custodial — private key stays in y
 
 Before any action, check prerequisites for the current flow and auto-fix what you can.
 
-**Browse flow** (no wallet or CLOB needed): check steps 3–4 only.
+**Browse flow** (no wallet, no RPC, no CLOB needed): check step 4 only.
+**Redeem flow** (no CLOB needed): check steps 1–5 in order.
 **Balance / Trade / Setup flow**: check all steps 1–6 in order.
 
 | Step | Missing item | Agent action |
