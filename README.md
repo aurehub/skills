@@ -72,7 +72,7 @@ Enable git pre-commit checks:
 
 Current checks:
 - `scripts/check-no-runtime-private-key.sh`
-- `scripts/check-skill-version.sh` (valid semver and version consistency between `SKILL.md` and `scripts/package.json` when present)
+- `scripts/check-skill-version.sh` (valid semver for `SKILL.md` metadata.version and `scripts/package.json` when present)
 
 ## License
 
