@@ -12,8 +12,12 @@ import { createTransport, createInfoClient } from './lib/hl-client.js';
 
 const [,, subcommand] = process.argv;
 
+if (!subcommand) {
+  process.stderr.write(JSON.stringify({ error: 'No subcommand provided. Use: address|spot|perp' }) + '\n');
+  process.exit(1);
+}
 if (!['address', 'spot', 'perp'].includes(subcommand)) {
-  process.stderr.write(JSON.stringify({ error: `Unknown subcommand: ${subcommand}. Use address|spot|perp` }) + '\n');
+  process.stderr.write(JSON.stringify({ error: `Unknown subcommand: ${subcommand}. Use: address|spot|perp` }) + '\n');
   process.exit(1);
 }
 
@@ -32,7 +36,7 @@ try {
 
   if (subcommand === 'spot') {
     const result = await info.spotClearinghouseState({ user: address });
-    process.stdout.write(JSON.stringify(result) + '\n');
+    process.stdout.write(JSON.stringify({ balances: result.balances }) + '\n');
   } else {
     // perp
     const result = await info.clearinghouseState({ user: address });
