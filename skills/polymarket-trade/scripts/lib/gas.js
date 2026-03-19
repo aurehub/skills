@@ -2,7 +2,7 @@
 import { ethers } from 'ethers';
 
 // Polygon requires a minimum 30 Gwei tip; some public RPCs return stale low estimates.
-// NOTE: if this constant changes, update it here only — trade.js and redeem.js both import from here.
+// NOTE: if this constant changes, update it here only — all callers import from this file.
 const MIN_GAS_TIP = ethers.utils.parseUnits('30', 'gwei');
 
 export async function polyGasOverrides(provider) {

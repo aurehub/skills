@@ -1,4 +1,5 @@
 import { ethers } from 'ethers';
+import { polyGasOverrides } from './gas.js';
 
 const WMATIC  = '0x0d500B1d8E8eF31E21C99d1Db9A6444d3ADf1270';
 const USDC_E  = '0x2791Bca1f2de4661ED88A30C99A7a9449Aa84174';
@@ -93,16 +94,11 @@ export async function swapPolToUsdc({ polAmountMax, usdceTarget, cfg, wallet, pr
   }]);
   const refundCalldata = routerIface.encodeFunctionData('refundETH', []);
 
-  // Polygon requires minimum 30 Gwei tip; some public RPCs return stale low fee estimates
-  const feeData = await provider.getFeeData();
-  const MIN_TIP = ethers.utils.parseUnits('30', 'gwei');
-  const maxPriorityFeePerGas = feeData.maxPriorityFeePerGas?.lt(MIN_TIP) ? MIN_TIP : feeData.maxPriorityFeePerGas;
-  const maxFeePerGas = feeData.maxFeePerGas?.lt(MIN_TIP) ? MIN_TIP : feeData.maxFeePerGas;
+  const gasOverrides = await polyGasOverrides(provider);
 
   const tx = await routerSigned.multicall([swapCalldata, refundCalldata], {
     value: polAmountMax,
-    maxPriorityFeePerGas,
-    maxFeePerGas,
+    ...gasOverrides,
   });
   console.log(`Swap tx submitted (${tx.hash?.slice(0, 12) ?? 'pending'}...), waiting for confirmation...`);
   const receipt = await tx.wait();
