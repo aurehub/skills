@@ -17,6 +17,8 @@ The script outputs a preview JSON first. After `--confirmed`, calls `updateLever
 
 **Leverage warning:** If `leverage ≥ leverage_warn` (default 20x from `hyperliquid.yaml`), the preview sets `leverageWarning: true` — show an extra warning before prompting.
 
+**Leverage change warning:** If `--leverage N` is specified, the preview sets `leverageChangeWarning: true`. The leverage update takes effect immediately on the exchange before the order is placed. If the user has an existing cross-margin position for this coin, its leverage will change as well. Show the warning: "Note: this leverage setting takes effect immediately and will apply to all existing cross-margin positions for this coin."
+
 Result format: `{ "ok": true, "oid": 12345, "avgPx": "3200.50", "filledSz": "0.1" }`
 
 ## Close position

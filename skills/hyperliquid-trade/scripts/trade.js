@@ -141,6 +141,7 @@ try {
         requiresConfirm: marginUsed >= confirmThreshold,
         requiresDoubleConfirm: marginUsed >= largeThreshold,
         leverageWarning,
+        leverageChangeWarning: leverage !== null,
       }) + '\n');
       if (!process.argv.includes('--confirmed')) process.exit(0);
 
@@ -187,7 +188,7 @@ try {
     if (action === 'close') {
       // Auto-detect direction from open position
       const state = await info.clearinghouseState({ user: address });
-      const pos = state.assetPositions.find(p => p.position.coin === coin);
+      const pos = state.assetPositions.find(p => p.position.coin === baseCoin);
 
       if (!pos) {
         process.stderr.write(JSON.stringify({ error: `No open position found for ${coin}.` }) + '\n');
@@ -196,7 +197,7 @@ try {
 
       const szi = parseFloat(pos.position.szi);
       if (!isFinite(szi) || szi === 0) {
-        process.stderr.write(JSON.stringify({ error: `Could not read open position size for ${coin}. Try again or check your position at app.hyperliquid.xyz.` }) + '\n');
+        process.stderr.write(JSON.stringify({ error: `Could not read open position size for ${baseCoin}. Try again or check your position at app.hyperliquid.xyz.` }) + '\n');
         process.exit(1);
       }
       const posSize = Math.abs(szi);

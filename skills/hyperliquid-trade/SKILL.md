@@ -150,7 +150,7 @@ Trade value: ~$<320> USDC         ← spot only
 Confirm? [y/N]
 ```
 
-`trade.js` outputs this as a `preview` JSON object. Parse the JSON and render the above format before prompting. Apply `requiresConfirm`/`requiresDoubleConfirm` flags for confirmation logic; if `leverageWarning: true`, add an extra warning line about high leverage.
+`trade.js` outputs this as a `preview` JSON object. Parse the JSON and render the above format before prompting. Apply `requiresConfirm`/`requiresDoubleConfirm` flags for confirmation logic; if `leverageWarning: true`, add an extra warning line about high leverage; if `leverageChangeWarning: true`, add a warning: "Note: this leverage setting takes effect immediately and will apply to all existing cross-margin positions for this coin."
 
 ## Hard Stops
 
