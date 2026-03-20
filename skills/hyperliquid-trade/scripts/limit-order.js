@@ -142,7 +142,7 @@ if (process.argv[1] && new URL(import.meta.url).href === pathToFileURL(process.a
 
 async function runList({ info, address, coin }) {
   const orders = await info.openOrders({ user: address });
-  const filtered = coin ? orders.filter(o => o.coin === coin) : orders;
+  const filtered = coin ? orders.filter(o => o.coin === coin || o.coin === `${coin}/USDC`) : orders;
   process.stdout.write(JSON.stringify({
     orders: filtered.map(o => ({
       oid: o.oid,
