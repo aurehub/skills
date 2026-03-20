@@ -18,7 +18,13 @@ npx skills add aurehub/skills   # select xaut-trade
 
 Then follow xaut-trade's wallet setup, and return here.
 
-## Step 2: Configure hyperliquid.yaml
+## Step 2: Install dependencies
+
+```bash
+cd <scripts-dir> && npm install
+```
+
+## Step 3: Configure hyperliquid.yaml
 
 ```bash
 cp <skill-dir>/config.example.yaml ~/.aurehub/hyperliquid.yaml
@@ -36,7 +42,7 @@ risk:
   leverage_warn: 20         # at or above: extra warning before open
 ```
 
-## Step 3: Fund your Hyperliquid account
+## Step 4: Fund your Hyperliquid account
 
 Your wallet address on Hyperliquid is the same EVM address as your WDK wallet. Check it:
 
@@ -51,7 +57,7 @@ Deposit USDC at [app.hyperliquid.xyz](https://app.hyperliquid.xyz):
 4. If spot balance shows 0: go to Portfolio → Transfer → move USDC from Perp to Spot wallet
 5. For perp trading: no transfer needed if USDC is already in the margin account
 
-## Step 4: Verify
+## Step 5: Verify
 
 ```bash
 node <scripts-dir>/balance.js address
