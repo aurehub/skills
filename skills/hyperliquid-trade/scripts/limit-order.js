@@ -192,6 +192,10 @@ async function runModify({ info, exchange, address, transport, orderId, newPrice
   }
 
   const szDec = converter.getSzDecimals(order.coin);
+  if (szDec === undefined) {
+    process.stderr.write(JSON.stringify({ error: `Size decimals for ${order.coin} not found.` }) + '\n');
+    process.exit(1);
+  }
   const finalSize = newSize ?? parseFloat(order.sz);
   const isBuy = order.side === 'B';
 
@@ -238,6 +242,10 @@ async function runPlace({ info, exchange, address, transport, parsed, cfg }) {
     process.exit(1);
   }
   const szDec = converter.getSzDecimals(symbol);
+  if (szDec === undefined) {
+    process.stderr.write(JSON.stringify({ error: `Size decimals for ${symbol} not found.` }) + '\n');
+    process.exit(1);
+  }
 
   // Balance check
   if (mode === 'spot') {
