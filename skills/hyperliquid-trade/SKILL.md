@@ -1,6 +1,6 @@
 ---
 name: hyperliquid-trade
-description: "Trade on Hyperliquid — spot and perpetual futures. Supports market orders (IOC), leverage setting, and WDK/Foundry wallet. Triggers: buy ETH spot, sell BTC, long ETH, short BTC, open long, open short, close position, perp trade, check balance, Hyperliquid positions."
+description: "Trade on Hyperliquid — spot and perpetual futures. Supports market orders (IOC), leverage setting, and WDK wallet. Triggers: buy ETH spot, sell BTC, long ETH, short BTC, open long, open short, close position, perp trade, check balance, Hyperliquid positions."
 license: MIT
 compatibility: "Requires Node.js >= 20.19.0"
 metadata:
@@ -48,8 +48,8 @@ Run these checks before handling any intent (except knowledge queries):
 
 | Step | Check | Type | Action |
 |------|-------|------|--------|
-| 1 | `~/.aurehub/.wdk_vault` exists | HARD STOP | Inform: xaut-trade must be installed and its wallet setup completed first. Stop. |
-| 2 | `~/.aurehub/.wdk_password` exists | HARD STOP | Inform: xaut-trade must be installed and its wallet setup completed first. Stop. |
+| 1 | `~/.aurehub/.wdk_vault` exists | HARD STOP | Load [references/onboarding.md](references/onboarding.md) and guide the user through setup. |
+| 2 | `~/.aurehub/.wdk_password` exists | HARD STOP | Load [references/onboarding.md](references/onboarding.md) and guide the user through setup. |
 | 3 | `~/.aurehub/hyperliquid.yaml` exists | AUTO-FIX | `cp <skill-dir>/config.example.yaml ~/.aurehub/hyperliquid.yaml` |
 | 4 | `node -e "if(+process.version.slice(1).split('.')[0]<20)process.exit(1)"` passes | HARD STOP | "Node.js >= 20.19.0 is required. Please upgrade." |
 | 5 | `<scripts-dir>/node_modules` exists | AUTO-FIX | `cd <scripts-dir> && npm install` |

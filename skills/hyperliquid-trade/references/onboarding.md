@@ -46,8 +46,9 @@ node <scripts-dir>/balance.js address
 
 Deposit USDC at [app.hyperliquid.xyz](https://app.hyperliquid.xyz):
 1. Connect your wallet (same address shown above)
-2. Deposit USDC from Arbitrum to your Hyperliquid account
-3. For spot trading, USDC lands in your spot account; for perps, it goes to your perp margin account
+2. Deposit USDC from Arbitrum — funds arrive in your **perp margin account**
+3. For spot trading: go to Portfolio → Transfer → move USDC from Perp to Spot wallet
+4. For perp trading: no transfer needed, USDC is already in the margin account
 
 ## Step 4: Verify
 
