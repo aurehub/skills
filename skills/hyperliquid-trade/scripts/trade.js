@@ -41,10 +41,13 @@ try {
   const transport = createTransport(cfg);
   const info = createInfoClient(transport);
 
-  // Resolve asset index and size decimals
-  const converter = await SymbolConverter.create({ transport });
+  // Resolve asset metadata and mid price in parallel (independent calls)
   const baseCoin = coin.replace(/\/USDC$/i, '');
   const symbol = mode === 'spot' ? `${baseCoin}/USDC` : baseCoin;
+  const [converter, mids] = await Promise.all([
+    SymbolConverter.create({ transport }),
+    info.allMids(),
+  ]);
   const assetId = converter.getAssetId(symbol);
   if (assetId === undefined) {
     process.stderr.write(JSON.stringify({ error: `Asset ${baseCoin} not found on Hyperliquid. Check the symbol and try again.` }) + '\n');
@@ -56,8 +59,6 @@ try {
     process.exit(1);
   }
 
-  // Get mid price
-  const mids = await info.allMids();
   const midRaw = mids[symbol] ?? mids[coin];
   if (!midRaw) {
     process.stderr.write(JSON.stringify({ error: `Could not fetch mid price for ${coin}.` }) + '\n');
