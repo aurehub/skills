@@ -158,7 +158,7 @@ try {
 
       const szi = parseFloat(pos.position.szi);
       if (!isFinite(szi) || szi === 0) {
-        process.stderr.write(JSON.stringify({ error: `Invalid or zero position size for ${coin}: ${pos.position.szi}` }) + '\n');
+        process.stderr.write(JSON.stringify({ error: `Could not read open position size for ${coin}. Try again or check your position at app.hyperliquid.xyz.` }) + '\n');
         process.exit(1);
       }
       const posSize = Math.abs(szi);

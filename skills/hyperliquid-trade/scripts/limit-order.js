@@ -275,7 +275,7 @@ async function runPlace({ info, exchange, address, transport, parsed, cfg }) {
       );
       if (tokenBalance < size) {
         process.stderr.write(JSON.stringify({
-          error: `Insufficient balance: have $${(tokenBalance * price).toFixed(2)}, need $${(size * price).toFixed(2)}. Deposit at app.hyperliquid.xyz to top up.`,
+          error: `Insufficient ${baseCoin} balance: have ${tokenBalance}, need ${size}. Transfer ${baseCoin} to your Hyperliquid spot account at app.hyperliquid.xyz.`,
         }) + '\n');
         process.exit(1);
       }
