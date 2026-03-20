@@ -1,6 +1,6 @@
 ---
 name: hyperliquid-trade
-description: "Trade on Hyperliquid — spot and perpetual futures. Supports market orders (IOC), leverage setting, and WDK wallet. Triggers: buy ETH spot, sell BTC, long ETH, short BTC, open long, open short, close position, perp trade, check balance, Hyperliquid positions."
+description: "Trade on Hyperliquid — spot and perpetual futures. Supports market orders (IOC), limit orders (GTC), leverage setting, and WDK wallet. Triggers: buy ETH spot, sell BTC, long ETH, short BTC, open long, open short, close position, perp trade, check balance, Hyperliquid positions, limit order, limit buy, limit sell, open orders, cancel order, modify order, GTC."
 license: MIT
 compatibility: "Requires Node.js >= 20.19.0"
 metadata:
@@ -69,6 +69,10 @@ If all pass: proceed to intent detection.
 | balance / holdings / positions / how much | `balance.js spot` + `balance.js perp` |
 | setup / onboarding / first time | Load [references/onboarding.md](references/onboarding.md) |
 | Insufficient info (no coin or amount) | Ask for the missing details before proceeding |
+| limit buy ETH at 3000 / 挂限价买单 / limit sell | Load [references/limit-order.md](references/limit-order.md); run `limit-order.js place` |
+| open orders / 查看挂单 / 我的限价单 | Load [references/limit-order.md](references/limit-order.md); run `limit-order.js list` |
+| cancel order / 撤单 | Load [references/limit-order.md](references/limit-order.md); run `limit-order.js cancel` |
+| change order price / 改价 / modify order | Load [references/limit-order.md](references/limit-order.md); run `limit-order.js modify` |
 
 ## Resolving SCRIPTS_DIR
 
@@ -154,3 +158,19 @@ Confirm? [y/N]
 | IOC order not filled | "Order not filled — price moved beyond the 5% IOC limit. Check current price and retry." |
 | Node.js < 20.19 | "Node.js >= 20.19.0 required. Please upgrade: https://nodejs.org" |
 | API unreachable | "Hyperliquid API unreachable. Check network or `api_url` in `~/.aurehub/hyperliquid.yaml`." |
+
+## Limit Order Flow
+
+Load [references/limit-order.md](references/limit-order.md) for the full flow.
+
+**Place a limit order:**
+1. Confirm intent: coin, direction, price, size (ask for any missing details)
+2. Run: `node "$SCRIPTS_DIR/limit-order.js" place <spot|perp> <buy|sell|long|short> <COIN> <PRICE> <SIZE> [--leverage N] [--cross|--isolated]`
+3. Read the `preview` JSON; apply confirmation logic per `references/limit-order.md`
+4. After user confirms, re-run with `--confirmed` flag
+5. Report fill outcome and order ID
+
+**List / cancel / modify:**
+1. Run the appropriate `limit-order.js` subcommand
+2. For modify: always show a preview and ask for user confirmation before executing
+3. Parse JSON and present result in a human-readable format
