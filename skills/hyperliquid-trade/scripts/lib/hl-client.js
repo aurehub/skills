@@ -8,7 +8,8 @@ import { HttpTransport, ExchangeClient, InfoClient } from '@nktkas/hyperliquid';
  */
 export function createTransport(cfg) {
   const apiUrl = cfg?.yaml?.api_url ?? 'https://api.hyperliquid.xyz';
-  return new HttpTransport({ apiUrl });
+  const isTestnet = cfg?.yaml?.network === 'testnet';
+  return new HttpTransport({ apiUrl, isTestnet });
 }
 
 /**
