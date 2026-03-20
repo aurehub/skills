@@ -224,12 +224,25 @@ async function runModify({ info, exchange, address, transport, orderId, newPrice
   const p = formatPrice(newPrice, szDec);
   const s = formatSize(finalSize, szDec);
 
-  await exchange.modify({
+  const modifyResult = await exchange.modify({
     oid: orderId,
     order: { a: assetId, b: isBuy, p, s, r: reduceOnly, t: { limit: { tif: 'Gtc' } } },
   });
 
-  process.stdout.write(JSON.stringify({ ok: true, orderId, newPrice, newSize: finalSize }) + '\n');
+  // Hyperliquid modify is cancel+reorder — extract new oid from response if present,
+  // otherwise query open orders to find the resting order at the new price.
+  let newOid = modifyResult?.response?.data?.statuses?.[0]?.resting?.oid ?? null;
+  if (newOid == null) {
+    const updatedOrders = await info.openOrders({ user: address });
+    const match = updatedOrders.find(
+      o => o.coin === order.coin &&
+           o.side === order.side &&
+           Math.abs(parseFloat(o.limitPx) - newPrice) / newPrice < 1e-6
+    );
+    newOid = match?.oid ?? null;
+  }
+
+  process.stdout.write(JSON.stringify({ ok: true, oldOid: orderId, oid: newOid, newPrice, newSize: finalSize }) + '\n');
   process.exit(0);
 }
 
