@@ -51,7 +51,7 @@ Run these checks before handling any intent (except knowledge queries):
 | 1 | `~/.aurehub/.wdk_vault` exists | HARD STOP | Load [references/onboarding.md](references/onboarding.md) and guide the user through setup. |
 | 2 | `~/.aurehub/.wdk_password` exists | HARD STOP | Load [references/onboarding.md](references/onboarding.md) and guide the user through setup. |
 | 3 | `~/.aurehub/hyperliquid.yaml` exists | AUTO-FIX | `cp <skill-dir>/config.example.yaml ~/.aurehub/hyperliquid.yaml` |
-| 4 | `node -e "if(+process.version.slice(1).split('.')[0]<20)process.exit(1)"` passes | HARD STOP | "Node.js >= 20.19.0 is required. Please upgrade." |
+| 4 | `node -e "const [maj,min]=process.version.slice(1).split('.').map(Number);if(maj<20||(maj===20&&min<19))process.exit(1)"` passes | HARD STOP | "Node.js >= 20.19.0 is required. Please upgrade." |
 | 5 | `<scripts-dir>/node_modules` exists | AUTO-FIX | `cd <scripts-dir> && npm install` |
 | 6 | `node <scripts-dir>/balance.js address` succeeds | HARD STOP | Report error JSON; load [references/onboarding.md](references/onboarding.md) |
 
@@ -69,10 +69,10 @@ If all pass: proceed to intent detection.
 | balance / holdings / positions / how much | `balance.js spot` + `balance.js perp` |
 | setup / onboarding / first time | Load [references/onboarding.md](references/onboarding.md) |
 | Insufficient info (no coin or amount) | Ask for the missing details before proceeding |
-| limit buy ETH at 3000 / 挂限价买单 / limit sell | Load [references/limit-order.md](references/limit-order.md); run `limit-order.js place` |
-| open orders / 查看挂单 / 我的限价单 | Load [references/limit-order.md](references/limit-order.md); run `limit-order.js list` |
-| cancel order / 撤单 | Load [references/limit-order.md](references/limit-order.md); run `limit-order.js cancel` |
-| change order price / 改价 / modify order | Load [references/limit-order.md](references/limit-order.md); run `limit-order.js modify` |
+| limit buy ETH at 3000 / limit order / limit sell | Load [references/limit-order.md](references/limit-order.md); run `limit-order.js place` |
+| open orders / my orders / list orders | Load [references/limit-order.md](references/limit-order.md); run `limit-order.js list` |
+| cancel order / cancel limit | Load [references/limit-order.md](references/limit-order.md); run `limit-order.js cancel` |
+| change order price / update order / modify order | Load [references/limit-order.md](references/limit-order.md); run `limit-order.js modify` |
 
 ## Resolving SCRIPTS_DIR
 

@@ -29,13 +29,18 @@ try {
 
   // Resolve asset index and size decimals
   const converter = await SymbolConverter.create({ transport });
-  const symbol = mode === 'spot' ? `${coin}/USDC` : coin;
+  const baseCoin = coin.replace(/\/USDC$/i, '');
+  const symbol = mode === 'spot' ? `${baseCoin}/USDC` : baseCoin;
   const assetId = converter.getAssetId(symbol);
   if (assetId === undefined) {
-    process.stderr.write(JSON.stringify({ error: `Asset ${coin} not found on Hyperliquid. Check the symbol and try again.` }) + '\n');
+    process.stderr.write(JSON.stringify({ error: `Asset ${baseCoin} not found on Hyperliquid. Check the symbol and try again.` }) + '\n');
     process.exit(1);
   }
   const szDec = converter.getSzDecimals(symbol);
+  if (szDec === undefined) {
+    process.stderr.write(JSON.stringify({ error: `Size decimals for ${symbol} not found.` }) + '\n');
+    process.exit(1);
+  }
 
   // Get mid price
   const mids = await info.allMids();

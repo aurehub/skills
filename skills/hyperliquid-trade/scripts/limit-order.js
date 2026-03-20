@@ -235,7 +235,8 @@ async function runPlace({ info, exchange, address, transport, parsed, cfg }) {
   const leverageWarn = risk.leverage_warn ?? 20;
 
   const converter = await SymbolConverter.create({ transport });
-  const symbol = mode === 'spot' ? `${coin}/USDC` : coin;
+  const baseCoin = coin.replace(/\/USDC$/i, '');
+  const symbol = mode === 'spot' ? `${baseCoin}/USDC` : baseCoin;
   const assetId = converter.getAssetId(symbol);
   if (assetId === undefined) {
     process.stderr.write(JSON.stringify({ error: `Asset ${coin} not found on Hyperliquid.` }) + '\n');
@@ -272,11 +273,11 @@ async function runPlace({ info, exchange, address, transport, parsed, cfg }) {
         process.exit(1);
       }
     }
-  } else {
+  } else if (leverage !== null) {
+    // Only check margin when leverage is explicit; otherwise the exchange enforces it
     const perpState = await info.clearinghouseState({ user: address });
     const withdrawable = parseFloat(perpState.withdrawable ?? '0');
-    const effectiveLeverage = leverage ?? 1;
-    const marginNeeded = (price * size) / effectiveLeverage;
+    const marginNeeded = (price * size) / leverage;
     if (withdrawable < marginNeeded) {
       process.stderr.write(JSON.stringify({
         error: `Insufficient margin: have $${withdrawable.toFixed(2)}, need $${marginNeeded.toFixed(2)}.`,
