@@ -330,10 +330,32 @@ async function runPlace({ info, exchange, address, transport, parsed, cfg }) {
   const p = formatPrice(price, szDec);
   const s = formatSize(size, szDec);
 
-  const result = await exchange.order({
-    orders: [{ a: assetId, b: isBuy, p, s, r: false, t: { limit: { tif: 'Gtc' } } }],
-    grouping: 'na',
-  });
+  const orderStartTime = Date.now();
+  let result;
+  try {
+    result = await exchange.order({
+      orders: [{ a: assetId, b: isBuy, p, s, r: false, t: { limit: { tif: 'Gtc' } } }],
+      grouping: 'na',
+    });
+  } catch (orderErr) {
+    // GTC order: check if it landed in open orders despite the network error
+    try {
+      const orders = await info.openOrders({ user: address });
+      const match = orders.find(o =>
+        o.coin === symbol &&
+        o.side === (isBuy ? 'B' : 'A') &&
+        Math.abs(parseFloat(o.limitPx) - price) / price < 1e-6 &&
+        Math.abs(parseFloat(o.sz) - size) / size < 1e-6 &&
+        o.timestamp >= orderStartTime
+      );
+      if (match) {
+        process.stdout.write(JSON.stringify({ ok: true, oid: match.oid, coin, side: action, price, size, status: 'resting' }) + '\n');
+        process.exit(0);
+      }
+    } catch { /* ignore — fall through to unknown error */ }
+    process.stderr.write(JSON.stringify({ error: `Order status unknown after network error — check your open orders before retrying. (${orderErr?.message ?? orderErr})` }) + '\n');
+    process.exit(1);
+  }
 
   const status0 = result.response.data.statuses[0];
   let oid, orderStatus;

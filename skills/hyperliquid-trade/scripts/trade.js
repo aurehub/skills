@@ -20,6 +20,20 @@ try {
 
 const { mode, action, coin, size, direction, leverage, isCross } = parsed;
 
+/**
+ * On network error after exchange.order(), query recent fills to determine if the order
+ * actually executed. Returns the matching fill object or null.
+ */
+async function checkRecentFill(info, address, isBuy, coin, startTime) {
+  try {
+    const fills = await info.userFillsByTime({ user: address, startTime });
+    const expectedSide = isBuy ? 'B' : 'A';
+    return fills.find(f => f.coin === coin && f.side === expectedSide && f.time >= startTime) ?? null;
+  } catch {
+    return null;
+  }
+}
+
 try {
   const cfg = loadConfig();
   const wallet = await createSigner(cfg, null);
@@ -80,10 +94,22 @@ try {
 
     const sz = formatSize(size, szDec);
     const exchange = createExchangeClient(transport, wallet);
-    const result = await exchange.order({
-      orders: [{ a: assetId, b: isBuy, p: formatPrice(ioPrice(isBuy, mid), szDec, 'spot'), s: sz, r: false, t: { limit: { tif: 'Ioc' } } }],
-      grouping: 'na',
-    });
+    const orderStartTime = Date.now();
+    let result;
+    try {
+      result = await exchange.order({
+        orders: [{ a: assetId, b: isBuy, p: formatPrice(ioPrice(isBuy, mid), szDec, 'spot'), s: sz, r: false, t: { limit: { tif: 'Ioc' } } }],
+        grouping: 'na',
+      });
+    } catch (orderErr) {
+      const fill = await checkRecentFill(info, address, isBuy, symbol, orderStartTime);
+      if (fill) {
+        process.stdout.write(JSON.stringify({ ok: true, oid: fill.oid, avgPx: fill.px, filledSz: fill.sz }) + '\n');
+        process.exit(0);
+      }
+      process.stderr.write(JSON.stringify({ error: `Order status unknown after network error — check your position before retrying. (${orderErr?.message ?? orderErr})` }) + '\n');
+      process.exit(1);
+    }
 
     const status0 = result?.response?.data?.statuses?.[0];
     if (!status0?.filled) {
@@ -131,10 +157,22 @@ try {
 
       const sz = formatSize(size, szDec);
 
-      const result = await exchange.order({
-        orders: [{ a: assetId, b: isBuy, p: formatPrice(ioPrice(isBuy, mid), szDec, 'perp'), s: sz, r: false, t: { limit: { tif: 'Ioc' } } }],
-        grouping: 'na',
-      });
+      const orderStartTime = Date.now();
+      let result;
+      try {
+        result = await exchange.order({
+          orders: [{ a: assetId, b: isBuy, p: formatPrice(ioPrice(isBuy, mid), szDec, 'perp'), s: sz, r: false, t: { limit: { tif: 'Ioc' } } }],
+          grouping: 'na',
+        });
+      } catch (orderErr) {
+        const fill = await checkRecentFill(info, address, isBuy, symbol, orderStartTime);
+        if (fill) {
+          process.stdout.write(JSON.stringify({ ok: true, oid: fill.oid, avgPx: fill.px, filledSz: fill.sz }) + '\n');
+          process.exit(0);
+        }
+        process.stderr.write(JSON.stringify({ error: `Order status unknown after network error — check your position before retrying. (${orderErr?.message ?? orderErr})` }) + '\n');
+        process.exit(1);
+      }
 
       const status0 = result?.response?.data?.statuses?.[0];
       if (!status0?.filled) {
@@ -188,10 +226,22 @@ try {
       const exchange = createExchangeClient(transport, wallet);
       const sz = formatSize(size, szDec);
 
-      const result = await exchange.order({
-        orders: [{ a: assetId, b: isBuy, p: formatPrice(ioPrice(isBuy, mid), szDec, 'perp'), s: sz, r: true, t: { limit: { tif: 'Ioc' } } }],
-        grouping: 'na',
-      });
+      const orderStartTime = Date.now();
+      let result;
+      try {
+        result = await exchange.order({
+          orders: [{ a: assetId, b: isBuy, p: formatPrice(ioPrice(isBuy, mid), szDec, 'perp'), s: sz, r: true, t: { limit: { tif: 'Ioc' } } }],
+          grouping: 'na',
+        });
+      } catch (orderErr) {
+        const fill = await checkRecentFill(info, address, isBuy, symbol, orderStartTime);
+        if (fill) {
+          process.stdout.write(JSON.stringify({ ok: true, oid: fill.oid, avgPx: fill.px, filledSz: fill.sz, closedDirection: szi > 0 ? 'long' : 'short' }) + '\n');
+          process.exit(0);
+        }
+        process.stderr.write(JSON.stringify({ error: `Order status unknown after network error — check your position before retrying. (${orderErr?.message ?? orderErr})` }) + '\n');
+        process.exit(1);
+      }
 
       const status0 = result?.response?.data?.statuses?.[0];
       if (!status0?.filled) {
