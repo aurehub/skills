@@ -6,8 +6,18 @@ import { HttpTransport, ExchangeClient, InfoClient } from '@nktkas/hyperliquid';
  * @param {{ yaml: object }} cfg  Result of loadConfig()
  * @returns {HttpTransport}
  */
+const ALLOWED_API_URLS = new Set([
+  'https://api.hyperliquid.xyz',
+  'https://api.hyperliquid-testnet.xyz',
+]);
+
 export function createTransport(cfg) {
   const apiUrl = cfg?.yaml?.api_url ?? 'https://api.hyperliquid.xyz';
+  if (!ALLOWED_API_URLS.has(apiUrl)) {
+    throw new Error(
+      `Disallowed api_url "${apiUrl}". Must be one of: ${[...ALLOWED_API_URLS].join(', ')}`,
+    );
+  }
   const isTestnet = cfg?.yaml?.network === 'testnet';
   return new HttpTransport({ apiUrl, isTestnet });
 }

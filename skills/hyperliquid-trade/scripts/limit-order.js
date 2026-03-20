@@ -54,11 +54,11 @@ export function parseLimitArgs(args) {
     for (let i = 0; i < flags.length; i++) {
       if (flags[i] === '--price' && flags[i + 1]) {
         newPrice = parseFloat(flags[++i]);
-        if (isNaN(newPrice) || newPrice <= 0) throw new Error('Invalid price: must be greater than zero');
+        if (!isFinite(newPrice) || newPrice <= 0) throw new Error('Invalid price: must be greater than zero');
       }
       if (flags[i] === '--size' && flags[i + 1]) {
         newSize = parseFloat(flags[++i]);
-        if (isNaN(newSize) || newSize <= 0) throw new Error('Invalid size: must be greater than zero');
+        if (!isFinite(newSize) || newSize <= 0) throw new Error('Invalid size: must be greater than zero');
       }
     }
     if (newPrice === null) throw new Error('Missing required --price argument');
@@ -73,10 +73,11 @@ export function parseLimitArgs(args) {
       const [action, coin, priceStr, sizeStr] = [actionOrDir, ...placeRest];
       if (!['buy', 'sell'].includes(action)) throw new Error(`Unknown spot action: ${action}. Use buy or sell`);
       if (!coin) throw new Error('Missing coin argument');
+      if (!/^[A-Za-z0-9._/-]{1,20}$/.test(coin)) throw new Error(`Invalid coin format: ${coin}`);
       const price = parseFloat(priceStr);
-      if (isNaN(price) || price <= 0) throw new Error('Invalid price: must be greater than zero');
+      if (!isFinite(price) || price <= 0) throw new Error('Invalid price: must be greater than zero');
       const size = parseFloat(sizeStr);
-      if (isNaN(size) || size <= 0) throw new Error('Invalid size: must be greater than zero');
+      if (!isFinite(size) || size <= 0) throw new Error('Invalid size: must be greater than zero');
       return { ...blank, subcommand: 'place', mode: 'spot', action, coin, price, size };
     }
 
@@ -84,15 +85,19 @@ export function parseLimitArgs(args) {
       const [direction, coin, priceStr, sizeStr, ...flags] = [actionOrDir, ...placeRest];
       if (!['long', 'short'].includes(direction)) throw new Error(`Unknown perp direction: ${direction}. Use long or short`);
       if (!coin) throw new Error('Missing coin argument');
+      if (!/^[A-Za-z0-9._/-]{1,20}$/.test(coin)) throw new Error(`Invalid coin format: ${coin}`);
       const price = parseFloat(priceStr);
-      if (isNaN(price) || price <= 0) throw new Error('Invalid price: must be greater than zero');
+      if (!isFinite(price) || price <= 0) throw new Error('Invalid price: must be greater than zero');
       const size = parseFloat(sizeStr);
-      if (isNaN(size) || size <= 0) throw new Error('Invalid size: must be greater than zero');
+      if (!isFinite(size) || size <= 0) throw new Error('Invalid size: must be greater than zero');
 
       let leverage = null;
       let isCross = true;
       for (let i = 0; i < flags.length; i++) {
-        if (flags[i] === '--leverage' && flags[i + 1]) leverage = parseInt(flags[++i], 10);
+        if (flags[i] === '--leverage' && flags[i + 1]) {
+          leverage = parseInt(flags[++i], 10);
+          if (isNaN(leverage)) throw new Error(`Invalid leverage value: ${flags[i]}`);
+        }
         if (flags[i] === '--cross') isCross = true;
         if (flags[i] === '--isolated') isCross = false;
       }
@@ -167,7 +172,7 @@ async function runCancel({ info, exchange, address, transport, orderId }) {
   const converter = await SymbolConverter.create({ transport });
   const assetId = converter.getAssetId(order.coin);
   if (assetId === undefined) {
-    process.stderr.write(JSON.stringify({ error: `Asset ${order.coin} not found on Hyperliquid.` }) + '\n');
+    process.stderr.write(JSON.stringify({ error: `Asset ${order.coin} not found on Hyperliquid. Check the symbol and try again.` }) + '\n');
     process.exit(1);
   }
 
@@ -187,7 +192,7 @@ async function runModify({ info, exchange, address, transport, orderId, newPrice
   const converter = await SymbolConverter.create({ transport });
   const assetId = converter.getAssetId(order.coin);
   if (assetId === undefined) {
-    process.stderr.write(JSON.stringify({ error: `Asset ${order.coin} not found on Hyperliquid.` }) + '\n');
+    process.stderr.write(JSON.stringify({ error: `Asset ${order.coin} not found on Hyperliquid. Check the symbol and try again.` }) + '\n');
     process.exit(1);
   }
 
@@ -198,6 +203,7 @@ async function runModify({ info, exchange, address, transport, orderId, newPrice
   }
   const finalSize = newSize ?? parseFloat(order.sz);
   const isBuy = order.side === 'B';
+  const reduceOnly = order.reduceOnly ?? false;
 
   // Output preview and require --confirmed (always single confirmation for modify)
   process.stdout.write(JSON.stringify({
@@ -220,7 +226,7 @@ async function runModify({ info, exchange, address, transport, orderId, newPrice
 
   await exchange.modify({
     oid: orderId,
-    order: { a: assetId, b: isBuy, p, s, r: false, t: { limit: { tif: 'Gtc' } } },
+    order: { a: assetId, b: isBuy, p, s, r: reduceOnly, t: { limit: { tif: 'Gtc' } } },
   });
 
   process.stdout.write(JSON.stringify({ ok: true, orderId, newPrice, newSize: finalSize }) + '\n');
@@ -230,16 +236,17 @@ async function runModify({ info, exchange, address, transport, orderId, newPrice
 async function runPlace({ info, exchange, address, transport, parsed, cfg }) {
   const { mode, action, coin, price, size, leverage, isCross } = parsed;
   const risk = cfg?.yaml?.risk ?? {};
-  const confirmThreshold = risk.confirm_trade_usd ?? 100;
-  const largeThreshold = risk.large_trade_usd ?? 1000;
-  const leverageWarn = risk.leverage_warn ?? 20;
+  const toFinitePos = (v, fallback) => (typeof v === 'number' && isFinite(v) && v > 0 ? v : fallback);
+  const confirmThreshold = toFinitePos(risk.confirm_trade_usd, 100);
+  const largeThreshold = toFinitePos(risk.large_trade_usd, 1000);
+  const leverageWarn = toFinitePos(risk.leverage_warn, 20);
 
   const converter = await SymbolConverter.create({ transport });
   const baseCoin = coin.replace(/\/USDC$/i, '');
   const symbol = mode === 'spot' ? `${baseCoin}/USDC` : baseCoin;
   const assetId = converter.getAssetId(symbol);
   if (assetId === undefined) {
-    process.stderr.write(JSON.stringify({ error: `Asset ${coin} not found on Hyperliquid.` }) + '\n');
+    process.stderr.write(JSON.stringify({ error: `Asset ${coin} not found on Hyperliquid. Check the symbol and try again.` }) + '\n');
     process.exit(1);
   }
   const szDec = converter.getSzDecimals(symbol);
@@ -264,11 +271,11 @@ async function runPlace({ info, exchange, address, transport, parsed, cfg }) {
       }
     } else {
       const tokenBalance = parseFloat(
-        spotState.balances.find(b => b.coin === coin)?.total ?? '0'
+        spotState.balances.find(b => b.coin === baseCoin)?.total ?? '0'
       );
       if (tokenBalance < size) {
         process.stderr.write(JSON.stringify({
-          error: `Insufficient balance: have ${tokenBalance} ${coin}, need ${size}.`,
+          error: `Insufficient balance: have $${(tokenBalance * price).toFixed(2)}, need $${(size * price).toFixed(2)}. Deposit at app.hyperliquid.xyz to top up.`,
         }) + '\n');
         process.exit(1);
       }

@@ -24,6 +24,9 @@ Preview format:
   "marginMode": "Cross",
   "tradeValue": "300.00",
   "marginUsed": "30.00",
+  "confirmThreshold": 100,
+  "largeThreshold": 1000,
+  "leverageWarn": 20,
   "requiresConfirm": false,
   "requiresDoubleConfirm": false,
   "leverageWarning": false
@@ -77,7 +80,7 @@ The script always outputs a preview first. After user confirms, re-run with `--c
 ```bash
 # Step 1: get preview
 node "$SCRIPTS_DIR/limit-order.js" modify 12345 --price 2900
-# → { "preview": true, "orderId": 12345, "oldPrice": 3000, "newPrice": 2900, "oldSize": 0.1, "newSize": 0.1 }
+# → { "preview": true, "orderId": 12345, "coin": "ETH", "side": "B", "oldPrice": 3000, "newPrice": 2900, "oldSize": 0.1, "newSize": 0.1 }
 # Show user: "Changing order 12345: $3000 → $2900, size 0.1 (unchanged). Confirm? [y/N]"
 
 # Step 2: after user confirms, re-run with --confirmed

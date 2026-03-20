@@ -131,6 +131,9 @@ async function _createFoundrySigner(cfg, provider, opts) {
   if (!accountName) {
     throw new Error('FOUNDRY_ACCOUNT not set in .env');
   }
+  if (/[/\\]/.test(accountName) || accountName.includes('..')) {
+    throw new Error('FOUNDRY_ACCOUNT must be a plain filename with no path separators or ".."');
+  }
 
   const keystoreDir =
     opts.keystoreDir ?? join(homedir(), '.foundry', 'keystores');
@@ -211,6 +214,8 @@ async function _createWdkSigner(cfg, provider) {
   } finally {
     key.fill(0);
   }
+  // Note: JS strings are immutable and GC-managed, so `mnemonic` cannot be
+  // explicitly zeroed after use. Keep script lifetime short to minimise exposure.
   let wallet;
   try {
     const mnemonic = bip39.entropyToMnemonic(entropy);

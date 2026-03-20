@@ -3,28 +3,38 @@
 ## Open position
 
 ```bash
+# Step 1: get preview
 node "$SCRIPTS_DIR/trade.js" perp open <COIN> <long|short> <SIZE> [--leverage N] [--cross|--isolated]
+# Step 2: after user confirms, re-run with --confirmed
+node "$SCRIPTS_DIR/trade.js" perp open <COIN> <long|short> <SIZE> [--leverage N] [--cross|--isolated] --confirmed
 ```
 
 - `--leverage N`: sets leverage before placing order via `updateLeverage()`; omit to use current account leverage (defaults to cross margin)
 - `--cross` (default): cross margin — shared margin pool
 - `--isolated`: isolated margin — fixed margin per position
 
-The script calls `updateLeverage()` first (if `--leverage` is specified), then places the IOC order.
+The script outputs a preview JSON first. After `--confirmed`, calls `updateLeverage()` (if `--leverage` specified), then places the IOC order. On the `--confirmed` run the preview line is output again — use the last JSON line as the result.
 
-**Leverage warning:** If `leverage ≥ leverage_warn` (default 20x from `hyperliquid.yaml`), show an extra warning before confirmation.
+**Leverage warning:** If `leverage ≥ leverage_warn` (default 20x from `hyperliquid.yaml`), the preview sets `leverageWarning: true` — show an extra warning before prompting.
+
+Result format: `{ "ok": true, "oid": 12345, "avgPx": "3200.50", "filledSz": "0.1" }`
 
 ## Close position
 
 ```bash
+# Step 1: get preview
 node "$SCRIPTS_DIR/trade.js" perp close <COIN> <SIZE>
+# Step 2: after user confirms, re-run with --confirmed
+node "$SCRIPTS_DIR/trade.js" perp close <COIN> <SIZE> --confirmed
 ```
 
 Direction is **auto-detected**: the script calls `clearinghouseState()` and reads `szi` (signed position size):
 - `szi > 0` (long) → places a sell order with `r: true` (reduce-only)
 - `szi < 0` (short) → places a buy order with `r: true`
 
-If no open position is found for the coin, the script exits with an error.
+If no open position is found for the coin, the script exits with an error. On the `--confirmed` run the preview line is output again — use the last JSON line as the result.
+
+Result format: `{ "ok": true, "oid": 12345, "avgPx": "3200.50", "filledSz": "0.1", "closedDirection": "long" }`
 
 ## Leverage limits
 

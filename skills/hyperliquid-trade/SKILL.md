@@ -104,9 +104,10 @@ Load [references/spot-trade.md](references/spot-trade.md) for the full flow.
 
 1. Confirm intent: coin, direction (buy/sell), size
 2. Run balance check to verify sufficient USDC/token
-3. Show trade preview (see format below) and get confirmation
-4. Execute: `node "$SCRIPTS_DIR/trade.js" spot <buy|sell> <COIN> <SIZE>`
-5. Parse JSON result and report fill price and outcome
+3. Run: `node "$SCRIPTS_DIR/trade.js" spot <buy|sell> <COIN> <SIZE>`
+4. Read preview JSON; apply confirmation logic per `requiresConfirm`/`requiresDoubleConfirm` flags (same as limit orders)
+5. After user confirms, re-run: `node "$SCRIPTS_DIR/trade.js" spot <buy|sell> <COIN> <SIZE> --confirmed`
+6. Use the last JSON line as the result; report fill price and outcome
 
 ## Perp Trade Flow
 
@@ -114,13 +115,15 @@ Load [references/perp-trade.md](references/perp-trade.md) for the full flow.
 
 **Open position:**
 1. Confirm intent: coin, direction (long/short), size, leverage, margin mode
-2. Show trade preview and get confirmation (double if `≥ large_trade_usd` margin)
-3. Execute: `node "$SCRIPTS_DIR/trade.js" perp open <COIN> <long|short> <SIZE> --leverage <N> --<cross|isolated>`
+2. Run: `node "$SCRIPTS_DIR/trade.js" perp open <COIN> <long|short> <SIZE> [--leverage <N>] [--cross|--isolated]`
+3. Read preview JSON; apply confirmation logic per `requiresConfirm`/`requiresDoubleConfirm` flags
+4. After user confirms, re-run with `--confirmed`; use the last JSON line as the result
 
 **Close position:**
-1. Show current position from `balance.js perp`
-2. Confirm size to close
-3. Execute: `node "$SCRIPTS_DIR/trade.js" perp close <COIN> <SIZE>`
+1. Show current position from `balance.js perp`; confirm size to close
+2. Run: `node "$SCRIPTS_DIR/trade.js" perp close <COIN> <SIZE>`
+3. Read preview JSON; apply confirmation logic
+4. After user confirms, re-run with `--confirmed`; use the last JSON line as the result
 
 ## Confirmation Thresholds
 
@@ -136,7 +139,7 @@ For **perps**: threshold applies to margin deposited (size × est. price ÷ leve
 leverage ≥ leverage_warn  →  extra warning line before confirmation
 ```
 
-Trade preview format:
+Trade preview format (present to user before prompting):
 ```
 Action:      <Open Long ETH (Perpetual) | Buy ETH (Spot)>
 Size:        <0.1 ETH>
@@ -146,6 +149,8 @@ Margin used: ~$<320> USDC         ← perp only
 Trade value: ~$<320> USDC         ← spot only
 Confirm? [y/N]
 ```
+
+`trade.js` outputs this as a `preview` JSON object. Parse the JSON and render the above format before prompting. Apply `requiresConfirm`/`requiresDoubleConfirm` flags for confirmation logic; if `leverageWarning: true`, add an extra warning line about high leverage.
 
 ## Hard Stops
 

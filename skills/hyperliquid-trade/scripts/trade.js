@@ -50,24 +50,74 @@ try {
     process.exit(1);
   }
   const mid = parseFloat(midRaw);
+  if (!isFinite(mid) || mid <= 0) {
+    process.stderr.write(JSON.stringify({ error: `Invalid mid price for ${baseCoin}: ${midRaw}` }) + '\n');
+    process.exit(1);
+  }
+
+  const risk = cfg?.yaml?.risk ?? {};
+  const toFinitePos = (v, fallback) => (typeof v === 'number' && isFinite(v) && v > 0 ? v : fallback);
+  const confirmThreshold = toFinitePos(risk.confirm_trade_usd, 100);
+  const largeThreshold = toFinitePos(risk.large_trade_usd, 1000);
+  const leverageWarn = toFinitePos(risk.leverage_warn, 20);
 
   if (mode === 'spot') {
     const isBuy = action === 'buy';
-    const sz = formatSize(size, szDec);
+    const tradeValue = size * mid;
 
+    process.stdout.write(JSON.stringify({
+      preview: true,
+      action: `${isBuy ? 'Buy' : 'Sell'} ${baseCoin} (Spot)`,
+      coin: baseCoin,
+      side: action,
+      size,
+      estPrice: mid,
+      tradeValue: tradeValue.toFixed(2),
+      requiresConfirm: tradeValue >= confirmThreshold,
+      requiresDoubleConfirm: tradeValue >= largeThreshold,
+    }) + '\n');
+    if (!process.argv.includes('--confirmed')) process.exit(0);
+
+    const sz = formatSize(size, szDec);
     const exchange = createExchangeClient(transport, wallet);
     const result = await exchange.order({
       orders: [{ a: assetId, b: isBuy, p: formatPrice(ioPrice(isBuy, mid), szDec, 'spot'), s: sz, r: false, t: { limit: { tif: 'Ioc' } } }],
       grouping: 'na',
     });
 
-    process.stdout.write(JSON.stringify({ ok: true, result }) + '\n');
+    const status0 = result?.response?.data?.statuses?.[0];
+    if (!status0?.filled) {
+      process.stderr.write(JSON.stringify({ error: 'Order not filled — price moved beyond the 5% IOC limit. Check current price and retry.' }) + '\n');
+      process.exit(1);
+    }
+
+    process.stdout.write(JSON.stringify({ ok: true, oid: status0.filled.oid, avgPx: status0.filled.avgPx, filledSz: status0.filled.totalSz }) + '\n');
     process.exit(0);
   }
 
   if (mode === 'perp') {
     if (action === 'open') {
       const isBuy = direction === 'long';
+      const lev = leverage ?? 1;
+      const marginUsed = (size * mid) / lev;
+      const leverageWarning = leverage !== null && leverage >= leverageWarn;
+
+      process.stdout.write(JSON.stringify({
+        preview: true,
+        action: `Open ${isBuy ? 'Long' : 'Short'} ${baseCoin} (Perpetual)`,
+        coin: baseCoin,
+        direction,
+        size,
+        leverage: lev,
+        marginMode: isCross ? 'Cross' : 'Isolated',
+        estPrice: mid,
+        marginUsed: marginUsed.toFixed(2),
+        requiresConfirm: marginUsed >= confirmThreshold,
+        requiresDoubleConfirm: marginUsed >= largeThreshold,
+        leverageWarning,
+      }) + '\n');
+      if (!process.argv.includes('--confirmed')) process.exit(0);
+
       const exchange = createExchangeClient(transport, wallet);
 
       // Set leverage before opening position
@@ -86,7 +136,13 @@ try {
         grouping: 'na',
       });
 
-      process.stdout.write(JSON.stringify({ ok: true, result }) + '\n');
+      const status0 = result?.response?.data?.statuses?.[0];
+      if (!status0?.filled) {
+        process.stderr.write(JSON.stringify({ error: 'Order not filled — price moved beyond the 5% IOC limit. Check current price and retry.' }) + '\n');
+        process.exit(1);
+      }
+
+      process.stdout.write(JSON.stringify({ ok: true, oid: status0.filled.oid, avgPx: status0.filled.avgPx, filledSz: status0.filled.totalSz }) + '\n');
       process.exit(0);
     }
 
@@ -101,7 +157,33 @@ try {
       }
 
       const szi = parseFloat(pos.position.szi);
+      if (!isFinite(szi) || szi === 0) {
+        process.stderr.write(JSON.stringify({ error: `Invalid or zero position size for ${coin}: ${pos.position.szi}` }) + '\n');
+        process.exit(1);
+      }
+      const posSize = Math.abs(szi);
+      if (size > posSize) {
+        process.stderr.write(JSON.stringify({
+          error: `Close size ${size} exceeds open position size ${posSize}. Use ${posSize} to fully close.`,
+        }) + '\n');
+        process.exit(1);
+      }
       const isBuy = closeDirection(szi);
+
+      const closeValue = size * mid;
+      process.stdout.write(JSON.stringify({
+        preview: true,
+        action: `Close ${szi > 0 ? 'Long' : 'Short'} ${baseCoin} (Perpetual)`,
+        coin: baseCoin,
+        size,
+        positionSize: posSize,
+        closingDirection: isBuy ? 'buy' : 'sell',
+        estPrice: mid,
+        tradeValue: closeValue.toFixed(2),
+        requiresConfirm: closeValue >= confirmThreshold,
+        requiresDoubleConfirm: closeValue >= largeThreshold,
+      }) + '\n');
+      if (!process.argv.includes('--confirmed')) process.exit(0);
 
       const exchange = createExchangeClient(transport, wallet);
       const sz = formatSize(size, szDec);
@@ -111,7 +193,13 @@ try {
         grouping: 'na',
       });
 
-      process.stdout.write(JSON.stringify({ ok: true, result, closedDirection: szi > 0 ? 'long' : 'short' }) + '\n');
+      const status0 = result?.response?.data?.statuses?.[0];
+      if (!status0?.filled) {
+        process.stderr.write(JSON.stringify({ error: 'Order not filled — price moved beyond the 5% IOC limit. Check current price and retry.' }) + '\n');
+        process.exit(1);
+      }
+
+      process.stdout.write(JSON.stringify({ ok: true, oid: status0.filled.oid, avgPx: status0.filled.avgPx, filledSz: status0.filled.totalSz, closedDirection: szi > 0 ? 'long' : 'short' }) + '\n');
       process.exit(0);
     }
   }
