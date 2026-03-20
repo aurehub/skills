@@ -90,6 +90,8 @@ export function parseLimitArgs(args) {
         if (flags[i] === '--cross') isCross = true;
         if (flags[i] === '--isolated') isCross = false;
       }
+      if (leverage !== null && (leverage < 1 || leverage > 100))
+        throw new Error(`Leverage must be between 1 and 100, got: ${leverage}`);
       return { ...blank, subcommand: 'place', mode: 'perp', action: direction, coin, price, size, leverage, isCross };
     }
   }

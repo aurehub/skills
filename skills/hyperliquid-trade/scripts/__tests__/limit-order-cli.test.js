@@ -41,7 +41,11 @@ describe('parseLimitArgs — place', () => {
   });
 
   it('throws on missing coin', () => {
-    expect(() => parseLimitArgs(['place', 'spot', 'buy'])).toThrow();
+    expect(() => parseLimitArgs(['place', 'spot', 'buy'])).toThrow(/coin/i);
+  });
+
+  it('throws on leverage out of range', () => {
+    expect(() => parseLimitArgs(['place', 'perp', 'long', 'ETH', '3000', '0.1', '--leverage', '0'])).toThrow(/leverage/i);
   });
 
   it('throws on unknown spot action', () => {
