@@ -99,6 +99,10 @@ describe('parseLimitArgs — modify', () => {
   it('throws on invalid --price (zero)', () => {
     expect(() => parseLimitArgs(['modify', '99', '--price', '0'])).toThrow(/price/i);
   });
+
+  it('throws on non-integer orderId', () => {
+    expect(() => parseLimitArgs(['modify', '1.5', '--price', '2900'])).toThrow(/orderId/i);
+  });
 });
 
 describe('parseLimitArgs — unknown subcommand', () => {

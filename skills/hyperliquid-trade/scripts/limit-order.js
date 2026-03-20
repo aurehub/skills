@@ -32,16 +32,16 @@ export function parseLimitArgs(args) {
   if (subcommand === 'cancel') {
     const [orderIdStr] = rest;
     if (!orderIdStr) throw new Error('Missing orderId argument');
-    const orderId = parseInt(orderIdStr, 10);
-    if (isNaN(orderId) || orderId <= 0) throw new Error(`Invalid orderId: ${orderIdStr}`);
+    const orderId = Number(orderIdStr);
+    if (!Number.isInteger(orderId) || orderId <= 0) throw new Error(`Invalid orderId: ${orderIdStr}`);
     return { ...blank, subcommand: 'cancel', orderId };
   }
 
   if (subcommand === 'modify') {
     const [orderIdStr, ...flags] = rest;
     if (!orderIdStr) throw new Error('Missing orderId argument');
-    const orderId = parseInt(orderIdStr, 10);
-    if (isNaN(orderId) || orderId <= 0) throw new Error(`Invalid orderId: ${orderIdStr}`);
+    const orderId = Number(orderIdStr);
+    if (!Number.isInteger(orderId) || orderId <= 0) throw new Error(`Invalid orderId: ${orderIdStr}`);
 
     let newPrice = null;
     let newSize = null;
