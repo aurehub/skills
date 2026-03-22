@@ -85,85 +85,30 @@ function wdkDecrypt(payload, key) {
 // ---------------------------------------------------------------------------
 
 /**
- * Create an ethers.Wallet connected to `provider` from the wallet backend
- * specified by cfg.env.WALLET_MODE.
- *
- * Supported modes:
- *   'foundry' — decrypt a Foundry keystore JSON file with KEYSTORE_PASSWORD_FILE
- *   'wdk'     — decrypt a WDK vault file with WDK_PASSWORD_FILE
+ * Create an ethers.Wallet connected to `provider` from the WDK vault.
  *
  * @param {{ env: object, yaml: object, configDir: string }} cfg
  *   Config object returned by loadConfig().
  * @param {import('ethers').Provider|null} provider
  *   ethers provider to connect the wallet to (may be null/undefined).
- * @param {{ keystoreDir?: string }} [opts]
- *   Optional overrides for testing (e.g. keystoreDir to override Foundry default).
  * @returns {Promise<import('ethers').Wallet>}
  */
-export async function createSigner(cfg, provider, opts = {}) {
+export async function createSigner(cfg, provider) {
   const walletMode = cfg?.env?.WALLET_MODE;
 
   if (!walletMode) {
     throw new Error(
-      'WALLET_MODE not set in .env. Run setup to select a wallet mode.',
+      'WALLET_MODE not set in .env. Run setup to configure the WDK wallet.',
     );
   }
 
-  if (walletMode === 'foundry') {
-    return _createFoundrySigner(cfg, provider, opts);
-  }
-
-  if (walletMode === 'wdk') {
-    return _createWdkSigner(cfg, provider);
-  }
-
-  throw new Error(
-    `Unknown wallet_mode "${walletMode}". Expected "foundry" or "wdk".`,
-  );
-}
-
-// ---------------------------------------------------------------------------
-// Foundry keystore backend
-// ---------------------------------------------------------------------------
-
-async function _createFoundrySigner(cfg, provider, opts) {
-  const accountName = cfg.env.FOUNDRY_ACCOUNT;
-  if (!accountName) {
-    throw new Error('FOUNDRY_ACCOUNT not set in .env');
-  }
-  if (/[/\\]/.test(accountName) || accountName.includes('..')) {
-    throw new Error('FOUNDRY_ACCOUNT must be a plain filename with no path separators or ".."');
-  }
-
-  const keystoreDir =
-    opts.keystoreDir ?? join(homedir(), '.foundry', 'keystores');
-  const keystorePath = join(expandTilde(keystoreDir), accountName);
-
-  let keystoreJson;
-  try {
-    keystoreJson = readFileSync(keystorePath, 'utf8');
-  } catch (err) {
+  if (walletMode !== 'wdk') {
     throw new Error(
-      `Foundry keystore not found at "${keystorePath}": ${err.message}`,
+      `Unsupported WALLET_MODE "${walletMode}". Only "wdk" is supported.`,
     );
   }
 
-  const passwordFile = expandTilde(cfg.env.KEYSTORE_PASSWORD_FILE);
-  if (!passwordFile) {
-    throw new Error('KEYSTORE_PASSWORD_FILE not set in .env');
-  }
-
-  let password;
-  try {
-    password = readFileSync(passwordFile, 'utf8').trim();
-  } catch (err) {
-    throw new Error(
-      `Cannot read KEYSTORE_PASSWORD_FILE "${passwordFile}": ${err.message}`,
-    );
-  }
-
-  const wallet = await Wallet.fromEncryptedJson(keystoreJson, password);
-  return provider ? wallet.connect(provider) : wallet;
+  return _createWdkSigner(cfg, provider);
 }
 
 // ---------------------------------------------------------------------------

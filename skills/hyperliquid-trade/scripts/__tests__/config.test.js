@@ -43,9 +43,9 @@ describe('loadConfig', () => {
   });
 
   it('ignores comment lines in .env', () => {
-    writeFileSync(join(tmpDir, '.env'), '# this is a comment\nWALLET_MODE=foundry\n');
+    writeFileSync(join(tmpDir, '.env'), '# this is a comment\nWALLET_MODE=wdk\n');
     const cfg = loadConfig(tmpDir);
-    expect(cfg.env.WALLET_MODE).toBe('foundry');
+    expect(cfg.env.WALLET_MODE).toBe('wdk');
     expect(Object.keys(cfg.env)).toHaveLength(1);
   });
 });
