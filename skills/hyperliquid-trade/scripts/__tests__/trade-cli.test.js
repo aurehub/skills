@@ -6,7 +6,7 @@ describe('parseArgs', () => {
     const args = ['spot', 'buy', 'ETH', '0.1'];
     expect(parseArgs(args)).toEqual({
       mode: 'spot', action: 'buy', coin: 'ETH', size: 0.1,
-      direction: null, leverage: null, isCross: true,
+      direction: null, leverage: null, isCross: true, confirmed: false,
     });
   });
 
@@ -14,8 +14,20 @@ describe('parseArgs', () => {
     const args = ['spot', 'sell', 'BTC', '0.05'];
     expect(parseArgs(args)).toEqual({
       mode: 'spot', action: 'sell', coin: 'BTC', size: 0.05,
-      direction: null, leverage: null, isCross: true,
+      direction: null, leverage: null, isCross: true, confirmed: false,
     });
+  });
+
+  it('sets confirmed=true when --confirmed flag is present', () => {
+    const args = ['spot', 'buy', 'ETH', '0.1', '--confirmed'];
+    expect(parseArgs(args).confirmed).toBe(true);
+  });
+
+  it('strips --confirmed from positional args', () => {
+    const args = ['spot', 'buy', 'ETH', '0.1', '--confirmed'];
+    const result = parseArgs(args);
+    expect(result.coin).toBe('ETH');
+    expect(result.size).toBe(0.1);
   });
 
   it('parses perp open long with leverage and --cross', () => {

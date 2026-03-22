@@ -7,10 +7,12 @@
  *   perp close <COIN> <SIZE>
  *
  * @param {string[]} args  process.argv.slice(2)
- * @returns {{ mode, action, coin, size, direction, leverage, isCross }}
+ * @returns {{ mode, action, coin, size, direction, leverage, isCross, confirmed }}
  */
 export function parseArgs(args) {
-  const [mode, action, ...rest] = args;
+  const confirmed = args.includes('--confirmed');
+  const cleanArgs = args.filter(a => a !== '--confirmed');
+  const [mode, action, ...rest] = cleanArgs;
 
   if (!mode || !action) throw new Error('Usage: trade.js <spot|perp> <buy|sell|open|close> ...');
 
@@ -21,7 +23,7 @@ export function parseArgs(args) {
     if (!/^[A-Za-z0-9._/-]{1,20}$/.test(coin)) throw new Error(`Invalid coin format: ${coin}`);
     const size = parseFloat(sizeStr);
     if (!isFinite(size) || size <= 0) throw new Error(`Invalid size: ${sizeStr}`);
-    return { mode: 'spot', action, coin, size, direction: null, leverage: null, isCross: true };
+    return { mode: 'spot', action, coin, size, direction: null, leverage: null, isCross: true, confirmed };
   }
 
   if (mode === 'perp') {
@@ -31,7 +33,7 @@ export function parseArgs(args) {
       if (!/^[A-Za-z0-9._/-]{1,20}$/.test(coin)) throw new Error(`Invalid coin format: ${coin}`);
       const size = parseFloat(sizeStr);
       if (!isFinite(size) || size <= 0) throw new Error(`Invalid size: ${sizeStr}`);
-      return { mode: 'perp', action: 'close', coin, size, direction: null, leverage: null, isCross: true };
+      return { mode: 'perp', action: 'close', coin, size, direction: null, leverage: null, isCross: true, confirmed };
     }
 
     if (action === 'open') {
@@ -53,7 +55,7 @@ export function parseArgs(args) {
         if (flags[i] === '--isolated') isCross = false;
       }
       if (leverage !== null && (leverage < 1 || leverage > 100)) throw new Error(`Leverage must be between 1 and 100, got: ${leverage}`);
-      return { mode: 'perp', action: 'open', coin, size, direction, leverage, isCross };
+      return { mode: 'perp', action: 'open', coin, size, direction, leverage, isCross, confirmed };
     }
   }
 

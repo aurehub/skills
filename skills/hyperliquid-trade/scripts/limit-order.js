@@ -22,9 +22,11 @@ import { pathToFileURL } from 'url';
  * @returns {{ subcommand, mode, action, coin, price, size, leverage, isCross, orderId, newPrice, newSize }}
  */
 export function parseLimitArgs(args) {
-  const blank = { subcommand: null, mode: null, action: null, coin: null, price: null, size: null, leverage: null, isCross: true, orderId: null, newPrice: null, newSize: null };
+  const confirmed = args.includes('--confirmed');
+  const cleanArgs = args.filter(a => a !== '--confirmed');
+  const blank = { subcommand: null, mode: null, action: null, coin: null, price: null, size: null, leverage: null, isCross: true, orderId: null, newPrice: null, newSize: null, confirmed };
 
-  const [subcommand, ...rest] = args;
+  const [subcommand, ...rest] = cleanArgs;
   if (!subcommand) throw new Error('Usage: limit-order.js <place|list|cancel|modify> ...');
 
   if (subcommand === 'list') {
@@ -134,7 +136,7 @@ if (process.argv[1] && new URL(import.meta.url).href === pathToFileURL(process.a
       await runCancel({ info, exchange, address, transport, orderId: parsed.orderId });
     } else if (parsed.subcommand === 'modify') {
       const exchange = createExchangeClient(transport, wallet);
-      await runModify({ info, exchange, address, transport, orderId: parsed.orderId, newPrice: parsed.newPrice, newSize: parsed.newSize });
+      await runModify({ info, exchange, address, transport, orderId: parsed.orderId, newPrice: parsed.newPrice, newSize: parsed.newSize, confirmed: parsed.confirmed });
     } else if (parsed.subcommand === 'place') {
       const exchange = createExchangeClient(transport, wallet);
       await runPlace({ info, exchange, address, transport, parsed, cfg });
@@ -181,7 +183,7 @@ async function runCancel({ info, exchange, address, transport, orderId }) {
   process.exit(0);
 }
 
-async function runModify({ info, exchange, address, transport, orderId, newPrice, newSize }) {
+async function runModify({ info, exchange, address, transport, orderId, newPrice, newSize, confirmed }) {
   const orders = await info.openOrders({ user: address });
   const order = orders.find(o => o.oid === orderId);
   if (!order) {
@@ -215,9 +217,11 @@ async function runModify({ info, exchange, address, transport, orderId, newPrice
     newPrice,
     oldSize: parseFloat(order.sz),
     newSize: finalSize,
+    requiresConfirm: true,
+    requiresDoubleConfirm: false,
   }) + '\n');
 
-  if (!process.argv.includes('--confirmed')) {
+  if (!parsed.confirmed) {
     process.exit(0);
   }
 
@@ -313,9 +317,9 @@ async function runPlace({ info, exchange, address, transport, parsed, cfg }) {
   process.stdout.write(JSON.stringify({
     preview: true,
     action: mode === 'spot'
-      ? `${action === 'buy' ? 'Buy' : 'Sell'} ${coin} (Spot)`
-      : `Open ${action === 'long' ? 'Long' : 'Short'} ${coin} (Perpetual)`,
-    coin,
+      ? `${action === 'buy' ? 'Buy' : 'Sell'} ${baseCoin} (Spot)`
+      : `Open ${action === 'long' ? 'Long' : 'Short'} ${baseCoin} (Perpetual)`,
+    coin: baseCoin,
     side: action,
     price,
     size,
@@ -331,7 +335,7 @@ async function runPlace({ info, exchange, address, transport, parsed, cfg }) {
     leverageWarning: mode === 'perp' && (leverage ?? 1) >= leverageWarn,
   }) + '\n');
 
-  if (!process.argv.includes('--confirmed')) {
+  if (!parsed.confirmed) {
     process.exit(0);
   }
 

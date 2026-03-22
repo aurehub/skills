@@ -18,7 +18,7 @@ try {
   process.exit(1);
 }
 
-const { mode, action, coin, size, direction, leverage, isCross } = parsed;
+const { mode, action, coin, size, direction, leverage, isCross, confirmed } = parsed;
 
 /**
  * On network error after exchange.order(), query recent fills to determine if the order
@@ -92,7 +92,7 @@ try {
       requiresConfirm: tradeValue >= confirmThreshold,
       requiresDoubleConfirm: tradeValue >= largeThreshold,
     }) + '\n');
-    if (!process.argv.includes('--confirmed')) process.exit(0);
+    if (!confirmed) process.exit(0);
 
     const sz = formatSize(size, szDec);
     const exchange = createExchangeClient(transport, wallet);
@@ -145,7 +145,7 @@ try {
         leverageWarning,
         leverageChangeWarning: leverage !== null,
       }) + '\n');
-      if (!process.argv.includes('--confirmed')) process.exit(0);
+      if (!confirmed) process.exit(0);
 
       const exchange = createExchangeClient(transport, wallet);
 
@@ -193,7 +193,7 @@ try {
       const pos = state.assetPositions.find(p => p.position.coin === baseCoin);
 
       if (!pos) {
-        process.stderr.write(JSON.stringify({ error: `No open position found for ${coin}.` }) + '\n');
+        process.stderr.write(JSON.stringify({ error: `No open position found for ${baseCoin}.` }) + '\n');
         process.exit(1);
       }
 
@@ -212,19 +212,23 @@ try {
       const isBuy = closeDirection(szi);
 
       const closeValue = size * mid;
+      const posLeverage = pos.position.leverage?.value ?? 1;
+      const closeMargin = closeValue / posLeverage;
       process.stdout.write(JSON.stringify({
         preview: true,
         action: `Close ${szi > 0 ? 'Long' : 'Short'} ${baseCoin} (Perpetual)`,
         coin: baseCoin,
         size,
         positionSize: posSize,
+        leverage: posLeverage,
         closingDirection: isBuy ? 'buy' : 'sell',
         estPrice: mid,
         tradeValue: closeValue.toFixed(2),
-        requiresConfirm: closeValue >= confirmThreshold,
-        requiresDoubleConfirm: closeValue >= largeThreshold,
+        marginReleased: closeMargin.toFixed(2),
+        requiresConfirm: closeMargin >= confirmThreshold,
+        requiresDoubleConfirm: closeMargin >= largeThreshold,
       }) + '\n');
-      if (!process.argv.includes('--confirmed')) process.exit(0);
+      if (!confirmed) process.exit(0);
 
       const exchange = createExchangeClient(transport, wallet);
       const sz = formatSize(size, szDec);

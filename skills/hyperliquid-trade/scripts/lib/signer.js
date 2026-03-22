@@ -128,7 +128,12 @@ async function _createWdkSigner(cfg, provider) {
     throw new Error(`WDK vault not found at "${vaultPath}": ${err.message}`);
   }
 
-  const vault = JSON.parse(vaultJson);
+  let vault;
+  try {
+    vault = JSON.parse(vaultJson);
+  } catch {
+    throw new Error('WDK vault file is not valid JSON');
+  }
   if (!vault.encryptedEntropy || !vault.salt) {
     throw new Error(
       'WDK vault is missing required fields: encryptedEntropy, salt',

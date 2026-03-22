@@ -6,7 +6,7 @@ describe('parseLimitArgs — place', () => {
     expect(parseLimitArgs(['place', 'spot', 'buy', 'ETH', '3000', '0.1'])).toEqual({
       subcommand: 'place', mode: 'spot', action: 'buy', coin: 'ETH',
       price: 3000, size: 0.1, leverage: null, isCross: true,
-      orderId: null, newPrice: null, newSize: null,
+      orderId: null, newPrice: null, newSize: null, confirmed: false,
     });
   });
 
