@@ -164,8 +164,8 @@ async function _createWdkSigner(cfg, provider) {
   } finally {
     key.fill(0);
   }
-  // Note: JS strings are immutable and GC-managed, so `mnemonic` cannot be
-  // explicitly zeroed after use. Keep script lifetime short to minimise exposure.
+  // Note: JS strings are immutable and GC-managed, so `mnemonic` and `password`
+  // cannot be explicitly zeroed after use. Keep script lifetime short to minimise exposure.
   let wallet;
   try {
     const mnemonic = bip39.entropyToMnemonic(entropy);

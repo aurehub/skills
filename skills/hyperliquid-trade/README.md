@@ -53,10 +53,11 @@ risk:
   confirm_trade_usd: 100   # trades below this execute without prompting
   large_trade_usd: 1000    # trades at or above this require double confirmation
   leverage_warn: 20        # leverage at or above this shows an extra warning
+  slippage_pct: 5          # IOC market order slippage budget (%; does not affect GTC limit orders)
 ```
 
 ## Security
 
 - Private key never stored in plaintext — WDK vault uses PBKDF2 + XSalsa20-Poly1305 encryption
-- Every trade requires explicit confirmation
+- Trades at or above `confirm_trade_usd` (default $100) require explicit confirmation; trades below show a preview and execute automatically
 - Runtime `PRIVATE_KEY` environment variable is rejected

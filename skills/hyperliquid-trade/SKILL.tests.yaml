@@ -181,9 +181,9 @@ cases:
     input: "I want to set up my wallet for Hyperliquid trading"
     expect:
       contains:
-        - ["WDK", "Foundry", "wallet mode", "recommended"]
+        - ["WDK", "xaut-trade", "vault"]
       not_contains:
-        - ["order placed", "executing trade"]
+        - ["Foundry", "order placed", "executing trade"]
     tier: integration
 
   - id: tc-016
