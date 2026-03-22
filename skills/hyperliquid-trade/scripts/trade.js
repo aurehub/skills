@@ -79,6 +79,24 @@ try {
 
   if (mode === 'spot') {
     const isBuy = action === 'buy';
+
+    // Balance pre-check
+    const spotState = await info.spotClearinghouseState({ user: address });
+    if (isBuy) {
+      const usdcBalance = parseFloat(spotState.balances.find(b => b.coin === 'USDC')?.total ?? '0');
+      const needed = size * mid;
+      if (usdcBalance < needed) {
+        process.stderr.write(JSON.stringify({ error: `Insufficient balance: have $${usdcBalance.toFixed(2)}, need $${needed.toFixed(2)}. Deposit at app.hyperliquid.xyz to top up.` }) + '\n');
+        process.exit(1);
+      }
+    } else {
+      const tokenBalance = parseFloat(spotState.balances.find(b => b.coin === baseCoin)?.total ?? '0');
+      if (tokenBalance < size) {
+        process.stderr.write(JSON.stringify({ error: `Insufficient ${baseCoin} balance: have ${tokenBalance}, need ${size}. Transfer ${baseCoin} to your Hyperliquid spot account at app.hyperliquid.xyz.` }) + '\n');
+        process.exit(1);
+      }
+    }
+
     const tradeValue = size * mid;
 
     process.stdout.write(JSON.stringify({
@@ -129,6 +147,16 @@ try {
       const lev = leverage ?? 1;
       const marginUsed = (size * mid) / lev;
       const leverageWarning = leverage !== null && leverage >= leverageWarn;
+
+      // Balance pre-check (only when leverage is explicit; otherwise exchange enforces it)
+      if (leverage !== null) {
+        const perpState = await info.clearinghouseState({ user: address });
+        const withdrawable = parseFloat(perpState.withdrawable ?? '0');
+        if (withdrawable < marginUsed) {
+          process.stderr.write(JSON.stringify({ error: `Insufficient margin: have $${withdrawable.toFixed(2)}, need $${marginUsed.toFixed(2)}.` }) + '\n');
+          process.exit(1);
+        }
+      }
 
       process.stdout.write(JSON.stringify({
         preview: true,

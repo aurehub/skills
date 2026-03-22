@@ -86,7 +86,11 @@ node "$SCRIPTS_DIR/limit-order.js" modify 12345 --price 2900
 # Step 2: after user confirms, re-run with --confirmed
 node "$SCRIPTS_DIR/limit-order.js" modify 12345 --price 2900 --confirmed
 # → { "preview": true, ... }   ← preview line (ignore)
-# → { "ok": true, "orderId": 12345, "newPrice": 2900, "newSize": 0.1 }
+# → { "ok": true, "oldOid": 12345, "oid": 67890, "newPrice": 2900, "newSize": 0.1 }
 ```
 
-Use the last JSON line as the result. Modify always requires single confirmation — no size-based threshold.
+Use the **last** JSON line as the result. The `--confirmed` run re-emits the preview line first — ignore it.
+
+**Note:** Hyperliquid implements modify as cancel + reorder internally. The order ID **changes**: `oldOid` is the cancelled order, `oid` is the new resting order. Update any stored order ID to `oid` before issuing further cancel or modify commands.
+
+Modify always requires single confirmation — no size-based threshold.

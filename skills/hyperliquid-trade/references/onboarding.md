@@ -40,6 +40,7 @@ risk:
   confirm_trade_usd: 100    # below: execute without prompting
   large_trade_usd: 1000     # at or above: double confirmation required
   leverage_warn: 20         # at or above: extra warning before open
+  slippage_pct: 5           # IOC market order slippage budget (%)
 ```
 
 ## Step 4: Fund your Hyperliquid account
@@ -62,6 +63,7 @@ Deposit USDC at [app.hyperliquid.xyz](https://app.hyperliquid.xyz):
 ```bash
 node <scripts-dir>/balance.js address
 node <scripts-dir>/balance.js spot
+node <scripts-dir>/balance.js perp
 ```
 
-Expected: address JSON and spot balances including USDC.
+Expected: address JSON, spot balances including USDC, and perp account state.

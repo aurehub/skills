@@ -32,7 +32,10 @@ export function parseLimitArgs(args) {
   if (subcommand === 'list') {
     let coin = null;
     for (let i = 0; i < rest.length; i++) {
-      if (rest[i] === '--coin' && rest[i + 1]) coin = rest[++i];
+      if (rest[i] === '--coin' && rest[i + 1]) {
+        coin = rest[++i];
+        if (!/^[A-Za-z0-9._/-]{1,20}$/.test(coin)) throw new Error(`Invalid coin format: ${coin}`);
+      }
     }
     return { ...blank, subcommand: 'list', coin };
   }
@@ -221,7 +224,7 @@ async function runModify({ info, exchange, address, transport, orderId, newPrice
     requiresDoubleConfirm: false,
   }) + '\n');
 
-  if (!parsed.confirmed) {
+  if (!confirmed) {
     process.exit(0);
   }
 
@@ -333,6 +336,7 @@ async function runPlace({ info, exchange, address, transport, parsed, cfg }) {
     requiresConfirm: confirmValue >= confirmThreshold,
     requiresDoubleConfirm: confirmValue >= largeThreshold,
     leverageWarning: mode === 'perp' && (leverage ?? 1) >= leverageWarn,
+    leverageChangeWarning: mode === 'perp' && leverage !== null,
   }) + '\n');
 
   if (!parsed.confirmed) {

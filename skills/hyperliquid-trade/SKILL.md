@@ -178,4 +178,6 @@ Load [references/limit-order.md](references/limit-order.md) for the full flow.
 **List / cancel / modify:**
 1. Run the appropriate `limit-order.js` subcommand
 2. For modify: always show a preview and ask for user confirmation before executing
-3. Parse JSON and present result in a human-readable format
+3. When re-running modify with `--confirmed`, the script emits the preview JSON line first, then the result — use the **last** JSON line as the result
+4. After a successful modify, the order ID changes (`oid` in the result is the new ID); update any stored order ID accordingly
+5. Parse JSON and present result in a human-readable format
