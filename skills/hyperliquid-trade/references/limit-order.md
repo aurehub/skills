@@ -10,6 +10,7 @@ After running `limit-order.js place ...` (without `--confirmed`), the script out
 - If `requiresConfirm: true` — ask once
 - If both are false — re-run with `--confirmed` immediately (no prompt needed)
 - If `leverageWarning: true` — add an extra warning line about high leverage before prompting
+- If `leverageChangeWarning: true` — show: "Note: this leverage setting takes effect immediately and will apply to all existing cross-margin positions for this coin."
 
 Preview format:
 ```json
@@ -29,7 +30,8 @@ Preview format:
   "leverageWarn": 20,
   "requiresConfirm": false,
   "requiresDoubleConfirm": false,
-  "leverageWarning": false
+  "leverageWarning": false,
+  "leverageChangeWarning": true
 }
 ```
 

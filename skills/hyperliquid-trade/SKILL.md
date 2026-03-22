@@ -144,7 +144,7 @@ Trade preview format (present to user before prompting):
 Action:      <Open Long ETH (Perpetual) | Buy ETH (Spot)>
 Size:        <0.1 ETH>
 Leverage:    <10x Cross>           ← perp only
-Est. price:  ~$<3,200>  (IOC, 5% slippage budget)
+Est. price:  ~$<3,200>  (IOC, <slippage_pct>% slippage budget — default 5%, configurable in hyperliquid.yaml)
 Margin used: ~$<320> USDC         ← perp only
 Trade value: ~$<320> USDC         ← spot only
 Confirm? [y/N]
@@ -160,7 +160,7 @@ Confirm? [y/N]
 | Asset not found | "Asset X not found on Hyperliquid. Check the symbol and try again." |
 | Leverage exceeds asset max | "Max leverage for ETH is Nx. Requested: Mx." |
 | No open position (close) | "No open position found for ETH." |
-| IOC order not filled | "Order not filled — price moved beyond the 5% IOC limit. Check current price and retry." |
+| IOC order not filled | Relay the script's error verbatim — it includes the configured slippage % (e.g. "Order not filled — price moved beyond the 5% IOC limit. Check current price and retry.") |
 | Node.js < 20.19 | "Node.js >= 20.19.0 required. Please upgrade: https://nodejs.org" |
 | API unreachable | "Hyperliquid API unreachable. Check network or `api_url` in `~/.aurehub/hyperliquid.yaml`." |
 

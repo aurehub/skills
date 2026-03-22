@@ -80,17 +80,19 @@ try {
   if (mode === 'spot') {
     const isBuy = action === 'buy';
 
-    // Balance pre-check
+    // Balance pre-check (available = total - hold; hold is locked in open GTC orders)
     const spotState = await info.spotClearinghouseState({ user: address });
     if (isBuy) {
-      const usdcBalance = parseFloat(spotState.balances.find(b => b.coin === 'USDC')?.total ?? '0');
+      const usdcEntry = spotState.balances.find(b => b.coin === 'USDC');
+      const usdcBalance = parseFloat(usdcEntry?.total ?? '0') - parseFloat(usdcEntry?.hold ?? '0');
       const needed = size * mid;
       if (usdcBalance < needed) {
         process.stderr.write(JSON.stringify({ error: `Insufficient balance: have $${usdcBalance.toFixed(2)}, need $${needed.toFixed(2)}. Deposit at app.hyperliquid.xyz to top up.` }) + '\n');
         process.exit(1);
       }
     } else {
-      const tokenBalance = parseFloat(spotState.balances.find(b => b.coin === baseCoin)?.total ?? '0');
+      const tokenEntry = spotState.balances.find(b => b.coin === baseCoin);
+      const tokenBalance = parseFloat(tokenEntry?.total ?? '0') - parseFloat(tokenEntry?.hold ?? '0');
       if (tokenBalance < size) {
         process.stderr.write(JSON.stringify({ error: `Insufficient ${baseCoin} balance: have ${tokenBalance}, need ${size}. Transfer ${baseCoin} to your Hyperliquid spot account at app.hyperliquid.xyz.` }) + '\n');
         process.exit(1);

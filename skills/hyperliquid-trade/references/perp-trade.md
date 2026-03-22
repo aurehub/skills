@@ -21,6 +21,13 @@ The script outputs a preview JSON first. After `--confirmed`, calls `updateLever
 
 Result format: `{ "ok": true, "oid": 12345, "avgPx": "3200.50", "filledSz": "0.1" }`
 
+## IOC price calculation
+
+Buy: price = mid × (1 + slippage_pct/100)
+Sell: price = mid × (1 − slippage_pct/100)
+
+`slippage_pct` defaults to 5 and is configurable in `~/.aurehub/hyperliquid.yaml` under `risk.slippage_pct`.
+
 ## Close position
 
 ```bash

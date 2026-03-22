@@ -30,6 +30,13 @@ describe('loadConfig', () => {
     expect(cfg.yaml.risk.large_trade_usd).toBe(500);
   });
 
+  it('reads slippage_pct from hyperliquid.yaml as a number', () => {
+    writeFileSync(join(tmpDir, 'hyperliquid.yaml'), 'risk:\n  slippage_pct: 2\n');
+    const cfg = loadConfig(tmpDir);
+    expect(cfg.yaml.risk.slippage_pct).toBe(2);
+    expect(typeof cfg.yaml.risk.slippage_pct).toBe('number');
+  });
+
   it('returns empty objects when files are missing', () => {
     const cfg = loadConfig(tmpDir);
     expect(cfg.env).toEqual({});

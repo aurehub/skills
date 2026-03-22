@@ -65,6 +65,30 @@ describe('parseLimitArgs — list', () => {
   it('parses list --coin ETH', () => {
     expect(parseLimitArgs(['list', '--coin', 'ETH'])).toMatchObject({ subcommand: 'list', coin: 'ETH' });
   });
+
+  it('throws on invalid --coin format', () => {
+    expect(() => parseLimitArgs(['list', '--coin', '!!!'])).toThrow(/coin/i);
+  });
+});
+
+describe('parseLimitArgs — --confirmed flag', () => {
+  it('sets confirmed=true for place with --confirmed', () => {
+    const r = parseLimitArgs(['place', 'spot', 'buy', 'ETH', '3000', '0.1', '--confirmed']);
+    expect(r.confirmed).toBe(true);
+    expect(r.coin).toBe('ETH');
+    expect(r.size).toBe(0.1);
+  });
+
+  it('sets confirmed=true for modify with --confirmed', () => {
+    const r = parseLimitArgs(['modify', '99', '--price', '2900', '--confirmed']);
+    expect(r.confirmed).toBe(true);
+    expect(r.orderId).toBe(99);
+    expect(r.newPrice).toBe(2900);
+  });
+
+  it('defaults confirmed=false when --confirmed is absent', () => {
+    expect(parseLimitArgs(['place', 'spot', 'buy', 'ETH', '3000', '0.1']).confirmed).toBe(false);
+  });
 });
 
 describe('parseLimitArgs — cancel', () => {
