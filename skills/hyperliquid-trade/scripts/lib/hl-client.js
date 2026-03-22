@@ -19,7 +19,11 @@ export function createTransport(cfg) {
     );
   }
   const isTestnet = cfg?.yaml?.network === 'testnet';
-  return new HttpTransport({ apiUrl, isTestnet });
+  // Default 60 s — SymbolConverter.create() fires meta+spotMeta in parallel; spotMeta returns a
+  // large payload that can take >30 s on testnet or under load. SDK default (10 s) is too short.
+  // Configurable via `request_timeout_ms` in hyperliquid.yaml.
+  const timeout = cfg?.yaml?.request_timeout_ms ?? 60_000;
+  return new HttpTransport({ apiUrl, isTestnet, timeout });
 }
 
 /**
