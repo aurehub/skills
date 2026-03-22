@@ -61,15 +61,17 @@ export function parseArgs(args) {
 }
 
 /**
- * Calculate IOC limit price with 5% slippage budget.
- * Buy: +5% above mid. Sell: -5% below mid.
+ * Calculate IOC limit price with configurable slippage budget.
+ * Buy: +slippagePct% above mid. Sell: -slippagePct% below mid.
  *
  * @param {boolean} isBuy
  * @param {number} mid  Mid price as a number
+ * @param {number} [slippagePct=5]  Slippage percentage (e.g. 5 = 5%)
  * @returns {number}
  */
-export function ioPrice(isBuy, mid) {
-  return isBuy ? mid * 1.05 : mid * 0.95;
+export function ioPrice(isBuy, mid, slippagePct = 5) {
+  const offset = slippagePct / 100;
+  return isBuy ? mid * (1 + offset) : mid * (1 - offset);
 }
 
 /**

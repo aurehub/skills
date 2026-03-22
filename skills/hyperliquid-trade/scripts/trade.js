@@ -75,6 +75,7 @@ try {
   const confirmThreshold = toFinitePos(risk.confirm_trade_usd, 100);
   const largeThreshold = toFinitePos(risk.large_trade_usd, 1000);
   const leverageWarn = toFinitePos(risk.leverage_warn, 20);
+  const slippagePct = toFinitePos(risk.slippage_pct, 5);
 
   if (mode === 'spot') {
     const isBuy = action === 'buy';
@@ -99,7 +100,7 @@ try {
     let result;
     try {
       result = await exchange.order({
-        orders: [{ a: assetId, b: isBuy, p: formatPrice(ioPrice(isBuy, mid), szDec, 'spot'), s: sz, r: false, t: { limit: { tif: 'Ioc' } } }],
+        orders: [{ a: assetId, b: isBuy, p: formatPrice(ioPrice(isBuy, mid, slippagePct), szDec, 'spot'), s: sz, r: false, t: { limit: { tif: 'Ioc' } } }],
         grouping: 'na',
       });
     } catch (orderErr) {
@@ -114,7 +115,7 @@ try {
 
     const status0 = result?.response?.data?.statuses?.[0];
     if (!status0?.filled) {
-      process.stderr.write(JSON.stringify({ error: 'Order not filled — price moved beyond the 5% IOC limit. Check current price and retry.' }) + '\n');
+      process.stderr.write(JSON.stringify({ error: `Order not filled — price moved beyond the ${slippagePct}% IOC limit. Check current price and retry.` }) + '\n');
       process.exit(1);
     }
 
@@ -163,7 +164,7 @@ try {
       let result;
       try {
         result = await exchange.order({
-          orders: [{ a: assetId, b: isBuy, p: formatPrice(ioPrice(isBuy, mid), szDec, 'perp'), s: sz, r: false, t: { limit: { tif: 'Ioc' } } }],
+          orders: [{ a: assetId, b: isBuy, p: formatPrice(ioPrice(isBuy, mid, slippagePct), szDec, 'perp'), s: sz, r: false, t: { limit: { tif: 'Ioc' } } }],
           grouping: 'na',
         });
       } catch (orderErr) {
@@ -178,7 +179,7 @@ try {
 
       const status0 = result?.response?.data?.statuses?.[0];
       if (!status0?.filled) {
-        process.stderr.write(JSON.stringify({ error: 'Order not filled — price moved beyond the 5% IOC limit. Check current price and retry.' }) + '\n');
+        process.stderr.write(JSON.stringify({ error: `Order not filled — price moved beyond the ${slippagePct}% IOC limit. Check current price and retry.` }) + '\n');
         process.exit(1);
       }
 
@@ -232,7 +233,7 @@ try {
       let result;
       try {
         result = await exchange.order({
-          orders: [{ a: assetId, b: isBuy, p: formatPrice(ioPrice(isBuy, mid), szDec, 'perp'), s: sz, r: true, t: { limit: { tif: 'Ioc' } } }],
+          orders: [{ a: assetId, b: isBuy, p: formatPrice(ioPrice(isBuy, mid, slippagePct), szDec, 'perp'), s: sz, r: true, t: { limit: { tif: 'Ioc' } } }],
           grouping: 'na',
         });
       } catch (orderErr) {
@@ -247,7 +248,7 @@ try {
 
       const status0 = result?.response?.data?.statuses?.[0];
       if (!status0?.filled) {
-        process.stderr.write(JSON.stringify({ error: 'Order not filled — price moved beyond the 5% IOC limit. Check current price and retry.' }) + '\n');
+        process.stderr.write(JSON.stringify({ error: `Order not filled — price moved beyond the ${slippagePct}% IOC limit. Check current price and retry.` }) + '\n');
         process.exit(1);
       }
 

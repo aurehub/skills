@@ -59,12 +59,20 @@ describe('parseArgs', () => {
 });
 
 describe('ioPrice', () => {
-  it('buy price is 5% above mid', () => {
+  it('buy price is 5% above mid (default slippage)', () => {
     expect(ioPrice(true, 3000)).toBeCloseTo(3150);
   });
 
-  it('sell price is 5% below mid', () => {
+  it('sell price is 5% below mid (default slippage)', () => {
     expect(ioPrice(false, 3000)).toBeCloseTo(2850);
+  });
+
+  it('buy price respects custom slippagePct', () => {
+    expect(ioPrice(true, 3000, 2)).toBeCloseTo(3060);
+  });
+
+  it('sell price respects custom slippagePct', () => {
+    expect(ioPrice(false, 3000, 2)).toBeCloseTo(2940);
   });
 });
 
