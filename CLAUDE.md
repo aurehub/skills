@@ -7,6 +7,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 - **Verify before answering**: Always confirm facts through code, tests, or documentation before stating them. Do not guess or assume.
 - **Surface uncertainty**: When something is unclear or unverified, raise it explicitly for discussion rather than picking an answer and moving on.
 - **Language**: All documentation, code, and git operations must be in English.
+- **Document during testing**: When a bug is found and fixed during a testing session, immediately ask whether to record it in the relevant `docs/testing/` file. Do not wait until the end of the session. After a testing session wraps up, check `docs/testing/` and offer to update it with any findings not yet recorded.
 
 ## Project Overview
 
