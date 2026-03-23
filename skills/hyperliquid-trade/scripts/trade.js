@@ -154,11 +154,18 @@ try {
       const leverageWarning = leverage !== null && leverage >= leverageWarn;
 
       // Balance pre-check (only when leverage is explicit; otherwise exchange enforces it)
+      // In Unified Account Mode, spot USDC also counts as available margin.
       if (leverage !== null) {
-        const perpState = await info.clearinghouseState({ user: address });
-        const withdrawable = parseFloat(perpState.withdrawable ?? '0');
-        if (withdrawable < marginUsed) {
-          process.stderr.write(JSON.stringify({ error: `Insufficient margin: have $${withdrawable.toFixed(2)}, need $${marginUsed.toFixed(2)}.` }) + '\n');
+        const [perpState, spotState] = await Promise.all([
+          info.clearinghouseState({ user: address }),
+          info.spotClearinghouseState({ user: address }),
+        ]);
+        const perpAvailable = parseFloat(perpState.withdrawable ?? '0');
+        const spotUsdcEntry = spotState.balances.find(b => b.coin === 'USDC');
+        const spotUsdc = parseFloat(spotUsdcEntry?.total ?? '0') - parseFloat(spotUsdcEntry?.hold ?? '0');
+        const totalAvailable = perpAvailable + spotUsdc;
+        if (totalAvailable < marginUsed) {
+          process.stderr.write(JSON.stringify({ error: `Insufficient margin: have $${totalAvailable.toFixed(2)}, need $${marginUsed.toFixed(2)}.` }) + '\n');
           process.exit(1);
         }
       }
