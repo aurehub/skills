@@ -168,6 +168,28 @@ describe('redeem() — market filter', () => {
   });
 });
 
+describe('redeem() — market filter by conditionId', () => {
+  it('filters by conditionId when marketFilter looks like a conditionId', async () => {
+    const targetConditionId = '0x0000000000000000000000000000000000000000000000000000000000001234';
+    axios.get.mockResolvedValue({
+      data: [
+        makePos({ slug: 'target-market', conditionId: targetConditionId }),
+        makePos({ slug: 'other-market',  conditionId: '0x0000000000000000000000000000000000000000000000000000000000005678' }),
+      ],
+    });
+    const wallet = { address: '0xUser' };
+    const logSpy = vi.spyOn(console, 'log').mockImplementation(() => {});
+    try {
+      await redeem({ cfg: makeCfg(), provider: makeProvider(), wallet, marketFilter: targetConditionId, dryRun: true });
+      const output = logSpy.mock.calls.map(c => c.join(' ')).join('\n');
+      expect(output).toContain('target-market');
+      expect(output).not.toContain('other-market');
+    } finally {
+      logSpy.mockRestore();
+    }
+  });
+});
+
 describe('redeem() — negRisk-only skip', () => {
   it('returns without error when all redeemable positions are negRisk', async () => {
     axios.get.mockResolvedValue({

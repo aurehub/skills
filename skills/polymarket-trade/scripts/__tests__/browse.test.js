@@ -115,7 +115,7 @@ describe('formatMarketOutput with Gamma keyword format', () => {
 describe('search', () => {
   afterEach(() => vi.clearAllMocks());
 
-  it('uses Events API for keyword search and flattens markets', async () => {
+  it('fetches events without q param and filters client-side by event title', async () => {
     const { default: axios } = await import('axios');
     const activeMarket = {
       question: 'Will BTC hit 100k by end of 2025?',
@@ -127,9 +127,14 @@ describe('search', () => {
       outcomePrices: '["0.65","0.35"]',
     };
     const closedMarket = { ...activeMarket, question: 'Old closed market', active: true, closed: true };
+    const unrelatedMarket = { ...activeMarket, question: 'Will it rain tomorrow?' };
     axios.get.mockImplementation(url => {
-      if (url.includes('/events')) return Promise.resolve({ data: [{ markets: [activeMarket, closedMarket] }] });
-      // orderbook + marketInfo calls — return empty
+      if (url.includes('/events')) return Promise.resolve({
+        data: [
+          { title: 'Bitcoin 2025 predictions', markets: [activeMarket, closedMarket] },
+          { title: 'Weather forecasts', markets: [unrelatedMarket] },
+        ],
+      });
       return Promise.resolve({ data: {} });
     });
     const logSpy = vi.spyOn(console, 'log').mockImplementation(() => {});
@@ -137,10 +142,63 @@ describe('search', () => {
     const output = logSpy.mock.calls.map(c => c[0]).join('\n');
     expect(output).toContain('Will BTC hit 100k');
     expect(output).not.toContain('Old closed market');
+    expect(output).not.toContain('Will it rain tomorrow');
+    // Must NOT include q= in the URL — Gamma API ignores it
     expect(axios.get).toHaveBeenCalledWith(
-      expect.stringContaining('/events?q=bitcoin&active=true&closed=false'),
+      expect.stringContaining('/events?active=true&closed=false'),
       expect.any(Object),
     );
+    expect(axios.get).not.toHaveBeenCalledWith(
+      expect.stringContaining('?q='),
+      expect.any(Object),
+    );
+    logSpy.mockRestore();
+  });
+
+  it('resolves conditionId directly via CLOB and displays market', async () => {
+    const { default: axios } = await import('axios');
+    const clobMarket = {
+      question: 'Will BTC hit $100k?',
+      active: true,
+      condition_id: '0x' + 'a'.repeat(64),
+      minimum_order_size: '5',
+      tokens: [
+        { token_id: 'tok-yes', outcome: 'Yes', price: 0.6 },
+        { token_id: 'tok-no',  outcome: 'No',  price: 0.4 },
+      ],
+    };
+    axios.get.mockImplementation(() => Promise.resolve({ data: clobMarket }));
+    const logSpy = vi.spyOn(console, 'log').mockImplementation(() => {});
+    await search('0x' + 'a'.repeat(64), { yaml: {} });
+    const output = logSpy.mock.calls.map(c => c[0]).join('\n');
+    expect(output).toContain('Will BTC hit $100k');
+    // Must NOT call the events endpoint for a conditionId query
+    expect(axios.get).not.toHaveBeenCalledWith(
+      expect.stringContaining('/events'),
+      expect.any(Object),
+    );
+    logSpy.mockRestore();
+  });
+
+  it('matches on market question when event title does not contain keyword', async () => {
+    const { default: axios } = await import('axios');
+    const btcMarket = {
+      question: 'Will Bitcoin reach $200k in 2026?',
+      active: true, closed: false, conditionId: 'cond-btc',
+      clobTokenIds: '["t1","t2"]', outcomes: '["Yes","No"]', outcomePrices: '["0.3","0.7"]',
+    };
+    const unrelatedMarket = { ...btcMarket, question: 'Will Elon buy Twitter again?', conditionId: 'cond-elon' };
+    axios.get.mockImplementation(url => {
+      if (url.includes('/events')) return Promise.resolve({
+        data: [{ title: 'Crypto markets 2026', markets: [btcMarket, unrelatedMarket] }],
+      });
+      return Promise.resolve({ data: {} });
+    });
+    const logSpy = vi.spyOn(console, 'log').mockImplementation(() => {});
+    await search('bitcoin', { yaml: {} });
+    const output = logSpy.mock.calls.map(c => c[0]).join('\n');
+    expect(output).toContain('Will Bitcoin reach $200k');
+    expect(output).not.toContain('Will Elon buy Twitter');
     logSpy.mockRestore();
   });
 });
@@ -173,22 +231,27 @@ describe('resolveMarket', () => {
     );
   });
 
-  it('falls back to keyword search when slug lookup returns empty array', async () => {
+  it('falls back to client-side keyword search when slug lookup returns empty array', async () => {
     const { default: axios } = await import('axios');
     axios.get
-      .mockResolvedValueOnce({ data: [] })         // slug lookup → no match
-      .mockResolvedValueOnce({ data: [mockSlugMarket] }); // keyword fallback
+      .mockResolvedValueOnce({ data: [] })  // slug lookup → no match
+      .mockResolvedValueOnce({ data: [{ title: 'Bitcoin 100k prediction', markets: [mockSlugMarket] }] }); // events fallback
     const result = await resolveMarket('bitcoin 100k', { yaml: {} });
     expect(result).toEqual(mockSlugMarket);
+    expect(axios.get).toHaveBeenCalledWith(
+      expect.stringContaining('/events?active=true&closed=false'),
+      expect.any(Object),
+    );
   });
 
   it('calls process.exit(1) and prints list when multiple results found', async () => {
     const { default: axios } = await import('axios');
     const exitSpy = vi.spyOn(process, 'exit').mockImplementation(() => { throw new Error('process.exit'); });
     const errSpy = vi.spyOn(console, 'error').mockImplementation(() => {});
+    const market2 = { ...mockSlugMarket, slug: 'bitcoin-200k-2025', question: 'Will BTC reach $200k?' };
     axios.get
-      .mockResolvedValueOnce({ data: [] })          // slug lookup → no match
-      .mockResolvedValueOnce({ data: [mockSlugMarket, { ...mockSlugMarket, slug: 'bitcoin-200k-2025' }] });
+      .mockResolvedValueOnce({ data: [] })  // slug lookup → no match
+      .mockResolvedValueOnce({ data: [{ title: 'Bitcoin predictions', markets: [mockSlugMarket, market2] }] }); // events fallback
     await expect(resolveMarket('bitcoin', { yaml: {} })).rejects.toThrow('process.exit');
     expect(exitSpy).toHaveBeenCalledWith(1);
     expect(errSpy).toHaveBeenCalledWith(expect.stringContaining('Found 2 markets matching "bitcoin"'));
@@ -200,8 +263,8 @@ describe('resolveMarket', () => {
   it('throws Market not found when keyword search returns no results', async () => {
     const { default: axios } = await import('axios');
     axios.get
-      .mockResolvedValueOnce({ data: [] })  // slug lookup → no match
-      .mockResolvedValueOnce({ data: [] }); // keyword fallback → no match
+      .mockResolvedValueOnce({ data: [] })   // slug lookup → no match
+      .mockResolvedValueOnce({ data: [] });  // events fallback → no matching events
     await expect(resolveMarket('nonexistent-market', { yaml: {} })).rejects.toThrow('Market not found: nonexistent-market');
   });
 
@@ -210,7 +273,7 @@ describe('resolveMarket', () => {
     const err403 = Object.assign(new Error('Forbidden'), { response: { status: 403 } });
     axios.get
       .mockRejectedValueOnce(err403)   // slug lookup → any error, silently caught
-      .mockRejectedValueOnce(err403);  // keyword fallback → 403 propagates
+      .mockRejectedValueOnce(err403);  // events fallback → 403 propagates
     await expect(resolveMarket('some-slug', { yaml: {} })).rejects.toThrow('Forbidden');
   });
 });

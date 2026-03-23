@@ -91,15 +91,24 @@ async function fetchGamma(url, query) {
     const data = res.data;
     return Array.isArray(data) ? data : (data.markets ?? [data]);
   }
-  // Keyword search: use Events API for better relevance, then flatten markets.
-  // active=true&closed=false filters out resolved/archived events.
+  // Keyword search: the Gamma Events API ignores the `q` parameter entirely —
+  // fetch active events and filter client-side by event title/slug or market question/slug.
   const res = await axios.get(
-    `${url}/events?q=${encodeURIComponent(query)}&active=true&closed=false`,
+    `${url}/events?active=true&closed=false&limit=200`,
     { timeout: 10_000 },
   );
   const events = Array.isArray(res.data) ? res.data : (res.data?.events ?? []);
-  // Each event has a markets array; flatten and filter to active, non-closed markets only
-  return events.flatMap(e => (e.markets ?? []).filter(m => m.active && !m.closed));
+  const lq = query.toLowerCase();
+  return events.flatMap(e => {
+    const eventMatches = e.title?.toLowerCase().includes(lq) || e.slug?.toLowerCase().includes(lq);
+    return (e.markets ?? []).filter(m =>
+      m.active && !m.closed && (
+        eventMatches ||
+        m.question?.toLowerCase().includes(lq) ||
+        m.slug?.toLowerCase().includes(lq)
+      )
+    );
+  });
 }
 
 async function fetchOrderbook(clobUrl, tokenId) {
@@ -116,14 +125,28 @@ async function fetchMarketInfo(clobUrl, conditionId) {
 
 // ── Main search function ──────────────────────────────────────────────────────
 
-export async function search(query, cfg) {
+export async function search(query, cfg, limit = 5) {
   const gammaUrl = cfg.yaml?.polymarket?.gamma_url ?? DEFAULT_GAMMA_URL;
   const clobUrl  = cfg.yaml?.polymarket?.clob_url  ?? DEFAULT_CLOB_URL;
+
+  // conditionId: fetch directly from CLOB, skip event search
+  if (/^0x[0-9a-fA-F]{64}$/.test(query)) {
+    const market = await fetchMarketInfo(clobUrl, query);
+    const ids = extractTokenIds(market);
+    const orderbooks = {};
+    for (const [, tokenId] of Object.entries(ids)) {
+      if (tokenId) {
+        try { orderbooks[tokenId] = await fetchOrderbook(clobUrl, tokenId); } catch { /* unavailable */ }
+      }
+    }
+    console.log(formatMarketOutput(market, orderbooks, market));
+    return;
+  }
 
   const markets = await fetchGamma(gammaUrl, query);
   if (!markets.length) { console.log('No markets found.'); return; }
 
-  for (const market of markets.slice(0, 5)) {
+  for (const market of markets.slice(0, limit)) {
     const ids = extractTokenIds(market);
     const orderbooks = {};
     for (const [side, tokenId] of Object.entries(ids)) {
@@ -171,10 +194,17 @@ export async function resolveMarket(query, cfg) {
     }
   } catch { /* fall through to keyword search */ }
 
-  // Step 2: keyword fallback — call keyword endpoint directly to bypass fetchGamma's
-  // query.includes('/') heuristic (which would misroute queries like "US/election")
-  const kwRes = await axios.get(`${gammaUrl}/markets?q=${encodeURIComponent(query)}&active=true&closed=false`, { timeout: 10_000 });
-  const markets = Array.isArray(kwRes.data) ? kwRes.data : (kwRes.data?.markets ?? []);
+  // Step 2: keyword fallback — Gamma ?q= ignores the query param; fetch events and
+  // filter client-side by event title/slug or market question/slug.
+  const evRes = await axios.get(`${gammaUrl}/events?active=true&closed=false&limit=200`, { timeout: 10_000 });
+  const events = Array.isArray(evRes.data) ? evRes.data : (evRes.data?.events ?? []);
+  const lq = query.toLowerCase();
+  const markets = events.flatMap(e => {
+    const em = e.title?.toLowerCase().includes(lq) || e.slug?.toLowerCase().includes(lq);
+    return (e.markets ?? []).filter(m =>
+      m.active && !m.closed && (em || m.question?.toLowerCase().includes(lq) || m.slug?.toLowerCase().includes(lq))
+    );
+  });
   if (markets.length === 0) throw new Error(`Market not found: ${query}`);
   if (markets.length === 1) return markets[0];
 
@@ -190,13 +220,16 @@ export async function resolveMarket(query, cfg) {
 
 // ── CLI entry point ───────────────────────────────────────────────────────────
 if (process.argv[1] && realpathSync(process.argv[1]) === fileURLToPath(import.meta.url)) {
-  const query = process.argv[2];
-  if (!query) { console.error('Usage: node scripts/browse.js <keyword|slug>'); process.exit(1); }
+  const args = process.argv.slice(2);
+  const query = args.find(a => !a.startsWith('--'));
+  const limitArg = args.indexOf('--limit');
+  const limit = limitArg >= 0 ? parseInt(args[limitArg + 1], 10) : 5;
+  if (!query) { console.error('Usage: node scripts/browse.js <keyword|slug> [--limit N]'); process.exit(1); }
   (async () => {
     try {
       runBrowseEnvCheck();
       const cfg = loadConfig();
-      await search(query, cfg);
+      await search(query, cfg, limit);
     } catch (e) {
       if (e.response?.status === 403) {
         console.error('❌ 403 Forbidden — Polymarket API blocked in your region. Use a VPN.');

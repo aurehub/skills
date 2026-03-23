@@ -107,7 +107,7 @@ export async function redeem({ cfg, provider, wallet, marketFilter, dryRun }) {
 
   // Apply optional market filter
   const filtered = marketFilter
-    ? allPositions.filter(p => p.slug === marketFilter)
+    ? allPositions.filter(p => p.slug === marketFilter || p.conditionId === marketFilter)
     : allPositions;
 
   const { standard, negRisk } = filterRedeemable(filtered);
