@@ -60,9 +60,9 @@ try {
   }
 
   // allMids keys named spot markets as "COIN/USDC" but unnamed ones as "@N" (spot market index).
-  // Spot assetIds from SymbolConverter are 10000+N, so "@N" = "@" + (assetId - 10000).
-  const atKey = mode === 'spot' && assetId !== undefined ? `@${assetId - 10000}` : undefined;
-  const midRaw = mids[symbol] ?? mids[coin] ?? (atKey !== undefined ? mids[atKey] : undefined);
+  // SymbolConverter.getSpotPairId() returns the exact allMids key for any spot market.
+  const spotPairId = mode === 'spot' ? converter.getSpotPairId(symbol) : undefined;
+  const midRaw = mids[symbol] ?? mids[coin] ?? (spotPairId !== undefined ? mids[spotPairId] : undefined);
   if (!midRaw) {
     process.stderr.write(JSON.stringify({ error: `Could not fetch mid price for ${coin}.` }) + '\n');
     process.exit(1);
