@@ -59,7 +59,10 @@ try {
     process.exit(1);
   }
 
-  const midRaw = mids[symbol] ?? mids[coin];
+  // allMids keys named spot markets as "COIN/USDC" but unnamed ones as "@N" (spot market index).
+  // Spot assetIds from SymbolConverter are 10000+N, so "@N" = "@" + (assetId - 10000).
+  const atKey = mode === 'spot' && assetId !== undefined ? `@${assetId - 10000}` : undefined;
+  const midRaw = mids[symbol] ?? mids[coin] ?? (atKey !== undefined ? mids[atKey] : undefined);
   if (!midRaw) {
     process.stderr.write(JSON.stringify({ error: `Could not fetch mid price for ${coin}.` }) + '\n');
     process.exit(1);

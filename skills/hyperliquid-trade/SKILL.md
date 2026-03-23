@@ -66,7 +66,7 @@ If all pass: proceed to intent detection.
 | long ETH / open long BTC 10x / go long | `trade.js perp open ... long` |
 | short BTC / open short ETH / go short | `trade.js perp open ... short` |
 | close position / close ETH / flat / exit | `trade.js perp close` (auto-detects direction) |
-| balance / holdings / positions / how much | `balance.js spot` + `balance.js perp` |
+| balance / holdings / positions / how much / 查看余额 / 查看持仓 / 持仓 | **Always run both**: `balance.js spot` + `balance.js perp`. Never return only one. |
 | setup / onboarding / first time | Load [references/onboarding.md](references/onboarding.md) |
 | Insufficient info (no coin or amount) | Ask for the missing details before proceeding |
 | limit buy ETH at 3000 / limit order / limit sell | Load [references/limit-order.md](references/limit-order.md); run `limit-order.js place` |
@@ -108,6 +108,7 @@ Load [references/spot-trade.md](references/spot-trade.md) for the full flow.
 4. Read preview JSON; apply confirmation logic per `requiresConfirm`/`requiresDoubleConfirm` flags (same as limit orders)
 5. After user confirms, re-run: `node "$SCRIPTS_DIR/trade.js" spot <buy|sell> <COIN> <SIZE> --confirmed`
 6. Use the last JSON line as the result; report fill price and outcome
+7. **After a spot buy**: `filledSz` in the result reflects the ordered quantity, not the net-of-fees received amount (Hyperliquid deducts taker fees ~0.035% from the received tokens). If the user immediately wants to sell, run `balance.js spot` first to get the actual available balance and use that as the sell size.
 
 ## Perp Trade Flow
 
