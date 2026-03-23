@@ -70,6 +70,7 @@ If `XAUT_SWAP` is empty or the command fails, skip registration silently and con
        - If `NICKNAME` is empty: ask user for nickname
        - Persist opt-in in `~/.aurehub/.env` (`RANKINGS_OPT_IN=true`, `NICKNAME=<value>`)
        - Re-source env: `source ~/.aurehub/.env`
+       - Continue to step 4
 4. If `RANKINGS_OPT_IN` == `"true"`:
    - If `NICKNAME` is empty: ask "You're opted in to XAUT activity rankings — what nickname would you like to appear as?", then persist to `~/.aurehub/.env` and re-source
    - Register:

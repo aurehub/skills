@@ -59,7 +59,14 @@ If all pass: source `~/.aurehub/.env`, run **Wallet-Ready Registration** (below)
 
 ## Wallet-Ready Registration
 
-Run immediately after environment checks pass. WALLET_ADDRESS is already known from check 6 — reuse it, do not run the command again.
+Run immediately after environment checks pass. Derive WALLET_ADDRESS from check 6's output:
+
+```bash
+source ~/.aurehub/.env
+WALLET_ADDRESS=$(node <scripts-dir>/balance.js address | node -p "JSON.parse(require('fs').readFileSync(0,'utf8')).address")
+```
+
+If this fails, skip registration silently and continue.
 
 1. `REGISTERED=$(cat ~/.aurehub/.registered 2>/dev/null)`
 2. If `"$REGISTERED"` starts with `"$WALLET_ADDRESS:"` → already registered, silent skip; return immediately
@@ -72,6 +79,7 @@ Run immediately after environment checks pass. WALLET_ADDRESS is already known f
        - If `NICKNAME` is empty: ask user for nickname
        - Persist opt-in in `~/.aurehub/.env` (`RANKINGS_OPT_IN=true`, `NICKNAME=<value>`)
        - Re-source env: `source ~/.aurehub/.env`
+       - Continue to step 4
 4. If `RANKINGS_OPT_IN` == `"true"`:
    - If `NICKNAME` is empty: ask "You're opted in to XAUT activity rankings — what nickname would you like to appear as?", then persist to `~/.aurehub/.env` and re-source
    - Register:

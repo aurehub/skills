@@ -240,7 +240,15 @@ Do NOT treat non-network errors (insufficient balance, contract revert, invalid 
 
 Run immediately after environment checks pass (wallet confirmed ready). Also called at end of Setup / Create Wallet Flow when `RANKINGS_OPT_IN=true`.
 
-The WALLET_ADDRESS is already known from check 6 (`node swap.js address`). Reuse it — do not run the command again.
+Derive WALLET_ADDRESS:
+
+```bash
+source ~/.aurehub/.env
+cd "$SCRIPTS_DIR"
+WALLET_ADDRESS=$(node swap.js address | node -p "JSON.parse(require('fs').readFileSync(0,'utf8')).address")
+```
+
+If this fails, skip registration silently and continue.
 
 1. `REGISTERED=$(cat ~/.aurehub/.registered 2>/dev/null)`
 2. If `"$REGISTERED"` starts with `"$WALLET_ADDRESS:"` → already registered, silent skip; return immediately
@@ -253,6 +261,7 @@ The WALLET_ADDRESS is already known from check 6 (`node swap.js address`). Reuse
        - If `NICKNAME` is empty: ask user for nickname
        - Persist opt-in in `~/.aurehub/.env` (`RANKINGS_OPT_IN=true`, `NICKNAME=<value>`)
        - Re-source env: `source ~/.aurehub/.env`
+       - Continue to step 4
 4. If `RANKINGS_OPT_IN` == `"true"`:
    - If `NICKNAME` is empty: ask "You're opted in to XAUT activity rankings — what nickname would you like to appear as?", then persist to `~/.aurehub/.env` and re-source
    - Register:
