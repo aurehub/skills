@@ -55,7 +55,37 @@ Run these checks before handling any intent (except knowledge queries):
 | 5 | `<scripts-dir>/node_modules` exists | AUTO-FIX | `cd <scripts-dir> && npm install` |
 | 6 | `node <scripts-dir>/balance.js address` succeeds | HARD STOP | Report error JSON; load [references/onboarding.md](references/onboarding.md) |
 
-If all pass: proceed to intent detection.
+If all pass: source `~/.aurehub/.env`, run **Wallet-Ready Registration** (below), then proceed to intent detection.
+
+## Wallet-Ready Registration
+
+Run immediately after environment checks pass. WALLET_ADDRESS is already known from check 6 — reuse it, do not run the command again.
+
+1. `REGISTERED=$(cat ~/.aurehub/.registered 2>/dev/null)`
+2. If `"$REGISTERED"` starts with `"$WALLET_ADDRESS:"` → already registered, silent skip; return immediately
+3. If `RANKINGS_OPT_IN` != `"true"`:
+   - Check marker: `PROMPTED=$(cat ~/.aurehub/.rankings_prompted 2>/dev/null)`
+   - If marker starts with `"$WALLET_ADDRESS:"` → skip; return immediately
+   - Otherwise ask once: "Join XAUT activity rankings now? (yes/no)"
+     - If user says `no`: `echo "$WALLET_ADDRESS:declined" > ~/.aurehub/.rankings_prompted`; return
+     - If user says `yes`:
+       - If `NICKNAME` is empty: ask user for nickname
+       - Persist opt-in in `~/.aurehub/.env` (`RANKINGS_OPT_IN=true`, `NICKNAME=<value>`)
+       - Re-source env: `source ~/.aurehub/.env`
+4. If `RANKINGS_OPT_IN` == `"true"`:
+   - If `NICKNAME` is empty: ask "You're opted in to XAUT activity rankings — what nickname would you like to appear as?", then persist to `~/.aurehub/.env` and re-source
+   - Register:
+   ```bash
+   NICKNAME_ESC=$(printf '%s' "$NICKNAME" | sed 's/\\/\\\\/g; s/"/\\"/g')
+   REGISTER_RESP=$(curl -s -o /dev/null -w "%{http_code}" -X POST \
+     https://xaue.com/api/rankings/participants \
+     -H 'Content-Type: application/json' \
+     -d "{\"wallet_address\":\"$WALLET_ADDRESS\",\"nickname\":\"$NICKNAME_ESC\",\"source\":\"agent\"}")
+   ```
+   - HTTP 200 or 201: `echo "$WALLET_ADDRESS:$NICKNAME" > ~/.aurehub/.registered`; inform: "Registered with nickname: $NICKNAME"
+   - Any other status: silent continue, do not write marker file
+
+Only prompt once per wallet. The `.rankings_prompted` and `.registered` markers ensure idempotency across sessions.
 
 ## Intent Detection
 

@@ -43,7 +43,47 @@ Step types:
 On any auto-fix failure: stop and report the error with the manual remediation command.
 After all fixes succeed, re-run the relevant checks and proceed.
 
+After prerequisites pass: if the user's message matches browse flow (contains "browse", "what markets", "what are the odds"), skip registration and proceed directly to intent detection. Otherwise run **Wallet-Ready Registration** (below) before proceeding to intent detection.
+
 `<skill-dir>` is the directory containing this SKILL.md file.
+
+## Wallet-Ready Registration
+
+Run after prerequisites pass for any wallet-requiring flow (not browse). Derive WALLET_ADDRESS using xaut-trade's `swap.js` (required by prerequisites):
+
+```bash
+XAUT_SWAP=$(find "$HOME" -maxdepth 6 -type f -path "*/xaut-trade/scripts/swap.js" 2>/dev/null | head -1)
+source ~/.aurehub/.env
+WALLET_ADDRESS=$(node "$XAUT_SWAP" address | node -p "JSON.parse(require('fs').readFileSync(0,'utf8')).address")
+```
+
+If `XAUT_SWAP` is empty or the command fails, skip registration silently and continue.
+
+1. `REGISTERED=$(cat ~/.aurehub/.registered 2>/dev/null)`
+2. If `"$REGISTERED"` starts with `"$WALLET_ADDRESS:"` → already registered, silent skip; return immediately
+3. If `RANKINGS_OPT_IN` != `"true"`:
+   - Check marker: `PROMPTED=$(cat ~/.aurehub/.rankings_prompted 2>/dev/null)`
+   - If marker starts with `"$WALLET_ADDRESS:"` → skip; return immediately
+   - Otherwise ask once: "Join XAUT activity rankings now? (yes/no)"
+     - If user says `no`: `echo "$WALLET_ADDRESS:declined" > ~/.aurehub/.rankings_prompted`; return
+     - If user says `yes`:
+       - If `NICKNAME` is empty: ask user for nickname
+       - Persist opt-in in `~/.aurehub/.env` (`RANKINGS_OPT_IN=true`, `NICKNAME=<value>`)
+       - Re-source env: `source ~/.aurehub/.env`
+4. If `RANKINGS_OPT_IN` == `"true"`:
+   - If `NICKNAME` is empty: ask "You're opted in to XAUT activity rankings — what nickname would you like to appear as?", then persist to `~/.aurehub/.env` and re-source
+   - Register:
+   ```bash
+   NICKNAME_ESC=$(printf '%s' "$NICKNAME" | sed 's/\\/\\\\/g; s/"/\\"/g')
+   REGISTER_RESP=$(curl -s -o /dev/null -w "%{http_code}" -X POST \
+     https://xaue.com/api/rankings/participants \
+     -H 'Content-Type: application/json' \
+     -d "{\"wallet_address\":\"$WALLET_ADDRESS\",\"nickname\":\"$NICKNAME_ESC\",\"source\":\"agent\"}")
+   ```
+   - HTTP 200 or 201: `echo "$WALLET_ADDRESS:$NICKNAME" > ~/.aurehub/.registered`; inform: "Registered with nickname: $NICKNAME"
+   - Any other status: silent continue, do not write marker file
+
+Only prompt once per wallet. The `.rankings_prompted` and `.registered` markers ensure idempotency across sessions.
 
 ## Intent Detection
 

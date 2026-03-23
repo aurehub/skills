@@ -113,7 +113,7 @@ No data is sent to xaue.com unless you explicitly set `RANKINGS_OPT_IN=true`.
 > ```
 > Alternatively, `node swap.js balance` also includes the address in its output.
 
-If **all pass**: source `~/.aurehub/.env`, then proceed to intent detection.
+If **all pass**: source `~/.aurehub/.env`, run **Wallet-Ready Registration** (below), then proceed to intent detection.
 
 If **any fail**: do not continue with the original intent. Note which checks failed, then present the following to the user (fill in [original intent] with a one-sentence summary of what the user originally asked for):
 
@@ -236,6 +236,38 @@ If all RPCs fail, swap.js will exit with an error containing network-related mes
 
 Do NOT treat non-network errors (insufficient balance, contract revert, invalid parameters, nonce mismatch) as RPC failures. Report these directly to the user.
 
+## Wallet-Ready Registration
+
+Run immediately after environment checks pass (wallet confirmed ready). Also called at end of Setup / Create Wallet Flow when `RANKINGS_OPT_IN=true`.
+
+The WALLET_ADDRESS is already known from check 6 (`node swap.js address`). Reuse it — do not run the command again.
+
+1. `REGISTERED=$(cat ~/.aurehub/.registered 2>/dev/null)`
+2. If `"$REGISTERED"` starts with `"$WALLET_ADDRESS:"` → already registered, silent skip; return immediately
+3. If `RANKINGS_OPT_IN` != `"true"`:
+   - Check marker: `PROMPTED=$(cat ~/.aurehub/.rankings_prompted 2>/dev/null)`
+   - If marker starts with `"$WALLET_ADDRESS:"` → skip prompt; return immediately
+   - Otherwise ask once: "Join XAUT activity rankings now? (yes/no)"
+     - If user says `no`: `echo "$WALLET_ADDRESS:declined" > ~/.aurehub/.rankings_prompted`; return
+     - If user says `yes`:
+       - If `NICKNAME` is empty: ask user for nickname
+       - Persist opt-in in `~/.aurehub/.env` (`RANKINGS_OPT_IN=true`, `NICKNAME=<value>`)
+       - Re-source env: `source ~/.aurehub/.env`
+4. If `RANKINGS_OPT_IN` == `"true"`:
+   - If `NICKNAME` is empty: ask "You're opted in to XAUT activity rankings — what nickname would you like to appear as?", then persist to `~/.aurehub/.env` and re-source
+   - Register:
+   ```bash
+   NICKNAME_ESC=$(printf '%s' "$NICKNAME" | sed 's/\\/\\\\/g; s/"/\\"/g')
+   REGISTER_RESP=$(curl -s -o /dev/null -w "%{http_code}" -X POST \
+     https://xaue.com/api/rankings/participants \
+     -H 'Content-Type: application/json' \
+     -d "{\"wallet_address\":\"$WALLET_ADDRESS\",\"nickname\":\"$NICKNAME_ESC\",\"source\":\"agent\"}")
+   ```
+   - HTTP 200 or 201: `echo "$WALLET_ADDRESS:$NICKNAME" > ~/.aurehub/.registered`; inform: "Registered with nickname: $NICKNAME"
+   - Any other status: silent continue, do not write marker file
+
+Only prompt once per wallet. The `.rankings_prompted` and `.registered` markers ensure idempotency across sessions.
+
 ## Intent Detection
 
 Determine the operation from the user's message:
@@ -314,6 +346,19 @@ After WDK wallet creation succeeds, **always** display this security notice:
 > Write down the 12 words and keep them offline. **Never share your seed phrase with anyone.**
 
 Do NOT skip this step. Do NOT display the seed phrase in chat — only provide the export command for the user to run in their own terminal.
+
+### Step 5: Post-setup registration
+
+After wallet creation completes (Steps 3–4 done):
+
+1. Derive WALLET_ADDRESS:
+   ```bash
+   source ~/.aurehub/.env
+   cd "$SCRIPTS_DIR"
+   WALLET_ADDRESS=$(node swap.js address | node -p "JSON.parse(require('fs').readFileSync(0,'utf8')).address")
+   ```
+2. If `RANKINGS_OPT_IN` == `"true"`: run **Wallet-Ready Registration** (no opt-in prompt — user already opted in)
+3. Otherwise: skip (registration will be prompted on first use via the environment check flow)
 
 ---
 
@@ -528,42 +573,6 @@ Return:
 - tx hash
 - post-trade USDT balance
 - on failure, return retry suggestions (reduce sell amount / increase slippage tolerance / check nonce and gas)
-
-## Post-Trade Registration
-
-After **any** on-chain trade completes successfully (buy swap, sell swap, or limit order placed):
-
-1. `source ~/.aurehub/.env`
-2. Derive WALLET_ADDRESS:
-   ```bash
-   cd "$SCRIPTS_DIR"
-   WALLET_ADDRESS=$(node swap.js address | node -p "JSON.parse(require('fs').readFileSync(0,'utf8')).address")
-   ```
-3. `REGISTERED=$(cat ~/.aurehub/.registered 2>/dev/null)`
-4. If `"$REGISTERED"` starts with `"$WALLET_ADDRESS:"` -> already registered, silent skip
-5. If `RANKINGS_OPT_IN` != `"true"`:
-   - Check marker: `PROMPTED=$(cat ~/.aurehub/.rankings_prompted 2>/dev/null)`
-   - If marker starts with `"$WALLET_ADDRESS:"` -> skip prompt
-   - Otherwise ask once: "Join XAUT activity rankings now? (yes/no)"
-     - If user says `no`: `echo "$WALLET_ADDRESS:declined" > ~/.aurehub/.rankings_prompted`; stop
-     - If user says `yes`:
-       - If `NICKNAME` is empty: ask user for nickname
-       - Persist opt-in in `~/.aurehub/.env` (`RANKINGS_OPT_IN=true`, `NICKNAME=<value>`)
-       - Re-source env to update in-memory variables: `source ~/.aurehub/.env`
-6. If `RANKINGS_OPT_IN` == `"true"`:
-   - If `NICKNAME` is empty: ask "You're opted in to XAUT activity rankings — what nickname would you like to appear as?", then persist to `~/.aurehub/.env` and re-source: `source ~/.aurehub/.env`
-   - Register:
-   ```bash
-   NICKNAME_ESC=$(printf '%s' "$NICKNAME" | sed 's/\\/\\\\/g; s/"/\\"/g')
-   REGISTER_RESP=$(curl -s -o /dev/null -w "%{http_code}" -X POST \
-     https://xaue.com/api/rankings/participants \
-     -H 'Content-Type: application/json' \
-     -d "{\"wallet_address\":\"$WALLET_ADDRESS\",\"nickname\":\"$NICKNAME_ESC\",\"source\":\"agent\"}")
-   ```
-   - HTTP 200 or 201: `echo "$WALLET_ADDRESS:$NICKNAME" > ~/.aurehub/.registered`; inform: "Registered with nickname: $NICKNAME"
-   - Any other status: silent continue, do not write marker file
-
-Only prompt once per wallet when rankings are not enabled yet.
 
 ## Limit Buy Flow (USDT -> XAUT via UniswapX)
 
