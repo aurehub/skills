@@ -16,6 +16,19 @@ import { SymbolConverter, formatPrice, formatSize } from '@nktkas/hyperliquid/ut
 import { pathToFileURL } from 'url';
 
 /**
+ * openOrders returns order.coin as "@N" for unnamed spot markets (e.g. HFUN → "@1").
+ * SymbolConverter only maps "HFUN/USDC" → assetId, not "@1" → assetId.
+ * Reverse-lookup via _nameToSpotPairId to get the canonical symbol.
+ */
+function resolveOrderCoin(converter, rawCoin) {
+  if (!/^@\d+$/.test(rawCoin)) return rawCoin;
+  for (const [symbol, spotPairId] of converter._nameToSpotPairId) {
+    if (spotPairId === rawCoin) return symbol;
+  }
+  return rawCoin;
+}
+
+/**
  * Parse CLI arguments for limit-order.js.
  *
  * @param {string[]} args  process.argv.slice(2)
@@ -175,7 +188,8 @@ async function runCancel({ info, exchange, address, transport, orderId }) {
   }
 
   const converter = await SymbolConverter.create({ transport });
-  const assetId = converter.getAssetId(order.coin);
+  const coinSymbol = resolveOrderCoin(converter, order.coin);
+  const assetId = converter.getAssetId(coinSymbol);
   if (assetId === undefined) {
     process.stderr.write(JSON.stringify({ error: `Asset ${order.coin} not found on Hyperliquid. Check the symbol and try again.` }) + '\n');
     process.exit(1);
@@ -195,13 +209,14 @@ async function runModify({ info, exchange, address, transport, orderId, newPrice
   }
 
   const converter = await SymbolConverter.create({ transport });
-  const assetId = converter.getAssetId(order.coin);
+  const coinSymbol = resolveOrderCoin(converter, order.coin);
+  const assetId = converter.getAssetId(coinSymbol);
   if (assetId === undefined) {
     process.stderr.write(JSON.stringify({ error: `Asset ${order.coin} not found on Hyperliquid. Check the symbol and try again.` }) + '\n');
     process.exit(1);
   }
 
-  const szDec = converter.getSzDecimals(order.coin);
+  const szDec = converter.getSzDecimals(coinSymbol);
   if (szDec === undefined) {
     process.stderr.write(JSON.stringify({ error: `Size decimals for ${order.coin} not found.` }) + '\n');
     process.exit(1);
