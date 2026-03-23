@@ -126,12 +126,13 @@ export async function buy({ market, side, amount, cfg, provider, wallet }) {
   // Preview
   const tickSize = await client.getTickSize(tokenID);
   const ob = await client.getOrderBook(tokenID);
-  const bestAsk = parseFloat(ob.asks?.[0]?.price ?? '0.5');
+  // Polymarket sorts asks descending (worst first), best ask is last
+  const bestAsk = parseFloat(ob.asks?.at(-1)?.price ?? '0.5');
   const estPrice = bestAsk * 1.01;
   const estShares = (amount / estPrice).toFixed(2);
   console.log(`\nPreview:`);
   console.log(`  Spending:       $${amount} USDC.e`);
-  if (!ob.asks?.[0]) {
+  if (!ob.asks?.at(-1)) {
     console.log(`  Est. price:     ~$0.50/share ⚠️  (no asks in orderbook — estimate may be inaccurate)`);
   } else {
     console.log(`  Est. price:     ~$${estPrice.toFixed(4)}/share (market order — actual fill may differ)`);
@@ -260,11 +261,12 @@ export async function sell({ market, side, amount, cfg, provider, wallet }) {
   const negRisk = await client.getNegRisk(tokenID);
   const tickSize = await client.getTickSize(tokenID);
   const ob = await client.getOrderBook(tokenID);
-  const bestBid = parseFloat(ob.bids?.[0]?.price ?? '0.5');
+  // Polymarket sorts bids ascending (worst first), best bid is last
+  const bestBid = parseFloat(ob.bids?.at(-1)?.price ?? '0.5');
   const estUsdce = (amount * bestBid).toFixed(2);
   console.log(`\nPreview:`);
   console.log(`  Selling:        ${amount} ${side} shares`);
-  if (!ob.bids?.[0]) {
+  if (!ob.bids?.at(-1)) {
     console.log(`  Best bid:       ~$0.50/share ⚠️  (no bids in orderbook — estimate may be inaccurate)`);
   } else {
     console.log(`  Best bid:       $${bestBid.toFixed(4)}/share`);
