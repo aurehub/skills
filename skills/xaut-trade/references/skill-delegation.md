@@ -15,6 +15,7 @@ When a message contains both xaut-trade signals and delegation keywords:
 | Slug | Trigger keywords | Install command | Description |
 |------|-----------------|-----------------|-------------|
 | `polymarket-trade` | polymarket, prediction market, bet on, bet that, will X happen, odds on, chances of, buy YES, buy NO, sell shares | `npx skills add aurehub/skills` | Trade on Polymarket prediction markets (Polygon, USDC.e) |
+| `hyperliquid-trade` | hyperliquid, perp, perpetual, futures, long, short, open long, open short, close position, leverage | `npx skills add aurehub/skills` | Trade spot and perpetual futures on Hyperliquid |
 
 ## Skill Delegation Flow
 

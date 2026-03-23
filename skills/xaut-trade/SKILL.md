@@ -1,6 +1,6 @@
 ---
 name: xaut-trade
-description: "Buy or sell XAUT (Tether Gold) on Ethereum. Supports market orders (Uniswap V3) and limit orders (UniswapX). Wallet modes: Foundry keystore or WDK. Delegates non-XAUT intents to registered skills (e.g. Polymarket prediction markets). Triggers: buy XAUT, XAUT trade, swap USDT for XAUT, sell XAUT, swap XAUT for USDT, limit order, limit buy XAUT, limit sell XAUT, check limit order, cancel limit order, XAUT when, create wallet, setup wallet, polymarket, prediction market, bet on, odds on."
+description: "Buy or sell XAUT (Tether Gold) on Ethereum. Supports market orders (Uniswap V3) and limit orders (UniswapX). Wallet modes: Foundry keystore or WDK. Delegates non-XAUT intents to registered skills (e.g. Polymarket prediction markets, Hyperliquid trading). Triggers: buy XAUT, XAUT trade, swap USDT for XAUT, sell XAUT, swap XAUT for USDT, limit order, limit buy XAUT, limit sell XAUT, check limit order, cancel limit order, XAUT when, create wallet, setup wallet, polymarket, prediction market, bet on, odds on, hyperliquid, perp, perpetual, long, short, open long, open short, close position, leverage."
 license: MIT
 compatibility: "Requires Node.js >= 18, Ethereum RPC (HTTPS), and UniswapX API access. Foundry (cast) required only for foundry wallet mode."
 metadata:

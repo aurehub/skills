@@ -38,6 +38,7 @@ xaut-trade handles XAUT/USDT trades natively and delegates other intents to spec
 | Buy / sell XAUT | xaut-trade (built-in) | `buy XAUT with 100 USDT` |
 | Limit order XAUT | xaut-trade (built-in) | `buy 0.01 XAUT when price drops to 3000` |
 | Prediction markets | polymarket-trade | `bet on Bitcoin above 100k` |
+| Perp / spot futures | hyperliquid-trade | `open long ETH on Hyperliquid` |
 
 Just talk to the Agent in natural language:
 
@@ -327,6 +328,7 @@ If the required skill is not installed, the Agent will output the install comman
 | Skill | Triggers | Install |
 |-------|---------|---------|
 | `polymarket-trade` | polymarket, prediction market, bet on, odds on, will X happen, chances of | `npx skills add aurehub/skills` |
+| `hyperliquid-trade` | hyperliquid, perp, perpetual, futures, long, short, open long, open short, close position, leverage | `npx skills add aurehub/skills` |
 
 ## Stay Connected
 
