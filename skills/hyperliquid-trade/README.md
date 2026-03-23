@@ -8,6 +8,8 @@ Trade spot and perpetual futures on [Hyperliquid](https://hyperliquid.xyz) direc
 - xaut-trade installed with WDK wallet setup completed (`~/.aurehub/.wdk_vault`)
 - USDC deposited on Hyperliquid (via [app.hyperliquid.xyz](https://app.hyperliquid.xyz))
 
+> **Unified Account Mode**: If enabled in Hyperliquid settings (default), spot USDC is automatically available as perp margin — no manual transfer needed. If disabled, transfer USDC to the perp account via the Hyperliquid UI before trading perps.
+
 ## Installation
 
 ```bash
@@ -34,7 +36,7 @@ The assistant will configure `~/.aurehub/hyperliquid.yaml` and verify your walle
 
 ```
 Buy 0.1 ETH spot
-Sell 50 USDC worth of BTC
+Sell 0.001 BTC spot
 Open long ETH 0.1 with 5x leverage cross margin
 Short BTC 0.01 with 10x isolated margin
 Close my ETH position
