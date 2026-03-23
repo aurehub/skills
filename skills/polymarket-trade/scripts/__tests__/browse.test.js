@@ -51,6 +51,23 @@ describe('formatMarketOutput', () => {
     expect(out).toContain('—');
     expect(out).toContain('Will BTC reach $100k');
   });
+
+  it('shows best bid/ask (last entry) not worst (first entry) when orderbook has multiple levels', () => {
+    // Polymarket bids sorted ascending (worst first), asks descending (worst first)
+    // best bid = bids.at(-1), best ask = asks.at(-1)
+    const deepOrderbooks = {
+      '712345': {
+        bids: [{ price: '0.01', size: '10' }, { price: '0.65', size: '50' }, { price: '0.71', size: '100' }],
+        asks: [{ price: '0.99', size: '10' }, { price: '0.80', size: '50' }, { price: '0.73', size: '100' }],
+      },
+      '523456': { bids: [], asks: [] },
+    };
+    const out = formatMarketOutput(mockMarket, deepOrderbooks);
+    expect(out).toContain('0.71'); // best bid
+    expect(out).toContain('0.73'); // best ask
+    expect(out).not.toContain('0.01'); // worst bid must not appear
+    expect(out).not.toContain('0.99'); // worst ask must not appear
+  });
 });
 
 describe('extractTokenIds', () => {

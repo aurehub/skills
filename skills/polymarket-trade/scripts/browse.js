@@ -52,8 +52,10 @@ export function formatMarketOutput(market, orderbooks = {}, marketInfo = null) {
     } catch { /* fall through — prices remain undefined */ }
   }
 
-  const bestBid = ob => ob?.bids?.[0]?.price ?? '—';
-  const bestAsk = ob => ob?.asks?.[0]?.price ?? '—';
+  // Polymarket sorts bids ascending (worst first) and asks descending (worst first)
+  // so the best bid/ask is always the last element
+  const bestBid = ob => ob?.bids?.at(-1)?.price ?? '—';
+  const bestAsk = ob => ob?.asks?.at(-1)?.price ?? '—';
   // Approximate total market depth (bid + ask notional), not a one-sided figure
   const liq = ob => {
     if (!ob) return '—';
