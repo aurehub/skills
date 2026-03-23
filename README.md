@@ -15,6 +15,8 @@ Or manually copy the desired skill folder into your agent's skills directory.
 | Skill | Description |
 |-------|-------------|
 | [xaut-trade](skills/xaut-trade/) | Buy or sell XAUT (Tether Gold) on Ethereum via Uniswap V3 (market) and UniswapX (limit orders) |
+| [polymarket-trade](skills/polymarket-trade/) | Trade on Polymarket prediction markets on Polygon. Browse markets, buy/sell YES/NO shares with auto POL→USDC.e swap |
+| [hyperliquid-trade](skills/hyperliquid-trade/) | Trade spot and perpetual futures on Hyperliquid. Market and limit orders, leverage setting, WDK wallet |
 
 ## Creating a New Skill
 
@@ -71,7 +73,7 @@ Enable git pre-commit checks:
 
 Current checks:
 - `scripts/check-no-runtime-private-key.sh`
-- `scripts/check-skill-version.sh` (valid semver and version consistency between `SKILL.md` and `scripts/package.json` when present)
+- `scripts/check-skill-version.sh` (valid semver for `SKILL.md` metadata.version and `scripts/package.json` when present)
 
 ## License
 

@@ -101,11 +101,18 @@ export async function quote({ tokenIn, tokenOut, amountIn, fee, contracts, provi
  * @param {{ router: string }} params.contracts
  * @returns {{ to: string, data: string, value: bigint }}
  */
+function truncateDecimals(amount, decimals) {
+  const str = String(amount);
+  const dot = str.indexOf('.');
+  if (dot === -1 || str.length - dot - 1 <= decimals) return str;
+  return str.slice(0, dot + 1 + decimals);
+}
+
 export function buildSwap({ tokenIn, tokenOut, amountIn, minAmountOut, fee, recipient, deadline, contracts }) {
   const isEth = tokenIn.address === ZERO_ADDRESS;
 
   const amountInRaw = parseUnits(amountIn, tokenIn.decimals);
-  const amountOutMinRaw = parseUnits(minAmountOut, tokenOut.decimals);
+  const amountOutMinRaw = parseUnits(truncateDecimals(minAmountOut, tokenOut.decimals), tokenOut.decimals);
 
   const iface = new Interface(SWAP_ROUTER_ABI);
 
