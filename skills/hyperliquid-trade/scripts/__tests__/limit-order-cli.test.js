@@ -6,7 +6,7 @@ describe('parseLimitArgs — place', () => {
     expect(parseLimitArgs(['place', 'spot', 'buy', 'ETH', '3000', '0.1'])).toEqual({
       subcommand: 'place', mode: 'spot', action: 'buy', coin: 'ETH',
       price: 3000, size: 0.1, leverage: null, isCross: true,
-      orderId: null, newPrice: null, newSize: null, confirmed: false, reduceOnly: false,
+      orderId: null, newPrice: null, newSize: null, confirmed: false, reduceOnly: false, triggerPrice: null, tpsl: null,
     });
   });
 
@@ -41,6 +41,36 @@ describe('parseLimitArgs — place', () => {
   it('strips --reduce-only from positional args', () => {
     const r = parseLimitArgs(['place', 'spot', 'sell', 'ETH', '3000', '0.1', '--reduce-only']);
     expect(r).toMatchObject({ action: 'sell', coin: 'ETH', price: 3000, size: 0.1, reduceOnly: true });
+  });
+
+  it('parses trigger order with --trigger-price and --sl', () => {
+    const r = parseLimitArgs(['place', 'perp', 'short', 'ETH', '3200', '0.1', '--trigger-price', '3056', '--sl', '--reduce-only', '--confirmed']);
+    expect(r).toMatchObject({
+      subcommand: 'place', mode: 'perp', action: 'short', coin: 'ETH',
+      price: 3200, size: 0.1, triggerPrice: 3056, tpsl: 'sl',
+      reduceOnly: true, confirmed: true,
+    });
+  });
+
+  it('parses trigger order with --tp', () => {
+    const r = parseLimitArgs(['place', 'perp', 'short', 'ETH', '3200', '0.1', '--trigger-price', '3408', '--tp', '--reduce-only']);
+    expect(r).toMatchObject({ triggerPrice: 3408, tpsl: 'tp', reduceOnly: true });
+  });
+
+  it('throws when --trigger-price is used without --tp or --sl', () => {
+    expect(() => parseLimitArgs(['place', 'perp', 'short', 'ETH', '3200', '0.1', '--trigger-price', '3056'])).toThrow(/--tp or --sl/);
+  });
+
+  it('throws when --tp is used without --trigger-price', () => {
+    expect(() => parseLimitArgs(['place', 'perp', 'short', 'ETH', '3200', '0.1', '--tp'])).toThrow(/--trigger-price/);
+  });
+
+  it('throws when both --tp and --sl are used', () => {
+    expect(() => parseLimitArgs(['place', 'perp', 'short', 'ETH', '3200', '0.1', '--trigger-price', '3056', '--tp', '--sl'])).toThrow(/both/);
+  });
+
+  it('throws on invalid trigger price', () => {
+    expect(() => parseLimitArgs(['place', 'perp', 'short', 'ETH', '3200', '0.1', '--trigger-price', '0', '--sl'])).toThrow(/trigger price/i);
   });
 
   it('throws on invalid price (zero)', () => {

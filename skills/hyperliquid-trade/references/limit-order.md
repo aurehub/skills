@@ -51,6 +51,28 @@ node "$SCRIPTS_DIR/limit-order.js" place perp short ETH 3500 0.1 --reduce-only -
 
 Add `--reduce-only` to any `place` command to mark the order as reduce-only. The order will only reduce an existing position — it will **never** open a new position. Use this for take-profit and stop-loss orders. Works with both spot and perp, though most useful for perp.
 
+### Trigger Orders (Stop Loss / Take Profit)
+
+Use `--trigger-price` with `--sl` or `--tp` to place a trigger order. The exchange monitors the price and automatically places a market order when the trigger is hit.
+
+```bash
+# Stop loss: triggers market sell when price drops to $3056
+node "$SCRIPTS_DIR/limit-order.js" place perp short ETH 3200 0.1 --trigger-price 3056 --sl --reduce-only --confirmed
+
+# Take profit: triggers market sell when price rises to $3408
+node "$SCRIPTS_DIR/limit-order.js" place perp short ETH 3200 0.1 --trigger-price 3408 --tp --reduce-only --confirmed
+```
+
+Required flags:
+- `--trigger-price <price>` — the price at which the exchange triggers the order
+- `--sl` or `--tp` — tells the exchange the trigger direction (`--sl`: trigger when price moves against you; `--tp`: trigger when price moves in your favor)
+- `--reduce-only` — strongly recommended for TP/SL to prevent accidental position opening
+
+Success output includes `"status": "waitingForTrigger"`:
+```json
+{ "ok": true, "oid": 12345, "coin": "ETH", "side": "short", "price": 3200, "size": 0.1, "status": "waitingForTrigger", "triggerPrice": 3056, "tpsl": "sl" }
+```
+
 Success output:
 ```json
 { "ok": true, "oid": 12345, "coin": "ETH", "side": "buy", "price": 3000, "size": 0.1, "status": "resting" }

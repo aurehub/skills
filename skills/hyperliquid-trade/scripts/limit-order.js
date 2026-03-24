@@ -37,8 +37,23 @@ function resolveOrderCoin(converter, rawCoin) {
 export function parseLimitArgs(args) {
   const confirmed = args.includes('--confirmed');
   const reduceOnly = args.includes('--reduce-only');
-  const cleanArgs = args.filter(a => a !== '--confirmed' && a !== '--reduce-only');
-  const blank = { subcommand: null, mode: null, action: null, coin: null, price: null, size: null, leverage: null, isCross: true, orderId: null, newPrice: null, newSize: null, confirmed, reduceOnly };
+  const isTp = args.includes('--tp');
+  const isSl = args.includes('--sl');
+  if (isTp && isSl) throw new Error('Cannot use both --tp and --sl at the same time');
+  const tpsl = isTp ? 'tp' : isSl ? 'sl' : null;
+
+  let triggerPrice = null;
+  const triggerIdx = args.indexOf('--trigger-price');
+  if (triggerIdx !== -1) {
+    if (!args[triggerIdx + 1]) throw new Error('Missing value for --trigger-price');
+    triggerPrice = parseFloat(args[triggerIdx + 1]);
+    if (!isFinite(triggerPrice) || triggerPrice <= 0) throw new Error('Invalid trigger price: must be greater than zero');
+    if (!tpsl) throw new Error('--trigger-price requires --tp or --sl to specify trigger direction');
+  }
+  if (tpsl && triggerPrice === null) throw new Error('--tp/--sl requires --trigger-price');
+
+  const cleanArgs = args.filter((a, i) => !['--confirmed', '--reduce-only', '--tp', '--sl', '--trigger-price'].includes(a) && !(i > 0 && args[i - 1] === '--trigger-price'));
+  const blank = { subcommand: null, mode: null, action: null, coin: null, price: null, size: null, leverage: null, isCross: true, orderId: null, newPrice: null, newSize: null, confirmed, reduceOnly, triggerPrice, tpsl };
 
   const [subcommand, ...rest] = cleanArgs;
   if (!subcommand) throw new Error('Usage: limit-order.js <place|list|cancel|modify> ...');
@@ -331,15 +346,23 @@ async function runPlace({ info, exchange, address, transport, parsed, cfg }) {
   const marginUsed = mode === 'perp' ? tradeValue / (leverage ?? 1) : null;
   const confirmValue = mode === 'perp' ? (marginUsed ?? tradeValue) : tradeValue;
 
+  const isTrigger = parsed.triggerPrice !== null;
+  const previewAction = isTrigger
+    ? `${parsed.tpsl === 'tp' ? 'Take Profit' : 'Stop Loss'} ${action === 'buy' || action === 'long' ? 'Buy' : 'Sell'} ${baseCoin} (${mode === 'spot' ? 'Spot' : 'Perpetual'})`
+    : mode === 'spot'
+      ? `${action === 'buy' ? 'Buy' : 'Sell'} ${baseCoin} (Spot)`
+      : `Open ${action === 'long' ? 'Long' : 'Short'} ${baseCoin} (Perpetual)`;
+
   process.stdout.write(JSON.stringify({
     preview: true,
-    action: mode === 'spot'
-      ? `${action === 'buy' ? 'Buy' : 'Sell'} ${baseCoin} (Spot)`
-      : `Open ${action === 'long' ? 'Long' : 'Short'} ${baseCoin} (Perpetual)`,
+    action: previewAction,
     coin: baseCoin,
     side: action,
     price,
     size,
+    triggerPrice: isTrigger ? parsed.triggerPrice : undefined,
+    tpsl: isTrigger ? parsed.tpsl : undefined,
+    reduceOnly: parsed.reduceOnly || undefined,
     leverage: mode === 'perp' ? (leverage ?? 1) : undefined,
     marginMode: mode === 'perp' ? (isCross ? 'Cross' : 'Isolated') : undefined,
     tradeValue: tradeValue.toFixed(2),
@@ -365,29 +388,36 @@ async function runPlace({ info, exchange, address, transport, parsed, cfg }) {
   const p = formatPrice(price, szDec);
   const s = formatSize(size, szDec);
 
+  const orderType = isTrigger
+    ? { trigger: { isMarket: true, triggerPx: formatPrice(parsed.triggerPrice, szDec, mode === 'spot' ? 'spot' : 'perp'), tpsl: parsed.tpsl } }
+    : { limit: { tif: 'Gtc' } };
+  const grouping = isTrigger ? 'normalTpsl' : 'na';
+
   const orderStartTime = Date.now();
   let result;
   try {
     result = await exchange.order({
-      orders: [{ a: assetId, b: isBuy, p, s, r: parsed.reduceOnly, t: { limit: { tif: 'Gtc' } } }],
-      grouping: 'na',
+      orders: [{ a: assetId, b: isBuy, p, s, r: parsed.reduceOnly, t: orderType }],
+      grouping,
     });
   } catch (orderErr) {
-    // GTC order: check if it landed in open orders despite the network error
-    try {
-      const orders = await info.openOrders({ user: address });
-      const match = orders.find(o =>
-        o.coin === symbol &&
-        o.side === (isBuy ? 'B' : 'A') &&
-        Math.abs(parseFloat(o.limitPx) - price) / price < 1e-6 &&
-        Math.abs(parseFloat(o.sz) - size) / size < 1e-6 &&
-        o.timestamp >= orderStartTime
-      );
-      if (match) {
-        process.stdout.write(JSON.stringify({ ok: true, oid: match.oid, coin, side: action, price, size, status: 'resting' }) + '\n');
-        process.exit(0);
-      }
-    } catch { /* ignore — fall through to unknown error */ }
+    if (!isTrigger) {
+      // GTC order: check if it landed in open orders despite the network error
+      try {
+        const orders = await info.openOrders({ user: address });
+        const match = orders.find(o =>
+          o.coin === symbol &&
+          o.side === (isBuy ? 'B' : 'A') &&
+          Math.abs(parseFloat(o.limitPx) - price) / price < 1e-6 &&
+          Math.abs(parseFloat(o.sz) - size) / size < 1e-6 &&
+          o.timestamp >= orderStartTime
+        );
+        if (match) {
+          process.stdout.write(JSON.stringify({ ok: true, oid: match.oid, coin, side: action, price, size, status: 'resting' }) + '\n');
+          process.exit(0);
+        }
+      } catch { /* ignore — fall through to unknown error */ }
+    }
     process.stderr.write(JSON.stringify({ error: `Order status unknown after network error — check your open orders before retrying. (${orderErr?.message ?? orderErr})` }) + '\n');
     process.exit(1);
   }
@@ -400,11 +430,19 @@ async function runPlace({ info, exchange, address, transport, parsed, cfg }) {
   } else if (status0?.filled) {
     oid = status0.filled.oid;
     orderStatus = 'filled';
+  } else if (status0?.waitingForTrigger) {
+    oid = status0.waitingForTrigger;
+    orderStatus = 'waitingForTrigger';
   } else {
     process.stderr.write(JSON.stringify({ error: `Order error: ${JSON.stringify(status0)}` }) + '\n');
     process.exit(1);
   }
 
-  process.stdout.write(JSON.stringify({ ok: true, oid, coin, side: action, price, size, status: orderStatus }) + '\n');
+  const output = { ok: true, oid, coin, side: action, price, size, status: orderStatus };
+  if (isTrigger) {
+    output.triggerPrice = parsed.triggerPrice;
+    output.tpsl = parsed.tpsl;
+  }
+  process.stdout.write(JSON.stringify(output) + '\n');
   process.exit(0);
 }
