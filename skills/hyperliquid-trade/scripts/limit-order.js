@@ -16,7 +16,7 @@ import { SymbolConverter, formatPrice, formatSize } from '@nktkas/hyperliquid/ut
 import { pathToFileURL } from 'url';
 
 /**
- * openOrders returns order.coin as "@N" for unnamed spot markets (e.g. HFUN → "@1").
+ * frontendOpenOrders returns order.coin as "@N" for unnamed spot markets (e.g. HFUN → "@1").
  * SymbolConverter only maps "HFUN/USDC" → assetId, not "@1" → assetId.
  * Reverse-lookup via _nameToSpotPairId to get the canonical symbol.
  */
@@ -180,7 +180,7 @@ if (process.argv[1] && new URL(import.meta.url).href === pathToFileURL(process.a
 }
 
 async function runList({ info, address, coin }) {
-  const orders = await info.openOrders({ user: address });
+  const orders = await info.frontendOpenOrders({ user: address });
   const filtered = coin ? orders.filter(o => o.coin === coin || o.coin === `${coin}/USDC`) : orders;
   process.stdout.write(JSON.stringify({
     orders: filtered.map(o => ({
@@ -190,13 +190,17 @@ async function runList({ info, address, coin }) {
       limitPx: o.limitPx,
       sz: o.sz,
       timestamp: o.timestamp,
+      isTrigger: o.isTrigger || false,
+      triggerPx: o.triggerPx || undefined,
+      triggerCondition: o.triggerCondition || undefined,
+      orderType: o.orderType || undefined,
     })),
   }) + '\n');
   process.exit(0);
 }
 
 async function runCancel({ info, exchange, address, transport, orderId }) {
-  const orders = await info.openOrders({ user: address });
+  const orders = await info.frontendOpenOrders({ user: address });
   const order = orders.find(o => o.oid === orderId);
   if (!order) {
     process.stderr.write(JSON.stringify({ error: `Order ${orderId} not found in open orders.` }) + '\n');
@@ -217,7 +221,7 @@ async function runCancel({ info, exchange, address, transport, orderId }) {
 }
 
 async function runModify({ info, exchange, address, transport, orderId, newPrice, newSize, confirmed }) {
-  const orders = await info.openOrders({ user: address });
+  const orders = await info.frontendOpenOrders({ user: address });
   const order = orders.find(o => o.oid === orderId);
   if (!order) {
     process.stderr.write(JSON.stringify({ error: `Order ${orderId} not found in open orders.` }) + '\n');
@@ -271,7 +275,7 @@ async function runModify({ info, exchange, address, transport, orderId, newPrice
   // otherwise query open orders to find the resting order at the new price.
   let newOid = modifyResult?.response?.data?.statuses?.[0]?.resting?.oid ?? null;
   if (newOid == null) {
-    const updatedOrders = await info.openOrders({ user: address });
+    const updatedOrders = await info.frontendOpenOrders({ user: address });
     const match = updatedOrders.find(
       o => o.coin === order.coin &&
            o.side === order.side &&
