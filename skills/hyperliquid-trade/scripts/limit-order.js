@@ -36,8 +36,9 @@ function resolveOrderCoin(converter, rawCoin) {
  */
 export function parseLimitArgs(args) {
   const confirmed = args.includes('--confirmed');
-  const cleanArgs = args.filter(a => a !== '--confirmed');
-  const blank = { subcommand: null, mode: null, action: null, coin: null, price: null, size: null, leverage: null, isCross: true, orderId: null, newPrice: null, newSize: null, confirmed };
+  const reduceOnly = args.includes('--reduce-only');
+  const cleanArgs = args.filter(a => a !== '--confirmed' && a !== '--reduce-only');
+  const blank = { subcommand: null, mode: null, action: null, coin: null, price: null, size: null, leverage: null, isCross: true, orderId: null, newPrice: null, newSize: null, confirmed, reduceOnly };
 
   const [subcommand, ...rest] = cleanArgs;
   if (!subcommand) throw new Error('Usage: limit-order.js <place|list|cancel|modify> ...');
@@ -368,7 +369,7 @@ async function runPlace({ info, exchange, address, transport, parsed, cfg }) {
   let result;
   try {
     result = await exchange.order({
-      orders: [{ a: assetId, b: isBuy, p, s, r: false, t: { limit: { tif: 'Gtc' } } }],
+      orders: [{ a: assetId, b: isBuy, p, s, r: parsed.reduceOnly, t: { limit: { tif: 'Gtc' } } }],
       grouping: 'na',
     });
   } catch (orderErr) {

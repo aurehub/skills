@@ -42,7 +42,14 @@ Preview format:
 node "$SCRIPTS_DIR/limit-order.js" place spot buy ETH 3000 0.1
 # After user confirms:
 node "$SCRIPTS_DIR/limit-order.js" place spot buy ETH 3000 0.1 --confirmed
+
+# Perp reduce-only order (for TP/SL — closes existing position, will not open a new one)
+node "$SCRIPTS_DIR/limit-order.js" place perp short ETH 3500 0.1 --reduce-only --confirmed
 ```
+
+### `--reduce-only` flag
+
+Add `--reduce-only` to any `place` command to mark the order as reduce-only. The order will only reduce an existing position — it will **never** open a new position. Use this for take-profit and stop-loss orders. Works with both spot and perp, though most useful for perp.
 
 Success output:
 ```json

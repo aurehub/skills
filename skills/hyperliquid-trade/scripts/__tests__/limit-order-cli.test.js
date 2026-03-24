@@ -6,7 +6,7 @@ describe('parseLimitArgs — place', () => {
     expect(parseLimitArgs(['place', 'spot', 'buy', 'ETH', '3000', '0.1'])).toEqual({
       subcommand: 'place', mode: 'spot', action: 'buy', coin: 'ETH',
       price: 3000, size: 0.1, leverage: null, isCross: true,
-      orderId: null, newPrice: null, newSize: null, confirmed: false,
+      orderId: null, newPrice: null, newSize: null, confirmed: false, reduceOnly: false,
     });
   });
 
@@ -30,6 +30,17 @@ describe('parseLimitArgs — place', () => {
     expect(r.action).toBe('short');
     expect(r.isCross).toBe(true);
     expect(r.leverage).toBeNull();
+  });
+
+  it('sets reduceOnly=true when --reduce-only flag is present', () => {
+    const r = parseLimitArgs(['place', 'perp', 'short', 'ETH', '3500', '0.1', '--reduce-only', '--confirmed']);
+    expect(r.reduceOnly).toBe(true);
+    expect(r.confirmed).toBe(true);
+  });
+
+  it('strips --reduce-only from positional args', () => {
+    const r = parseLimitArgs(['place', 'spot', 'sell', 'ETH', '3000', '0.1', '--reduce-only']);
+    expect(r).toMatchObject({ action: 'sell', coin: 'ETH', price: 3000, size: 0.1, reduceOnly: true });
   });
 
   it('throws on invalid price (zero)', () => {
