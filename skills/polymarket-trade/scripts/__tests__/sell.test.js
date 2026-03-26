@@ -462,3 +462,88 @@ describe('sell() — no bids in orderbook', () => {
     expect(result).toMatchObject({ success: true });
   });
 });
+
+describe('sell() — dry-run', () => {
+  it('returns { dryRun: true } without calling postOrder or setApprovalForAll', async () => {
+    setupHappyPath({ sharesHeld: 20, alreadyApproved: false });
+
+    const result = await sell({
+      market:   makeMarket(),
+      side:     'YES',
+      amount:   5,
+      cfg:      makeCfg(),
+      provider: makeProvider(),
+      wallet:   makeWallet(),
+      dryRun:   true,
+    });
+
+    expect(result).toMatchObject({ dryRun: true });
+    expect(mockClientInstance.postOrder).not.toHaveBeenCalled();
+    expect(mockCtfSigned.setApprovalForAll).not.toHaveBeenCalled();
+  });
+
+  it('still calls createMarketOrder in dry-run', async () => {
+    setupHappyPath({ sharesHeld: 20 });
+
+    await sell({
+      market:   makeMarket(),
+      side:     'YES',
+      amount:   5,
+      cfg:      makeCfg(),
+      provider: makeProvider(),
+      wallet:   makeWallet(),
+      dryRun:   true,
+    });
+
+    expect(mockClientInstance.createMarketOrder).toHaveBeenCalledOnce();
+  });
+
+  it('skips safety gate confirm calls in dry-run', async () => {
+    setupHappyPath({ sharesHeld: 200, bestBid: '0.60' });
+
+    // 100 shares × $0.60 = $60 — would trigger warn gate normally
+    await sell({
+      market:   makeMarket({ min_incentive_size: '1' }),
+      side:     'YES',
+      amount:   100,
+      cfg:      makeCfg(),
+      provider: makeProvider(),
+      wallet:   makeWallet(),
+      dryRun:   true,
+    });
+
+    expect(confirm).not.toHaveBeenCalled();
+  });
+
+  it('still enforces hard stops in dry-run (market closed)', async () => {
+    setupHappyPath({ sharesHeld: 20 });
+
+    await expect(
+      sell({
+        market:   makeMarket({ active: false }),
+        side:     'YES',
+        amount:   5,
+        cfg:      makeCfg(),
+        provider: makeProvider(),
+        wallet:   makeWallet(),
+        dryRun:   true,
+      }),
+    ).rejects.toThrow('CLOSED');
+  });
+
+  it('still enforces CTF balance check in dry-run', async () => {
+    setupHappyPath({ sharesHeld: 3 }); // only 3 shares, trying to sell 10
+
+    await expect(
+      sell({
+        market:   makeMarket(),
+        side:     'YES',
+        amount:   10,
+        cfg:      makeCfg(),
+        provider: makeProvider(),
+        wallet:   makeWallet(),
+        dryRun:   true,
+      }),
+    ).rejects.toThrow('Insufficient');
+  });
+});

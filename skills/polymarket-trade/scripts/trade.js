@@ -253,7 +253,7 @@ export async function buy({ market, side, amount, cfg, provider, wallet, dryRun 
 
 // ── Sell flow ─────────────────────────────────────────────────────────────────
 
-export async function sell({ market, side, amount, cfg, provider, wallet }) {
+export async function sell({ market, side, amount, cfg, provider, wallet, dryRun = false }) {
   if (side !== 'YES' && side !== 'NO') throw new Error(`Invalid side "${side}": must be YES or NO`);
   if (!Number.isFinite(amount) || amount <= 0 || amount > 1_000_000) throw new Error(`Invalid amount: ${amount}`);
 
@@ -301,32 +301,37 @@ export async function sell({ market, side, amount, cfg, provider, wallet }) {
     minOrderSize: parseFloat(market.minimum_order_size ?? market.orderMinSize ?? market.min_incentive_size ?? market.minIncentiveSize ?? '0'),
   });
 
-  // Safety gates (on estimated USD value)
-  const safety = cfg.yaml?.safety ?? { warn_threshold_usd: 50, confirm_threshold_usd: 500 };
-  const level = getSafetyLevel(parseFloat(estUsdce), safety);
-  if (level === 'warn') {
-    if (!await confirm(`⚠️  Selling ${amount} ${side} shares (~$${estUsdce}). Confirm? (yes/no):`)) { console.log('Cancelled.'); return; }
-  } else if (level === 'confirm') {
-    if (!await confirm(`⚠️  Large order: ~$${estUsdce}. Are you sure? (yes/no):`)) { console.log('Cancelled.'); return; }
-    if (!await confirm(`⚠️  Confirm again — selling ${amount} ${side} shares. (yes/no):`)) { console.log('Cancelled.'); return; }
+  // Safety gates (on estimated USD value) — skipped in dry-run
+  if (!dryRun) {
+    const safety = cfg.yaml?.safety ?? { warn_threshold_usd: 50, confirm_threshold_usd: 500 };
+    const level = getSafetyLevel(parseFloat(estUsdce), safety);
+    if (level === 'warn') {
+      if (!await confirm(`⚠️  Selling ${amount} ${side} shares (~$${estUsdce}). Confirm? (yes/no):`)) { console.log('Cancelled.'); return; }
+    } else if (level === 'confirm') {
+      if (!await confirm(`⚠️  Large order: ~$${estUsdce}. Are you sure? (yes/no):`)) { console.log('Cancelled.'); return; }
+      if (!await confirm(`⚠️  Confirm again — selling ${amount} ${side} shares. (yes/no):`)) { console.log('Cancelled.'); return; }
+    }
   }
 
-  // setApprovalForAll
+  // setApprovalForAll — skipped in dry-run
   const operator = negRisk
     ? (contracts.neg_risk_exchange ?? '0xC5d563A36AE78145C45a50134d48A1215220f80a')
     : (contracts.ctf_exchange      ?? '0x4bFb41d5B3570DeFd03C39a9A4D8dE6Bd8B8982E');
   if (!ethers.utils.isAddress(operator)) throw new Error(`Invalid contract address in config: ${negRisk ? 'neg_risk_exchange' : 'ctf_exchange'} = "${operator}"`);
   const ctfSigned = ctf.connect(wallet);
-  const alreadyApproved = await ctf.isApprovedForAll(wallet.address, operator);
-  const approvalSetByThisCall = !alreadyApproved;
-  if (!alreadyApproved) {
-    console.log(`\nApproving exchange operator...`);
-    const approveTx = await ctfSigned.setApprovalForAll(operator, true, await polyGasOverrides(provider));
-    console.log(`Approval tx submitted, waiting for confirmation...`);
-    await approveTx.wait();
-    console.log(`Approval confirmed.`);
-  } else {
-    console.log(`\nOperator already approved, skipping setApprovalForAll.`);
+  let approvalSetByThisCall = false;
+  if (!dryRun) {
+    const alreadyApproved = await ctf.isApprovedForAll(wallet.address, operator);
+    approvalSetByThisCall = !alreadyApproved;
+    if (!alreadyApproved) {
+      console.log(`\nApproving exchange operator...`);
+      const approveTx = await ctfSigned.setApprovalForAll(operator, true, await polyGasOverrides(provider));
+      console.log(`Approval tx submitted, waiting for confirmation...`);
+      await approveTx.wait();
+      console.log(`Approval confirmed.`);
+    } else {
+      console.log(`\nOperator already approved, skipping setApprovalForAll.`);
+    }
   }
 
   // Submit order — split create/post so a network exception can be disambiguated
@@ -336,6 +341,12 @@ export async function sell({ market, side, amount, cfg, provider, wallet }) {
     { tokenID, amount, side: Side.SELL },
     { tickSize, negRisk },
   );
+
+  if (dryRun) {
+    console.log(`\n[DRY RUN] Order not submitted. No on-chain transactions were sent.`);
+    return { dryRun: true, order };
+  }
+
   let result;
   try {
     result = await client.postOrder(order, OrderType.FOK);
