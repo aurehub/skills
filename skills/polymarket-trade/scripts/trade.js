@@ -386,13 +386,14 @@ if (process.argv[1] && realpathSync(process.argv[1]) === fileURLToPath(import.me
   const args = process.argv.slice(2);
   const getArg = f => { const i = args.indexOf(f); return i >= 0 ? args[i + 1] : null; };
   const mode    = args.includes('--sell') ? 'sell' : 'buy';
+  const dryRun  = args.includes('--dry-run');
   const query   = getArg('--market');
   const side    = (getArg('--side') ?? 'YES').toUpperCase();
   const amount  = parseFloat(getArg('--amount') ?? '0');
 
   if (!query || !amount || amount <= 0 || !Number.isFinite(amount) || amount > 1_000_000) {
-    console.error('Usage: node scripts/trade.js --buy  --market <slug> --side YES|NO --amount <usd>     # buy');
-    console.error('       node scripts/trade.js --sell --market <slug> --side YES|NO --amount <shares>  # sell');
+    console.error('Usage: node scripts/trade.js --buy  --market <slug> --side YES|NO --amount <usd>     [--dry-run]  # buy');
+    console.error('       node scripts/trade.js --sell --market <slug> --side YES|NO --amount <shares>  [--dry-run]  # sell');
     process.exit(1);
   }
 
@@ -408,7 +409,7 @@ if (process.argv[1] && realpathSync(process.argv[1]) === fileURLToPath(import.me
       const market = await resolveMarket(query, cfg);
 
       const fn = mode === 'sell' ? sell : buy;
-      await fn({ market, side, amount, cfg, provider, wallet });
+      await fn({ market, side, amount, cfg, provider, wallet, dryRun });
     } catch (e) {
       if (e.response?.status === 403) {
         console.error('❌ 403 Forbidden — Polymarket API blocked in your region. Use a VPN.');

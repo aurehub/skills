@@ -143,12 +143,16 @@ Show output. If negRisk positions are skipped, tell the user to visit polymarket
 3. Run: `node "$POLY_SCRIPTS_DIR/trade.js" --buy --market <slug> --side YES|NO --amount <usd>`
 4. The script handles approval and order submission; report the result
 
+Pass `--dry-run` to simulate the full flow (balance checks, hard stops, order construction) without submitting any transactions.
+
 ## Sell Flow
 
 1. Run `node "$POLY_SCRIPTS_DIR/browse.js" <market>` to confirm token IDs and current bids
 2. Ask user: market slug, side (YES/NO to sell), number of shares
 3. Run: `node "$POLY_SCRIPTS_DIR/trade.js" --sell --market <slug> --side YES|NO --amount <shares>`
 4. The script handles setApprovalForAll and order submission; report the result
+
+Pass `--dry-run` to simulate the full flow (balance checks, hard stops, order construction) without submitting any transactions.
 
 ## Safety Gates (handled by trade.js)
 
