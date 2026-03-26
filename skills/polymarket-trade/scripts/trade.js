@@ -108,7 +108,7 @@ export async function checkRecentFill(client, tokenID, makerAddress, windowSec =
 
 // ── Buy flow ──────────────────────────────────────────────────────────────────
 
-export async function buy({ market, side, amount, cfg, provider, wallet }) {
+export async function buy({ market, side, amount, cfg, provider, wallet, dryRun = false }) {
   if (side !== 'YES' && side !== 'NO') throw new Error(`Invalid side "${side}": must be YES or NO`);
   if (!Number.isFinite(amount) || amount <= 0 || amount > 1_000_000) throw new Error(`Invalid amount: ${amount}`);
 
@@ -160,11 +160,12 @@ export async function buy({ market, side, amount, cfg, provider, wallet }) {
   const swapResult = await checkAndSwapIfNeeded({
     amount, usdceBalance, polBalance, cfg, wallet, provider,
     confirmFn: confirm,
+    dryRun,
   });
   if (swapResult === 'cancelled') return;
 
-  // Re-check USDC.e only after a swap (if already sufficient, no need to re-check)
-  if (swapResult !== false) {
+  // Re-check USDC.e only after a real swap (not dry-run-swap)
+  if (swapResult === true) {
     const usdceRawPost = await usdce.balanceOf(wallet.address);
     const usdcePost = parseFloat(ethers.utils.formatUnits(usdceRawPost, 6));
     if (usdcePost < amount) throw new Error('Swap completed but USDC.e balance still insufficient.');
@@ -175,28 +176,34 @@ export async function buy({ market, side, amount, cfg, provider, wallet }) {
   const polBalancePost = parseFloat(ethers.utils.formatEther(polRawPost));
   if (polBalancePost < 0.01) throw new Error(`Insufficient POL gas: have ${polBalancePost} POL, need ≥ 0.01.`);
 
-  // Safety gates
-  const safety = cfg.yaml?.safety ?? { warn_threshold_usd: 50, confirm_threshold_usd: 500 };
-  const level = getSafetyLevel(amount, safety);
-  if (level === 'warn') {
-    if (!await confirm(`⚠️  Buying ${side} at ~$${estPrice.toFixed(4)} for $${amount}. Confirm? (yes/no):`)) { console.log('Cancelled.'); return; }
-  } else if (level === 'confirm') {
-    if (!await confirm(`⚠️  Large order: $${amount}. Are you sure? (yes/no):`)) { console.log('Cancelled.'); return; }
-    if (!await confirm(`⚠️  Confirm again — this will spend $${amount} USDC.e. (yes/no):`)) { console.log('Cancelled.'); return; }
+  // Safety gates — skipped in dry-run
+  if (!dryRun) {
+    const safety = cfg.yaml?.safety ?? { warn_threshold_usd: 50, confirm_threshold_usd: 500 };
+    const level = getSafetyLevel(amount, safety);
+    if (level === 'warn') {
+      if (!await confirm(`⚠️  Buying ${side} at ~$${estPrice.toFixed(4)} for $${amount}. Confirm? (yes/no):`)) { console.log('Cancelled.'); return; }
+    } else if (level === 'confirm') {
+      if (!await confirm(`⚠️  Large order: $${amount}. Are you sure? (yes/no):`)) { console.log('Cancelled.'); return; }
+      if (!await confirm(`⚠️  Confirm again — this will spend $${amount} USDC.e. (yes/no):`)) { console.log('Cancelled.'); return; }
+    }
   }
 
-  // Approve if current allowance is insufficient
-  const exactAmount = ethers.utils.parseUnits(amount.toFixed(6), 6);
+  // Declare for potential use in error recovery (approve revoke)
   const usdceSigned = usdce.connect(wallet);
-  const currentAllowance = await usdce.allowance(wallet.address, spender);
-  if (currentAllowance.lt(exactAmount)) {
-    console.log(`\nApproving ${spender.slice(0, 10)}... to spend ${amount} USDC.e...`);
-    const approveTx = await usdceSigned.approve(spender, exactAmount, await polyGasOverrides(provider));
-    console.log(`Approval tx submitted, waiting for confirmation...`);
-    await approveTx.wait();
-    console.log(`Approval confirmed.`);
-  } else {
-    console.log(`\nAllowance sufficient (${ethers.utils.formatUnits(currentAllowance, 6)} USDC.e), skipping approve.`);
+
+  // Approve if current allowance is insufficient — skipped in dry-run
+  if (!dryRun) {
+    const exactAmount = ethers.utils.parseUnits(amount.toFixed(6), 6);
+    const currentAllowance = await usdce.allowance(wallet.address, spender);
+    if (currentAllowance.lt(exactAmount)) {
+      console.log(`\nApproving ${spender.slice(0, 10)}... to spend ${amount} USDC.e...`);
+      const approveTx = await usdceSigned.approve(spender, exactAmount, await polyGasOverrides(provider));
+      console.log(`Approval tx submitted, waiting for confirmation...`);
+      await approveTx.wait();
+      console.log(`Approval confirmed.`);
+    } else {
+      console.log(`\nAllowance sufficient (${ethers.utils.formatUnits(currentAllowance, 6)} USDC.e), skipping approve.`);
+    }
   }
 
   // Submit order — split create/post so a network exception can be disambiguated
@@ -206,6 +213,12 @@ export async function buy({ market, side, amount, cfg, provider, wallet }) {
     { tokenID, amount, side: Side.BUY },
     { tickSize, negRisk },
   );
+
+  if (dryRun) {
+    console.log(`\n[DRY RUN] Order not submitted. No on-chain transactions were sent.`);
+    return { dryRun: true, order };
+  }
+
   let result;
   try {
     result = await client.postOrder(order, OrderType.FOK);
