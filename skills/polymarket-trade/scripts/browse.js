@@ -83,7 +83,40 @@ export function formatMarketOutput(market, orderbooks = {}, marketInfo = null) {
   return lines.join('\n');
 }
 
+// ── Crypto keyword detection ──────────────────────────────────────────────────
+
+const CRYPTO_TERMS = new Set([
+  'btc', 'bitcoin', 'eth', 'ethereum', 'sol', 'solana', 'xrp', 'ripple',
+  'bnb', 'doge', 'dogecoin', 'ada', 'cardano', 'avax', 'avalanche', 'matic',
+  'polygon', 'dot', 'polkadot', 'link', 'chainlink', 'uni', 'uniswap',
+  'ltc', 'litecoin', 'atom', 'near', 'algo', 'algorand', 'trx', 'tron',
+  'crypto', 'defi', 'nft', 'stablecoin', 'altcoin',
+]);
+
+function isCryptoQuery(query) {
+  const lower = query.toLowerCase();
+  return [...CRYPTO_TERMS].some(t => lower.includes(t));
+}
+
 // ── Network fetch helpers ─────────────────────────────────────────────────────
+
+async function fetchGammaEvents(url, { tagSlug, pages = 1 } = {}) {
+  const { default: axios } = await import('axios');
+  const base = `${url}/events?active=true&closed=false&limit=500`;
+  const tag  = tagSlug ? `&tag_slug=${tagSlug}` : '';
+  // First page must succeed (errors propagate). Additional pages are best-effort.
+  const toEvents = r => Array.isArray(r.data) ? r.data : (r.data?.events ?? []);
+  const first = await axios.get(`${base}${tag}&offset=0`, { timeout: 15_000 }).then(toEvents);
+  if (pages === 1) return first;
+  const rest = await Promise.all(
+    Array.from({ length: pages - 1 }, (_, i) =>
+      axios.get(`${base}${tag}&offset=${(i + 1) * 500}`, { timeout: 15_000 })
+        .then(toEvents)
+        .catch(() => [])
+    )
+  );
+  return [first, ...rest].flat();
+}
 
 async function fetchGamma(url, query) {
   const { default: axios } = await import('axios');
@@ -95,11 +128,12 @@ async function fetchGamma(url, query) {
   }
   // Keyword search: the Gamma Events API ignores the `q` parameter entirely —
   // fetch active events and filter client-side by event title/slug or market question/slug.
-  const res = await axios.get(
-    `${url}/events?active=true&closed=false&limit=200`,
-    { timeout: 10_000 },
-  );
-  const events = Array.isArray(res.data) ? res.data : (res.data?.events ?? []);
+  // Crypto queries use tag_slug=crypto + 2 pages concurrently to cover ETH/BTC price markets
+  // that appear beyond the first 200 events.
+  const opts = isCryptoQuery(query)
+    ? { tagSlug: 'crypto', pages: 2 }
+    : { pages: 1 };
+  const events = await fetchGammaEvents(url, opts);
   const lq = query.toLowerCase();
   return events.flatMap(e => {
     const eventMatches = e.title?.toLowerCase().includes(lq) || e.slug?.toLowerCase().includes(lq);
@@ -198,8 +232,8 @@ export async function resolveMarket(query, cfg) {
 
   // Step 2: keyword fallback — Gamma ?q= ignores the query param; fetch events and
   // filter client-side by event title/slug or market question/slug.
-  const evRes = await axios.get(`${gammaUrl}/events?active=true&closed=false&limit=200`, { timeout: 10_000 });
-  const events = Array.isArray(evRes.data) ? evRes.data : (evRes.data?.events ?? []);
+  const opts = isCryptoQuery(query) ? { tagSlug: 'crypto', pages: 2 } : { pages: 1 };
+  const events = await fetchGammaEvents(gammaUrl, opts);
   const lq = query.toLowerCase();
   const markets = events.flatMap(e => {
     const em = e.title?.toLowerCase().includes(lq) || e.slug?.toLowerCase().includes(lq);
