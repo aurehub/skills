@@ -42,7 +42,7 @@ export function validateHardStops(amount, { usdceBalance, polBalance, marketActi
  * Returns: false (no swap needed), true (swapped), 'cancelled' (user declined).
  */
 export async function checkAndSwapIfNeeded({
-  amount, usdceBalance, polBalance, cfg, wallet, provider, confirmFn,
+  amount, usdceBalance, polBalance, cfg, wallet, provider, confirmFn, dryRun = false,
 }) {
   if (usdceBalance >= amount) return false;
 
@@ -61,6 +61,11 @@ export async function checkAndSwapIfNeeded({
   console.log(`  A POL → USDC.e swap is required to proceed with this buy.`);
   console.log(`  Will swap ~${polAmountMaxF.toFixed(2)} POL → ~$${target.toFixed(2)} USDC.e (10% buffer + 2% slippage protection)`);
   console.log(`  Est. rate: 1 POL ≈ $${rate.toFixed(2)} USDC.e`);
+
+  if (dryRun) {
+    console.log(`  [DRY RUN] Swap would be executed here — skipped.`);
+    return 'dry-run-swap';
+  }
 
   const swapConfirmed = await confirmFn('Proceed with swap and continue buy? (yes/no):');
   if (!swapConfirmed) {

@@ -108,6 +108,19 @@ describe('checkAndSwapIfNeeded', () => {
     expect(result).toBe('cancelled');
     expect(swapPolToUsdc).not.toHaveBeenCalled();
   });
+
+  it('returns "dry-run-swap" without executing swap when dryRun=true and USDC.e insufficient', async () => {
+    const { ethers } = await import('ethers');
+    getSwapQuote.mockResolvedValue({
+      polNeeded: ethers.utils.parseEther('1'),
+      rate: 2.5,
+    });
+
+    const result = await checkAndSwapIfNeeded({ ...baseParams, usdceBalance: 3, dryRun: true });
+    expect(result).toBe('dry-run-swap');
+    expect(swapPolToUsdc).not.toHaveBeenCalled();
+    expect(baseParams.confirmFn).not.toHaveBeenCalled();
+  });
 });
 
 // ── checkRecentFill ───────────────────────────────────────────────────────────
