@@ -380,8 +380,7 @@ function _resolveFee(cfg, symbolIn, symbolOut) {
       return pair.fee_tier;
     }
   }
-  // Default to 3000 (0.3%) if no matching pair found
-  return 3000;
+  throw new Error(`No enabled pair found for ${symbolIn}/${symbolOut} in config.yaml. Check your pairs configuration.`);
 }
 
 // ---------------------------------------------------------------------------

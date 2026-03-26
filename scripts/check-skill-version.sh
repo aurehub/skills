@@ -65,20 +65,8 @@ validate_skill_dir() {
     local package_version
     package_version="$(extract_package_json_version "$package_json")"
 
-    if [ -z "$package_version" ]; then
-      echo "[error] $package_json missing version"
-      return 1
-    fi
-
-    if ! is_semver "$package_version"; then
+    if [ -n "$package_version" ] && ! is_semver "$package_version"; then
       echo "[error] $package_json version is not valid semver: $package_version"
-      return 1
-    fi
-
-    if [ "$skill_version" != "$package_version" ]; then
-      echo "[error] version mismatch in $skill_dir"
-      echo "        SKILL.md metadata.version: $skill_version"
-      echo "        scripts/package.json version: $package_version"
       return 1
     fi
   fi

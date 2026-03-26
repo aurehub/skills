@@ -9,3 +9,13 @@ node_modules/
 dist/
 docs/
 .serena/
+
+# Agent skill install directories
+.agent/
+.agents/
+.claude/
+.trae/
+.windsurf/
+skills-lock.json
+
+strategy-engine/
