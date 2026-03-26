@@ -47,6 +47,18 @@ After prerequisites pass: if the user's message matches browse flow (contains "b
 
 `<skill-dir>` is the directory containing this SKILL.md file.
 
+## Resolving POLY_SCRIPTS_DIR
+
+Use `<skill-dir>/scripts` as the scripts directory. To find it at runtime:
+
+```bash
+# 1. Git repo fallback
+GIT_ROOT=$(git rev-parse --show-toplevel 2>/dev/null)
+[ -n "$GIT_ROOT" ] && [ -d "$GIT_ROOT/skills/polymarket-trade/scripts" ] && POLY_SCRIPTS_DIR="$GIT_ROOT/skills/polymarket-trade/scripts"
+# 2. Bounded home search
+[ -z "$POLY_SCRIPTS_DIR" ] && POLY_SCRIPTS_DIR=$(dirname "$(find "$HOME" -maxdepth 6 -type f -path "*/polymarket-trade/scripts/browse.js" 2>/dev/null | head -1)")
+```
+
 ## Wallet-Ready Registration
 
 Run after prerequisites pass for any wallet-requiring flow (not browse). Derive WALLET_ADDRESS using xaut-trade's `swap.js` (required by prerequisites):
@@ -100,7 +112,7 @@ Only prompt once per wallet. The `.rankings_prompted` and `.registered` markers 
 
 Run environment check (no wallet, no RPC, no CLOB credentials needed):
 ```
-node scripts/browse.js "<keyword or market slug>"
+node "$POLY_SCRIPTS_DIR/browse.js" "<keyword or market slug>"
 ```
 Show the output to the user. The output includes:
 - **Slug** and **ConditionId** — either can be passed as `--market` to trade.js
@@ -112,30 +124,30 @@ Prefer passing ConditionId to `--market` when trading (more reliable than slug).
 
 Run environment check:
 ```
-node scripts/balance.js
+node "$POLY_SCRIPTS_DIR/balance.js"
 ```
 
 ## Redeem Flow
 
 Run environment check (no CLOB credentials needed), then:
 ```
-node scripts/redeem.js
+node "$POLY_SCRIPTS_DIR/redeem.js"
 ```
 
 Show output. If negRisk positions are skipped, tell the user to visit polymarket.com.
 
 ## Buy Flow
 
-1. Run `node scripts/browse.js <market>` to show current prices
+1. Run `node "$POLY_SCRIPTS_DIR/browse.js" <market>` to show current prices
 2. Ask user: market slug, side (YES/NO), amount in USD
-3. Run: `node scripts/trade.js --buy --market <slug> --side YES|NO --amount <usd>`
+3. Run: `node "$POLY_SCRIPTS_DIR/trade.js" --buy --market <slug> --side YES|NO --amount <usd>`
 4. The script handles approval and order submission; report the result
 
 ## Sell Flow
 
-1. Run `node scripts/browse.js <market>` to confirm token IDs and current bids
+1. Run `node "$POLY_SCRIPTS_DIR/browse.js" <market>` to confirm token IDs and current bids
 2. Ask user: market slug, side (YES/NO to sell), number of shares
-3. Run: `node scripts/trade.js --sell --market <slug> --side YES|NO --amount <shares>`
+3. Run: `node "$POLY_SCRIPTS_DIR/trade.js" --sell --market <slug> --side YES|NO --amount <shares>`
 4. The script handles setApprovalForAll and order submission; report the result
 
 ## Safety Gates (handled by trade.js)

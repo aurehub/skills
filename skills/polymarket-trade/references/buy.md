@@ -3,7 +3,7 @@
 ## Command
 
 ```bash
-node scripts/trade.js --buy --market <slug> --side YES|NO --amount <usd>
+node "$POLY_SCRIPTS_DIR/trade.js" --buy --market <slug> --side YES|NO --amount <usd>
 ```
 
 - `--market` — market slug (from browse output or Polymarket URL)
@@ -13,7 +13,7 @@ node scripts/trade.js --buy --market <slug> --side YES|NO --amount <usd>
 ## Example
 
 ```bash
-node scripts/trade.js --buy --market bitcoin-100k-2025 --side YES --amount 25
+node "$POLY_SCRIPTS_DIR/trade.js" --buy --market bitcoin-100k-2025 --side YES --amount 25
 ```
 
 ## Flow

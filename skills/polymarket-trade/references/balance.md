@@ -3,7 +3,7 @@
 ## Command
 
 ```bash
-node scripts/balance.js
+node "$POLY_SCRIPTS_DIR/balance.js"
 ```
 
 ## Output Format

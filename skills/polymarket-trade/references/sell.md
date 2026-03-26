@@ -3,7 +3,7 @@
 ## Command
 
 ```bash
-node scripts/trade.js --sell --market <slug> --side YES|NO --amount <shares>
+node "$POLY_SCRIPTS_DIR/trade.js" --sell --market <slug> --side YES|NO --amount <shares>
 ```
 
 - `--market` — market slug
@@ -13,7 +13,7 @@ node scripts/trade.js --sell --market <slug> --side YES|NO --amount <shares>
 ## Example
 
 ```bash
-node scripts/trade.js --sell --market bitcoin-100k-2025 --side YES --amount 10
+node "$POLY_SCRIPTS_DIR/trade.js" --sell --market bitcoin-100k-2025 --side YES --amount 10
 ```
 
 ## Flow

@@ -3,7 +3,7 @@
 ## Command
 
 ```bash
-node scripts/browse.js "<keyword or market slug>"
+node "$POLY_SCRIPTS_DIR/browse.js" "<keyword or market slug>"
 ```
 
 ## Output Format
