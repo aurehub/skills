@@ -31,6 +31,12 @@ yellow() { printf '\033[0;33m%s\033[0m\n' "$*"; }
 
 die() { red "Error: $*" >&2; exit 1; }
 
+# Check if a specific version is already published on ClawHub
+version_exists_remote() {
+  local slug="$1" version="$2"
+  clawhub inspect "$slug" --version "$version" --json &>/dev/null
+}
+
 check_clawhub() {
   if ! command -v clawhub &>/dev/null; then
     die "clawhub CLI not found. Install with: npm i -g clawhub"
@@ -123,10 +129,18 @@ publish_one() {
       return 0
     fi
 
-    # Retry on timeout
-    if echo "$output" | grep -qi "Timeout" && [ $attempt -lt $max_retries ]; then
-      yellow "  Attempt $attempt timed out, retrying..."
-      continue
+    # On timeout, check if the version was actually published
+    if echo "$output" | grep -qi "Timeout"; then
+      yellow "  Attempt $attempt timed out, verifying remote..."
+      sleep 2
+      if version_exists_remote "$slug" "$version"; then
+        green "  Published $slug@$version (confirmed after timeout)"
+        return 0
+      fi
+      if [ $attempt -lt $max_retries ]; then
+        yellow "  Not yet available, retrying..."
+        continue
+      fi
     fi
 
     # Non-retryable failure
@@ -197,9 +211,20 @@ publish_all() {
         break
       fi
 
-      if echo "$output" | grep -qi "Timeout" && [ $attempt -lt $max_retries ]; then
-        yellow "  Attempt $attempt timed out, retrying..."
-        continue
+      if echo "$output" | grep -qi "Timeout"; then
+        local ver_check
+        ver_check="$(extract_field "$skill_md" "version")"
+        yellow "  Attempt $attempt timed out, verifying remote..."
+        sleep 2
+        if [ -n "$ver_check" ] && version_exists_remote "$slug" "$ver_check"; then
+          green "  Published $slug@$ver_check (confirmed after timeout)"
+          published=true
+          break
+        fi
+        if [ $attempt -lt $max_retries ]; then
+          yellow "  Not yet available, retrying..."
+          continue
+        fi
       fi
 
       echo "$output" >&2
