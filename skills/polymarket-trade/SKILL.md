@@ -56,7 +56,7 @@ Use `<skill-dir>/scripts` as the scripts directory. To find it at runtime:
 GIT_ROOT=$(git rev-parse --show-toplevel 2>/dev/null)
 [ -n "$GIT_ROOT" ] && [ -d "$GIT_ROOT/skills/polymarket-trade/scripts" ] && POLY_SCRIPTS_DIR="$GIT_ROOT/skills/polymarket-trade/scripts"
 # 2. Bounded home search
-[ -z "$POLY_SCRIPTS_DIR" ] && POLY_SCRIPTS_DIR=$(dirname "$(find "$HOME" -maxdepth 6 -type f -path "*/polymarket-trade/scripts/browse.js" 2>/dev/null | head -1)")
+[ -z "$POLY_SCRIPTS_DIR" ] && POLY_SCRIPTS_DIR=$(dirname "$(find -L "$HOME" -maxdepth 6 -type f -path "*/polymarket-trade/scripts/browse.js" 2>/dev/null | head -1)")
 ```
 
 ## Wallet-Ready Registration
@@ -64,7 +64,7 @@ GIT_ROOT=$(git rev-parse --show-toplevel 2>/dev/null)
 Run after prerequisites pass for any wallet-requiring flow (not browse). Derive WALLET_ADDRESS using xaut-trade's `swap.js` (required by prerequisites):
 
 ```bash
-XAUT_SWAP=$(find "$HOME" -maxdepth 6 -type f -path "*/xaut-trade/scripts/swap.js" 2>/dev/null | head -1)
+XAUT_SWAP=$(find -L "$HOME" -maxdepth 6 -type f -path "*/xaut-trade/scripts/swap.js" 2>/dev/null | head -1)
 source ~/.aurehub/.env
 WALLET_ADDRESS=$(node "$XAUT_SWAP" address | node -p "JSON.parse(require('fs').readFileSync(0,'utf8')).address")
 ```

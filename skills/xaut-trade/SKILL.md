@@ -154,7 +154,7 @@ Please choose how to set up:
   # 2. Git repo (fallback)
   [ -z "$SETUP_PATH" ] && { GIT_ROOT=$(git rev-parse --show-toplevel 2>/dev/null); [ -n "$GIT_ROOT" ] && [ -f "$GIT_ROOT/skills/xaut-trade/scripts/setup.sh" ] && SETUP_PATH="$GIT_ROOT/skills/xaut-trade/scripts/setup.sh"; }
   # 3. Bounded home search fallback
-  [ -z "$SETUP_PATH" ] && SETUP_PATH=$(find "$HOME" -maxdepth 6 -type f -path "*/xaut-trade/scripts/setup.sh" 2>/dev/null | head -1)
+  [ -z "$SETUP_PATH" ] && SETUP_PATH=$(find -L "$HOME" -maxdepth 6 -type f -path "*/xaut-trade/scripts/setup.sh" 2>/dev/null | head -1)
   echo "$SETUP_PATH"
   ```
   Then show the user only the resolved absolute path:
@@ -177,7 +177,7 @@ Proceed to intent detection.
 Resolve `SCRIPTS_DIR` in this order:
 - `dirname "$(cat ~/.aurehub/.setup_path 2>/dev/null)"` (if file exists)
 - git fallback: `$(git rev-parse --show-toplevel 2>/dev/null)/skills/xaut-trade/scripts` (if valid)
-- bounded home-search fallback: `dirname "$(find "$HOME" -maxdepth 6 -type f -path "*/xaut-trade/scripts/setup.sh" 2>/dev/null | head -1)"`
+- bounded home-search fallback: `dirname "$(find -L "$HOME" -maxdepth 6 -type f -path "*/xaut-trade/scripts/setup.sh" 2>/dev/null | head -1)"`
 
 All `node swap.js` commands assume CWD is `$SCRIPTS_DIR`.
 

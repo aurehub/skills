@@ -121,7 +121,7 @@ Use `<skill-dir>/scripts` as the scripts directory. To find `<skill-dir>` at run
 GIT_ROOT=$(git rev-parse --show-toplevel 2>/dev/null)
 [ -n "$GIT_ROOT" ] && [ -d "$GIT_ROOT/skills/hyperliquid-trade/scripts" ] && HL_SCRIPTS_DIR="$GIT_ROOT/skills/hyperliquid-trade/scripts"
 # 2. Bounded home search
-[ -z "$HL_SCRIPTS_DIR" ] && HL_SCRIPTS_DIR=$(dirname "$(find "$HOME" -maxdepth 6 -type f -path "*/hyperliquid-trade/scripts/balance.js" 2>/dev/null | head -1)")
+[ -z "$HL_SCRIPTS_DIR" ] && HL_SCRIPTS_DIR=$(dirname "$(find -L "$HOME" -maxdepth 6 -type f -path "*/hyperliquid-trade/scripts/balance.js" 2>/dev/null | head -1)")
 echo "$HL_SCRIPTS_DIR"
 ```
 
