@@ -12,5 +12,5 @@
 
 Hyperliquid uses EVM-compatible addresses. Your wallet address is the same address you use on Hyperliquid. Verify with:
 ```bash
-node "$SCRIPTS_DIR/balance.js" address
+node "$HL_SCRIPTS_DIR/balance.js" address
 ```

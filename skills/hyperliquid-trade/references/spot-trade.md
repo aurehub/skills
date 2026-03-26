@@ -3,11 +3,11 @@
 ## Buy flow
 
 1. Parse coin and size from user intent
-2. Run: `node "$SCRIPTS_DIR/trade.js" spot buy <COIN> <SIZE>` — outputs preview JSON; exits with structured error if balance is insufficient
+2. Run: `node "$HL_SCRIPTS_DIR/trade.js" spot buy <COIN> <SIZE>` — outputs preview JSON; exits with structured error if balance is insufficient
 3. Apply confirmation logic from `requiresConfirm`/`requiresDoubleConfirm` flags
 4. After user confirms, re-run:
 ```bash
-node "$SCRIPTS_DIR/trade.js" spot buy <COIN> <SIZE> --confirmed
+node "$HL_SCRIPTS_DIR/trade.js" spot buy <COIN> <SIZE> --confirmed
 ```
 5. Use the last JSON line as the result; report fill price or "not filled" outcome
 
@@ -16,11 +16,11 @@ Result format: `{ "ok": true, "oid": 12345, "avgPx": "3200.50", "filledSz": "0.1
 ## Sell flow
 
 1. Parse coin and size
-2. Run: `node "$SCRIPTS_DIR/trade.js" spot sell <COIN> <SIZE>` — outputs preview JSON; exits with structured error if balance is insufficient
+2. Run: `node "$HL_SCRIPTS_DIR/trade.js" spot sell <COIN> <SIZE>` — outputs preview JSON; exits with structured error if balance is insufficient
 3. Apply confirmation logic from `requiresConfirm`/`requiresDoubleConfirm` flags
 4. After user confirms, re-run:
 ```bash
-node "$SCRIPTS_DIR/trade.js" spot sell <COIN> <SIZE> --confirmed
+node "$HL_SCRIPTS_DIR/trade.js" spot sell <COIN> <SIZE> --confirmed
 ```
 5. Use the last JSON line as the result
 

@@ -4,9 +4,9 @@
 
 ```bash
 # Step 1: get preview
-node "$SCRIPTS_DIR/trade.js" perp open <COIN> <long|short> <SIZE> [--leverage N] [--cross|--isolated]
+node "$HL_SCRIPTS_DIR/trade.js" perp open <COIN> <long|short> <SIZE> [--leverage N] [--cross|--isolated]
 # Step 2: after user confirms, re-run with --confirmed
-node "$SCRIPTS_DIR/trade.js" perp open <COIN> <long|short> <SIZE> [--leverage N] [--cross|--isolated] --confirmed
+node "$HL_SCRIPTS_DIR/trade.js" perp open <COIN> <long|short> <SIZE> [--leverage N] [--cross|--isolated] --confirmed
 ```
 
 - `--leverage N`: sets leverage before placing order via `updateLeverage()`; omit to use current account leverage (defaults to cross margin)
@@ -32,9 +32,9 @@ Sell: price = mid × (1 − slippage_pct/100)
 
 ```bash
 # Step 1: get preview
-node "$SCRIPTS_DIR/trade.js" perp close <COIN> <SIZE>
+node "$HL_SCRIPTS_DIR/trade.js" perp close <COIN> <SIZE>
 # Step 2: after user confirms, re-run with --confirmed
-node "$SCRIPTS_DIR/trade.js" perp close <COIN> <SIZE> --confirmed
+node "$HL_SCRIPTS_DIR/trade.js" perp close <COIN> <SIZE> --confirmed
 ```
 
 Direction is **auto-detected**: the script calls `clearinghouseState()` and reads `szi` (signed position size):

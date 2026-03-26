@@ -39,12 +39,12 @@ Preview format:
 
 ```bash
 # Spot buy 0.1 ETH at $3000
-node "$SCRIPTS_DIR/limit-order.js" place spot buy ETH 3000 0.1
+node "$HL_SCRIPTS_DIR/limit-order.js" place spot buy ETH 3000 0.1
 # After user confirms:
-node "$SCRIPTS_DIR/limit-order.js" place spot buy ETH 3000 0.1 --confirmed
+node "$HL_SCRIPTS_DIR/limit-order.js" place spot buy ETH 3000 0.1 --confirmed
 
 # Perp reduce-only order (for TP/SL — closes existing position, will not open a new one)
-node "$SCRIPTS_DIR/limit-order.js" place perp short ETH 3500 0.1 --reduce-only --confirmed
+node "$HL_SCRIPTS_DIR/limit-order.js" place perp short ETH 3500 0.1 --reduce-only --confirmed
 ```
 
 ### `--reduce-only` flag
@@ -57,10 +57,10 @@ Use `--trigger-price` with `--sl` or `--tp` to place a trigger order. The exchan
 
 ```bash
 # Stop loss: triggers market sell when price drops to $3056
-node "$SCRIPTS_DIR/limit-order.js" place perp short ETH 3200 0.1 --trigger-price 3056 --sl --reduce-only --confirmed
+node "$HL_SCRIPTS_DIR/limit-order.js" place perp short ETH 3200 0.1 --trigger-price 3056 --sl --reduce-only --confirmed
 
 # Take profit: triggers market sell when price rises to $3408
-node "$SCRIPTS_DIR/limit-order.js" place perp short ETH 3200 0.1 --trigger-price 3408 --tp --reduce-only --confirmed
+node "$HL_SCRIPTS_DIR/limit-order.js" place perp short ETH 3200 0.1 --trigger-price 3408 --tp --reduce-only --confirmed
 ```
 
 Required flags:
@@ -83,8 +83,8 @@ Success output:
 ## List Open Orders
 
 ```bash
-node "$SCRIPTS_DIR/limit-order.js" list
-node "$SCRIPTS_DIR/limit-order.js" list --coin ETH
+node "$HL_SCRIPTS_DIR/limit-order.js" list
+node "$HL_SCRIPTS_DIR/limit-order.js" list --coin ETH
 ```
 
 Output:
@@ -99,7 +99,7 @@ Present as a table: Order ID | Coin | Side | Price | Size | Time.
 ## Cancel an Order
 
 ```bash
-node "$SCRIPTS_DIR/limit-order.js" cancel 12345
+node "$HL_SCRIPTS_DIR/limit-order.js" cancel 12345
 ```
 
 Output: `{ "ok": true, "orderId": 12345 }`
@@ -110,12 +110,12 @@ The script always outputs a preview first. After user confirms, re-run with `--c
 
 ```bash
 # Step 1: get preview
-node "$SCRIPTS_DIR/limit-order.js" modify 12345 --price 2900
+node "$HL_SCRIPTS_DIR/limit-order.js" modify 12345 --price 2900
 # → { "preview": true, "orderId": 12345, "coin": "ETH", "side": "B", "oldPrice": 3000, "newPrice": 2900, "oldSize": 0.1, "newSize": 0.1 }
 # Show user: "Changing order 12345: $3000 → $2900, size 0.1 (unchanged). Confirm? [y/N]"
 
 # Step 2: after user confirms, re-run with --confirmed
-node "$SCRIPTS_DIR/limit-order.js" modify 12345 --price 2900 --confirmed
+node "$HL_SCRIPTS_DIR/limit-order.js" modify 12345 --price 2900 --confirmed
 # → { "preview": true, ... }   ← preview line (ignore)
 # → { "ok": true, "oldOid": 12345, "oid": 67890, "newPrice": 2900, "newSize": 0.1 }
 ```

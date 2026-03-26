@@ -112,17 +112,17 @@ Only prompt once per wallet. The `.rankings_prompted` and `.registered` markers 
 | cancel order / cancel limit | Load [references/limit-order.md](references/limit-order.md); run `limit-order.js cancel` |
 | change order price / update order / modify order | Load [references/limit-order.md](references/limit-order.md); run `limit-order.js modify` |
 
-## Resolving SCRIPTS_DIR
+## Resolving HL_SCRIPTS_DIR
 
 Use `<skill-dir>/scripts` as the scripts directory. To find `<skill-dir>` at runtime:
 
 ```bash
 # 1. Git repo fallback
 GIT_ROOT=$(git rev-parse --show-toplevel 2>/dev/null)
-[ -n "$GIT_ROOT" ] && [ -d "$GIT_ROOT/skills/hyperliquid-trade/scripts" ] && SCRIPTS_DIR="$GIT_ROOT/skills/hyperliquid-trade/scripts"
+[ -n "$GIT_ROOT" ] && [ -d "$GIT_ROOT/skills/hyperliquid-trade/scripts" ] && HL_SCRIPTS_DIR="$GIT_ROOT/skills/hyperliquid-trade/scripts"
 # 2. Bounded home search
-[ -z "$SCRIPTS_DIR" ] && SCRIPTS_DIR=$(dirname "$(find "$HOME" -maxdepth 6 -type f -path "*/hyperliquid-trade/scripts/balance.js" 2>/dev/null | head -1)")
-echo "$SCRIPTS_DIR"
+[ -z "$HL_SCRIPTS_DIR" ] && HL_SCRIPTS_DIR=$(dirname "$(find "$HOME" -maxdepth 6 -type f -path "*/hyperliquid-trade/scripts/balance.js" 2>/dev/null | head -1)")
+echo "$HL_SCRIPTS_DIR"
 ```
 
 ## Balance Flow
@@ -130,8 +130,8 @@ echo "$SCRIPTS_DIR"
 Load [references/balance.md](references/balance.md) for the full flow.
 
 ```bash
-node "$SCRIPTS_DIR/balance.js" spot
-node "$SCRIPTS_DIR/balance.js" perp
+node "$HL_SCRIPTS_DIR/balance.js" spot
+node "$HL_SCRIPTS_DIR/balance.js" perp
 ```
 
 Parse the JSON output and present balances in a human-readable table.
@@ -142,9 +142,9 @@ Load [references/spot-trade.md](references/spot-trade.md) for the full flow.
 
 1. Confirm intent: coin, direction (buy/sell), size
 2. Run balance check to verify sufficient USDC/token
-3. Run: `node "$SCRIPTS_DIR/trade.js" spot <buy|sell> <COIN> <SIZE>`
+3. Run: `node "$HL_SCRIPTS_DIR/trade.js" spot <buy|sell> <COIN> <SIZE>`
 4. Read preview JSON; apply confirmation logic per `requiresConfirm`/`requiresDoubleConfirm` flags (same as limit orders)
-5. After user confirms, re-run: `node "$SCRIPTS_DIR/trade.js" spot <buy|sell> <COIN> <SIZE> --confirmed`
+5. After user confirms, re-run: `node "$HL_SCRIPTS_DIR/trade.js" spot <buy|sell> <COIN> <SIZE> --confirmed`
 6. Use the last JSON line as the result; report fill price and outcome
 7. **After a spot buy**: `filledSz` in the result reflects the ordered quantity, not the net-of-fees received amount (Hyperliquid deducts taker fees ~0.035% from the received tokens). If the user immediately wants to sell, run `balance.js spot` first to get the actual available balance and use that as the sell size.
 
@@ -154,13 +154,13 @@ Load [references/perp-trade.md](references/perp-trade.md) for the full flow.
 
 **Open position:**
 1. Confirm intent: coin, direction (long/short), size, leverage, margin mode
-2. Run: `node "$SCRIPTS_DIR/trade.js" perp open <COIN> <long|short> <SIZE> [--leverage <N>] [--cross|--isolated]`
+2. Run: `node "$HL_SCRIPTS_DIR/trade.js" perp open <COIN> <long|short> <SIZE> [--leverage <N>] [--cross|--isolated]`
 3. Read preview JSON; apply confirmation logic per `requiresConfirm`/`requiresDoubleConfirm` flags
 4. After user confirms, re-run with `--confirmed`; use the last JSON line as the result
 
 **Close position:**
 1. Show current position from `balance.js perp`; confirm size to close
-2. Run: `node "$SCRIPTS_DIR/trade.js" perp close <COIN> <SIZE>`
+2. Run: `node "$HL_SCRIPTS_DIR/trade.js" perp close <COIN> <SIZE>`
 3. Read preview JSON; apply confirmation logic
 4. After user confirms, re-run with `--confirmed`; use the last JSON line as the result
 
@@ -209,7 +209,7 @@ Load [references/limit-order.md](references/limit-order.md) for the full flow.
 
 **Place a limit order:**
 1. Confirm intent: coin, direction, price, size (ask for any missing details)
-2. Run: `node "$SCRIPTS_DIR/limit-order.js" place <spot|perp> <buy|sell|long|short> <COIN> <PRICE> <SIZE> [--leverage N] [--cross|--isolated]`
+2. Run: `node "$HL_SCRIPTS_DIR/limit-order.js" place <spot|perp> <buy|sell|long|short> <COIN> <PRICE> <SIZE> [--leverage N] [--cross|--isolated]`
 3. Read the `preview` JSON; apply confirmation logic per `references/limit-order.md`
 4. After user confirms, re-run with `--confirmed` flag
 5. Report fill outcome and order ID

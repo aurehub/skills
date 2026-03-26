@@ -3,7 +3,7 @@
 ## Spot balances
 
 ```bash
-node "$SCRIPTS_DIR/balance.js" spot
+node "$HL_SCRIPTS_DIR/balance.js" spot
 ```
 
 Response shape:
@@ -23,7 +23,7 @@ Response shape:
 ## Perp positions and margin
 
 ```bash
-node "$SCRIPTS_DIR/balance.js" perp
+node "$HL_SCRIPTS_DIR/balance.js" perp
 ```
 
 Response shape:
