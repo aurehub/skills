@@ -65,7 +65,7 @@ If all pass: source `~/.aurehub/.env`, run **Account Selection** (below), then *
 
 ## Account Selection
 
-If the user specifies a wallet index (e.g. "use wallet 2", "account 1", "第 3 个钱包"), remember that index for the entire session. Append `--account N` to **every** `node balance.js`, `node trade.js`, and `node limit-order.js` command in this session.
+If the user specifies a wallet index (e.g. "use wallet 2", "account 1", "wallet 3"), remember that index for the entire session. Append `--account N` to **every** `node balance.js`, `node trade.js`, and `node limit-order.js` command in this session.
 
 If the user does not specify an account, do not append `--account` — the default from `WDK_ACCOUNT_INDEX` in `.env` (or `0`) is used automatically.
 
