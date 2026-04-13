@@ -26,7 +26,7 @@ import { quote, buildSwap } from './lib/uniswap.js';
 // Constants
 // ---------------------------------------------------------------------------
 
-const VALID_COMMANDS = new Set(['quote', 'balance', 'allowance', 'approve', 'swap', 'address', 'sign', 'cancel-nonce']);
+const VALID_COMMANDS = new Set(['quote', 'balance', 'allowance', 'approve', 'swap', 'address', 'sign', 'cancel-nonce', 'accounts']);
 
 // ---------------------------------------------------------------------------
 // CLI argument parser — exported for unit-testing without RPC
@@ -88,6 +88,10 @@ export function parseCliArgs(argv) {
         parsed.spender = value;
         i++;
         break;
+      case '--account':
+        parsed.account = parseInt(value, 10);
+        i++;
+        break;
       default:
         // Ignore unknown flags silently
         break;
@@ -109,13 +113,13 @@ export function parseCliArgs(argv) {
 // Subcommand implementations
 // ---------------------------------------------------------------------------
 
-async function runAddress(cfg, provider) {
-  const signer = await createSigner(cfg, provider ? provider.getEthersProvider() : null);
+async function runAddress(cfg, provider, args) {
+  const signer = await createSigner(cfg, provider ? provider.getEthersProvider() : null, { accountIndex: args.account });
   console.log(JSON.stringify({ address: signer.address }, null, 2));
 }
 
-async function runBalance(cfg, provider) {
-  const signer = await createSigner(cfg, provider ? provider.getEthersProvider() : null);
+async function runBalance(cfg, provider, args) {
+  const signer = await createSigner(cfg, provider ? provider.getEthersProvider() : null, { accountIndex: args.account });
   const address = signer.address;
 
   const tokens = cfg.yaml?.tokens ?? {};
@@ -138,7 +142,7 @@ async function runBalance(cfg, provider) {
 async function runAllowance(cfg, provider, args) {
   if (!args.token) throw new Error('--token is required for allowance');
 
-  const signer = await createSigner(cfg, provider ? provider.getEthersProvider() : null);
+  const signer = await createSigner(cfg, provider ? provider.getEthersProvider() : null, { accountIndex: args.account });
   const address = signer.address;
 
   const token = resolveToken(cfg, args.token);
@@ -188,7 +192,7 @@ async function runApprove(cfg, provider, args) {
   if (!args.token) throw new Error('--token is required for approve');
   if (!args.amount) throw new Error('--amount is required for approve');
 
-  const signer = await createSigner(cfg, provider ? provider.getEthersProvider() : null);
+  const signer = await createSigner(cfg, provider ? provider.getEthersProvider() : null, { accountIndex: args.account });
   const token = resolveToken(cfg, args.token);
   const contracts = cfg.yaml?.contracts ?? {};
   const spender = args.spender || contracts.router;
@@ -215,7 +219,7 @@ async function runSwap(cfg, provider, args) {
   if (!args.minOut || Number.isNaN(Number(args.minOut)) || Number(args.minOut) <= 0) throw new Error('--min-out must be a positive number greater than 0');
   if (args.side !== 'buy' && args.side !== 'sell') throw new Error('--side must be "buy" or "sell"');
 
-  const signer = await createSigner(cfg, provider ? provider.getEthersProvider() : null);
+  const signer = await createSigner(cfg, provider ? provider.getEthersProvider() : null, { accountIndex: args.account });
   const address = signer.address;
 
   const isBuy = args.side === 'buy';
@@ -317,7 +321,7 @@ async function runSign(cfg, args) {
   const cleanTypes = { ...types };
   delete cleanTypes.EIP712Domain;
 
-  const signer = await createSigner(cfg, null);
+  const signer = await createSigner(cfg, null, { accountIndex: args.account });
   const signature = await signer.signTypedData(domain, cleanTypes, message);
   // Output raw signature string (no JSON) to match cast wallet sign format
   process.stdout.write(signature);
@@ -334,7 +338,7 @@ async function runCancelNonce(cfg, provider, args) {
   if (wordPosBig < 0n || wordPosBig >= (1n << 248n)) throw new Error(`--word-pos out of range: ${args.wordPos}`);
   if (maskBig <= 0n || maskBig >= (1n << 256n)) throw new Error(`--mask out of range: ${args.mask}`);
 
-  const signer = await createSigner(cfg, provider ? provider.getEthersProvider() : null);
+  const signer = await createSigner(cfg, provider ? provider.getEthersProvider() : null, { accountIndex: args.account });
 
   const permit2 = '0x000000000022D473030F116dDEE9F6B43aC78BA3';
   const iface = new Interface(['function invalidateUnorderedNonces(uint256 wordPos, uint256 mask)']);
@@ -421,10 +425,10 @@ if (isDirectRun) {
 
       switch (parsed.command) {
         case 'address':
-          await runAddress(cfg, provider);
+          await runAddress(cfg, provider, parsed);
           break;
         case 'balance':
-          await runBalance(cfg, provider);
+          await runBalance(cfg, provider, parsed);
           break;
         case 'allowance':
           await runAllowance(cfg, provider, parsed);

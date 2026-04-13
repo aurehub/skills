@@ -87,4 +87,21 @@ describe('parseCliArgs', () => {
     expect(result.command).toBe('balance');
     expect(result.configDir).toBe('/tmp/myconfig');
   });
+
+  it('parses --account flag', () => {
+    const result = parseCliArgs(['balance', '--account', '3']);
+    expect(result).toEqual({ command: 'balance', account: 3 });
+  });
+
+  it('parses --account with other flags', () => {
+    const result = parseCliArgs(['swap', '--side', 'buy', '--amount', '100', '--min-out', '0.03', '--account', '1']);
+    expect(result.account).toBe(1);
+    expect(result.side).toBe('buy');
+    expect(result.amount).toBe('100');
+  });
+
+  it('account is undefined when not provided', () => {
+    const result = parseCliArgs(['balance']);
+    expect(result.account).toBeUndefined();
+  });
 });
