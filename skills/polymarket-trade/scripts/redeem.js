@@ -182,6 +182,7 @@ if (process.argv[1] && realpathSync(process.argv[1]) === fileURLToPath(import.me
   const getArg = f => { const i = args.indexOf(f); return i >= 0 ? args[i + 1] : null; };
   const dryRun      = args.includes('--dry-run');
   const marketFilter = getArg('--market') ?? null;
+  const accountIdx = (() => { const v = getArg('--account'); if (v === null) return undefined; const n = parseInt(v, 10); if (Number.isNaN(n) || n < 0) { console.error('--account must be a non-negative integer'); process.exit(1); } return n; })();
 
   (async () => {
     try {
@@ -196,7 +197,7 @@ if (process.argv[1] && realpathSync(process.argv[1]) === fileURLToPath(import.me
       const cfg = loadConfig();
       const rpcUrl = resolveRpcUrl(cfg);
       const provider = new ethers.providers.JsonRpcProvider(rpcUrl);
-      const wallet = (await createSigner(cfg)).connect(provider);
+      const wallet = (await createSigner(cfg, { accountIndex: accountIdx })).connect(provider);
 
       await redeem({ cfg, provider, wallet, marketFilter, dryRun });
     } catch (e) {
