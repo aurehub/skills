@@ -114,4 +114,14 @@ describe('parseCliArgs', () => {
     const result = parseCliArgs(['balance', '--account', '0']);
     expect(result.account).toBe(0);
   });
+
+  it('parses accounts command', () => {
+    const result = parseCliArgs(['accounts']);
+    expect(result).toEqual({ command: 'accounts' });
+  });
+
+  it('parses accounts command with --count', () => {
+    const result = parseCliArgs(['accounts', '--count', '5']);
+    expect(result).toEqual({ command: 'accounts', count: 5 });
+  });
 });

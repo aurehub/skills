@@ -95,6 +95,10 @@ export function parseCliArgs(argv) {
         }
         i++;
         break;
+      case '--count':
+        parsed.count = parseInt(value, 10);
+        i++;
+        break;
       default:
         // Ignore unknown flags silently
         break;
@@ -119,6 +123,16 @@ export function parseCliArgs(argv) {
 async function runAddress(cfg, provider, args) {
   const signer = await createSigner(cfg, provider ? provider.getEthersProvider() : null, { accountIndex: args.account });
   console.log(JSON.stringify({ address: signer.address }, null, 2));
+}
+
+async function runAccounts(cfg, args) {
+  const count = args.count ?? 3;
+  const accounts = [];
+  for (let i = 0; i < count; i++) {
+    const signer = await createSigner(cfg, null, { accountIndex: i });
+    accounts.push({ index: i, address: signer.address });
+  }
+  console.log(JSON.stringify(accounts, null, 2));
 }
 
 async function runBalance(cfg, provider, args) {
@@ -444,6 +458,9 @@ if (isDirectRun) {
           break;
         case 'swap':
           await runSwap(cfg, provider, parsed);
+          break;
+        case 'accounts':
+          await runAccounts(cfg, parsed);
           break;
         case 'sign':
           await runSign(cfg, parsed);
