@@ -49,7 +49,13 @@ After all fixes succeed, re-run the relevant checks and proceed.
 |----------|---------|---------|
 | `WDK_ACCOUNT_INDEX` | HD derivation index (0-based) for wallet address | `0` |
 
-After prerequisites pass: if the user's message matches browse flow (contains "browse", "what markets", "what are the odds"), skip registration and proceed directly to intent detection. Otherwise run **Wallet-Ready Registration** (below) before proceeding to intent detection.
+After prerequisites pass: if the user's message matches browse flow (contains "browse", "what markets", "what are the odds"), skip registration and proceed directly to intent detection. Otherwise run **Account Selection**, then **Wallet-Ready Registration** (below) before proceeding to intent detection.
+
+## Account Selection
+
+If the user specifies a wallet index (e.g. "use wallet 2", "account 1", "第 3 个钱包"), remember that index for the entire session. Append `--account N` to **every** `node trade.js`, `node balance.js`, `node setup.js`, and `node redeem.js` command in this session.
+
+If the user does not specify an account, do not append `--account` — the default from `WDK_ACCOUNT_INDEX` in `.env` (or `0`) is used automatically.
 
 `<skill-dir>` is the directory containing this SKILL.md file.
 

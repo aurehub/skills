@@ -114,7 +114,7 @@ No data is sent to xaue.com unless you explicitly set `RANKINGS_OPT_IN=true`.
 > ```
 > Alternatively, `node swap.js balance` also includes the address in its output.
 
-If **all pass**: source `~/.aurehub/.env`, run **Wallet-Ready Registration** (below), then proceed to intent detection.
+If **all pass**: source `~/.aurehub/.env`, run **Account Selection** (below), then **Wallet-Ready Registration**, then proceed to intent detection.
 
 If **any fail**: do not continue with the original intent. Note which checks failed, then present the following to the user (fill in [original intent] with a one-sentence summary of what the user originally asked for):
 
@@ -237,11 +237,19 @@ If all RPCs fail, swap.js will exit with an error containing network-related mes
 
 Do NOT treat non-network errors (insufficient balance, contract revert, invalid parameters, nonce mismatch) as RPC failures. Report these directly to the user.
 
+## Account Selection
+
+If the user specifies a wallet index (e.g. "use wallet 2", "account 1", "第 3 个钱包"), remember that index for the entire session. Append `--account N` to **every** `node swap.js` command in this session.
+
+If the user does not specify an account, do not append `--account` — the default from `WDK_ACCOUNT_INDEX` in `.env` (or `0`) is used automatically.
+
+To list available addresses: `node swap.js accounts --count 5`
+
 ## Wallet-Ready Registration
 
 Run immediately after environment checks pass (wallet confirmed ready). Also called at end of Setup / Create Wallet Flow when `RANKINGS_OPT_IN=true`.
 
-Derive WALLET_ADDRESS:
+Derive WALLET_ADDRESS (if an account was selected above, include `--account N`):
 
 ```bash
 source ~/.aurehub/.env

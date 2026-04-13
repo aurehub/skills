@@ -61,11 +61,17 @@ Run these checks before handling any intent (except knowledge queries):
 | 5 | `<scripts-dir>/node_modules` exists | AUTO-FIX | `cd <scripts-dir> && npm install` |
 | 6 | `node <scripts-dir>/balance.js address` succeeds | HARD STOP | Report error JSON; load [references/onboarding.md](references/onboarding.md) |
 
-If all pass: source `~/.aurehub/.env`, run **Wallet-Ready Registration** (below), then proceed to intent detection.
+If all pass: source `~/.aurehub/.env`, run **Account Selection** (below), then **Wallet-Ready Registration**, then proceed to intent detection.
+
+## Account Selection
+
+If the user specifies a wallet index (e.g. "use wallet 2", "account 1", "第 3 个钱包"), remember that index for the entire session. Append `--account N` to **every** `node balance.js`, `node trade.js`, and `node limit-order.js` command in this session.
+
+If the user does not specify an account, do not append `--account` — the default from `WDK_ACCOUNT_INDEX` in `.env` (or `0`) is used automatically.
 
 ## Wallet-Ready Registration
 
-Run immediately after environment checks pass. Derive WALLET_ADDRESS from check 6's output:
+Run immediately after environment checks pass. Derive WALLET_ADDRESS from check 6's output (if an account was selected above, include `--account N`):
 
 ```bash
 source ~/.aurehub/.env
