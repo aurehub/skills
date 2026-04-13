@@ -40,6 +40,7 @@ This skill connects to external services (Ethereum RPC, UniswapX API, and option
 | `WALLET_MODE` | Wallet type: `wdk` (encrypted vault) or `foundry` (keystore) | Yes |
 | `ETH_RPC_URL` | Ethereum JSON-RPC endpoint (HTTPS) | Yes |
 | `WDK_PASSWORD_FILE` | Path to WDK vault password file (mode 0600) | When WALLET_MODE=wdk |
+| `WDK_ACCOUNT_INDEX` | HD derivation index (0-based) for WDK wallet address | No (default: 0) |
 | `KEYSTORE_PASSWORD_FILE` | Path to Foundry keystore password file (mode 0600) | When WALLET_MODE=foundry |
 | `UNISWAPX_API_KEY` | UniswapX API key for limit orders | When using limit orders |
 | `ETH_RPC_URL_FALLBACK` | Optional fallback RPC endpoint | No |
@@ -101,7 +102,7 @@ No data is sent to xaue.com unless you explicitly set `RANKINGS_OPT_IN=true`.
    cd "$SCRIPTS_DIR"
    node swap.js address
    ```
-   This outputs JSON: `{ "address": "0x..." }`. If it fails, the wallet is not configured correctly.
+   This outputs JSON: `{ "address": "0x..." }`. The address is derived from `WDK_ACCOUNT_INDEX` in `.env` (default: `0`). If it fails, the wallet is not configured correctly.
 
 > **Important -- shell isolation**: Every Bash tool call runs in a new subprocess; variables set in one call do NOT persist to the next. Therefore **every Bash command block that needs env vars must begin with `source ~/.aurehub/.env`** (or `set -a; source ~/.aurehub/.env; set +a` to auto-export all variables).
 >
