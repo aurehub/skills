@@ -223,6 +223,73 @@ describe('createSigner', () => {
       );
     });
 
+    it('derives different address with accountIndex=1', async () => {
+      const originalWallet = Wallet.createRandom();
+      const mnemonic = originalWallet.mnemonic.phrase;
+
+      const password = 'test-password-wdk-idx';
+      const vaultJson = createWdkVault(password, mnemonic);
+
+      const vaultFile = join(testDir, '.wdk_vault');
+      const passwordFile = join(testDir, '.wdk_password');
+      writeFileSync(vaultFile, vaultJson);
+      writeFileSync(passwordFile, password);
+
+      const cfg = {
+        env: {
+          WALLET_MODE: 'wdk',
+          WDK_VAULT_FILE: vaultFile,
+          WDK_PASSWORD_FILE: passwordFile,
+        },
+        yaml: {},
+        configDir: testDir,
+      };
+
+      const wallet0 = await createSigner(cfg, null);
+      const wallet1 = await createSigner(cfg, null, { accountIndex: 1 });
+
+      expect(wallet0).toBeInstanceOf(BaseWallet);
+      expect(wallet1).toBeInstanceOf(BaseWallet);
+      expect(wallet0.address).not.toBe(wallet1.address);
+
+      // index 0 explicitly should match default
+      const wallet0explicit = await createSigner(cfg, null, { accountIndex: 0 });
+      expect(wallet0explicit.address).toBe(wallet0.address);
+    });
+
+    it('reads WDK_ACCOUNT_INDEX from cfg.env as default', async () => {
+      const originalWallet = Wallet.createRandom();
+      const mnemonic = originalWallet.mnemonic.phrase;
+
+      const password = 'test-password-wdk-env';
+      const vaultJson = createWdkVault(password, mnemonic);
+
+      const vaultFile = join(testDir, '.wdk_vault_env');
+      const passwordFile = join(testDir, '.wdk_password_env');
+      writeFileSync(vaultFile, vaultJson);
+      writeFileSync(passwordFile, password);
+
+      const cfg = {
+        env: {
+          WALLET_MODE: 'wdk',
+          WDK_VAULT_FILE: vaultFile,
+          WDK_PASSWORD_FILE: passwordFile,
+          WDK_ACCOUNT_INDEX: '2',
+        },
+        yaml: {},
+        configDir: testDir,
+      };
+
+      const walletFromEnv = await createSigner(cfg, null);
+      const walletExplicit = await createSigner(cfg, null, { accountIndex: 2 });
+
+      expect(walletFromEnv.address).toBe(walletExplicit.address);
+
+      // opts.accountIndex overrides env
+      const walletOverride = await createSigner(cfg, null, { accountIndex: 0 });
+      expect(walletOverride.address).not.toBe(walletFromEnv.address);
+    });
+
     it('throws when decryption fails (wrong password)', async () => {
       const originalWallet = Wallet.createRandom();
       const mnemonic = originalWallet.mnemonic.phrase;
