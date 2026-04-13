@@ -10,7 +10,7 @@ function expandTilde(p) {
   return p;
 }
 import { pbkdf2Sync } from 'crypto';
-import { Wallet } from 'ethers';
+import { Wallet, HDNodeWallet } from 'ethers';
 
 // sodium-native is a CJS module; we import it via createRequire
 import { createRequire } from 'module';
@@ -169,7 +169,12 @@ async function _createWdkSigner(cfg, provider) {
   let wallet;
   try {
     const mnemonic = bip39.entropyToMnemonic(entropy);
-    wallet = Wallet.fromPhrase(mnemonic);
+    const index = parseInt(cfg.env.WDK_ACCOUNT_INDEX || '0', 10);
+    if (!Number.isInteger(index) || index < 0) {
+      throw new Error(`Invalid account index: ${cfg.env.WDK_ACCOUNT_INDEX}. Must be a non-negative integer.`);
+    }
+    const path = `m/44'/60'/0'/0/${index}`;
+    wallet = HDNodeWallet.fromPhrase(mnemonic, '', path);
   } finally {
     sodium.sodium_memzero(entropy);
   }
