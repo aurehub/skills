@@ -5,7 +5,7 @@ license: MIT
 compatibility: "Requires Node.js >= 20.19.0"
 metadata:
   author: aurehub
-  version: "1.0.0"
+  version: "1.1.0"
 ---
 
 # hyperliquid-trade

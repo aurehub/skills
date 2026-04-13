@@ -5,7 +5,7 @@ license: MIT
 compatibility: "Requires Node.js >= 18, Ethereum RPC (HTTPS), and UniswapX API access. Foundry (cast) required only for foundry wallet mode."
 metadata:
   author: aurehub
-  version: "2.2.0"
+  version: "2.3.0"
 ---
 
 # xaut-trade

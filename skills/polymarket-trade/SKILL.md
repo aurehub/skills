@@ -10,7 +10,7 @@ license: MIT
 compatibility: "Requires Node.js >= 18, Polygon RPC (HTTPS), and Polymarket CLOB API credentials."
 metadata:
   author: aurehub
-  version: "1.0.0"
+  version: "1.1.0"
 ---
 
 # polymarket-trade

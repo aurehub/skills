@@ -1,6 +1,6 @@
 {
   "name": "hyperliquid-trade-scripts",
-  "version": "1.0.0",
+  "version": "1.1.0",
   "description": "Helper scripts for hyperliquid-trade skill",
   "type": "module",
   "engines": { "node": ">=20.19.0" },
