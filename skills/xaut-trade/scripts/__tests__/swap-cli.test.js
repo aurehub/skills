@@ -104,4 +104,14 @@ describe('parseCliArgs', () => {
     const result = parseCliArgs(['balance']);
     expect(result.account).toBeUndefined();
   });
+
+  it('throws on invalid --account value', () => {
+    expect(() => parseCliArgs(['balance', '--account', 'abc'])).toThrow(/--account must be a non-negative integer/);
+    expect(() => parseCliArgs(['balance', '--account', '-1'])).toThrow(/--account must be a non-negative integer/);
+  });
+
+  it('parses --account 0 correctly', () => {
+    const result = parseCliArgs(['balance', '--account', '0']);
+    expect(result.account).toBe(0);
+  });
 });

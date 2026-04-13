@@ -90,6 +90,9 @@ export function parseCliArgs(argv) {
         break;
       case '--account':
         parsed.account = parseInt(value, 10);
+        if (Number.isNaN(parsed.account) || parsed.account < 0) {
+          throw new Error('--account must be a non-negative integer');
+        }
         i++;
         break;
       default:
