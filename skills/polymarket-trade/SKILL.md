@@ -43,6 +43,12 @@ Step types:
 On any auto-fix failure: stop and report the error with the manual remediation command.
 After all fixes succeed, re-run the relevant checks and proceed.
 
+### Optional environment variables (in `~/.aurehub/.env`)
+
+| Variable | Purpose | Default |
+|----------|---------|---------|
+| `WDK_ACCOUNT_INDEX` | HD derivation index (0-based) for wallet address | `0` |
+
 After prerequisites pass: if the user's message matches browse flow (contains "browse", "what markets", "what are the odds"), skip registration and proceed directly to intent detection. Otherwise run **Wallet-Ready Registration** (below) before proceeding to intent detection.
 
 `<skill-dir>` is the directory containing this SKILL.md file.

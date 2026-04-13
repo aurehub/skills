@@ -32,6 +32,12 @@ This skill connects to the Hyperliquid API (`api_url` in `hyperliquid.yaml`, def
 | `~/.aurehub/.wdk_password` | Vault password (mode 0600, created by xaut-trade setup) |
 | `~/.aurehub/hyperliquid.yaml` | Network, API URL, risk thresholds |
 
+### Optional environment variables (in `~/.aurehub/.env`)
+
+| Variable | Purpose | Default |
+|----------|---------|---------|
+| `WDK_ACCOUNT_INDEX` | HD derivation index (0-based) for wallet address | `0` |
+
 ### Security safeguards
 
 - Private key is decrypted from vault in memory only, never stored
