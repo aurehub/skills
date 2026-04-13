@@ -93,8 +93,9 @@ if (process.argv[1] && realpathSync(process.argv[1]) === fileURLToPath(import.me
     const args = process.argv.slice(2);
     const i = args.indexOf('--account');
     if (i === -1) return undefined;
-    const v = parseInt(args[i + 1], 10);
-    if (Number.isNaN(v) || v < 0) { console.error('--account must be a non-negative integer'); process.exit(1); }
+    const raw = args[i + 1];
+    const v = parseInt(raw, 10);
+    if (Number.isNaN(v) || v < 0 || String(v) !== raw) { console.error('--account must be a non-negative integer'); process.exit(1); }
     return v;
   })();
 

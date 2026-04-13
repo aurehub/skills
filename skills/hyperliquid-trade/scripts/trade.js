@@ -11,8 +11,9 @@ import { SymbolConverter, formatPrice, formatSize } from '@nktkas/hyperliquid/ut
 function extractAccount(argv) {
   const i = argv.indexOf('--account');
   if (i === -1) return { account: undefined, cleanArgs: argv };
-  const v = parseInt(argv[i + 1], 10);
-  if (Number.isNaN(v) || v < 0) { process.stderr.write(JSON.stringify({ error: '--account must be a non-negative integer' }) + '\n'); process.exit(1); }
+  const raw = argv[i + 1];
+  const v = parseInt(raw, 10);
+  if (Number.isNaN(v) || v < 0 || String(v) !== raw) { process.stderr.write(JSON.stringify({ error: '--account must be a non-negative integer' }) + '\n'); process.exit(1); }
   return { account: v, cleanArgs: [...argv.slice(0, i), ...argv.slice(i + 2)] };
 }
 

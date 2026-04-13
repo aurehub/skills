@@ -182,7 +182,7 @@ if (process.argv[1] && realpathSync(process.argv[1]) === fileURLToPath(import.me
   const getArg = f => { const i = args.indexOf(f); return i >= 0 ? args[i + 1] : null; };
   const dryRun      = args.includes('--dry-run');
   const marketFilter = getArg('--market') ?? null;
-  const accountIdx = (() => { const v = getArg('--account'); if (v === null) return undefined; const n = parseInt(v, 10); if (Number.isNaN(n) || n < 0) { console.error('--account must be a non-negative integer'); process.exit(1); } return n; })();
+  const accountIdx = (() => { const v = getArg('--account'); if (v === null) return undefined; const n = parseInt(v, 10); if (Number.isNaN(n) || n < 0 || String(n) !== v) { console.error('--account must be a non-negative integer'); process.exit(1); } return n; })();
 
   (async () => {
     try {

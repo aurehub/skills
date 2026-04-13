@@ -15,8 +15,9 @@ const [,, subcommand] = process.argv;
 const accountIdx = (() => {
   const i = process.argv.indexOf('--account');
   if (i === -1) return undefined;
-  const v = parseInt(process.argv[i + 1], 10);
-  if (Number.isNaN(v) || v < 0) { process.stderr.write(JSON.stringify({ error: '--account must be a non-negative integer' }) + '\n'); process.exit(1); }
+  const raw = process.argv[i + 1];
+  const v = parseInt(raw, 10);
+  if (Number.isNaN(v) || v < 0 || String(v) !== raw) { process.stderr.write(JSON.stringify({ error: '--account must be a non-negative integer' }) + '\n'); process.exit(1); }
   return v;
 })();
 
