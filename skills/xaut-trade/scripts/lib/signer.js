@@ -211,6 +211,9 @@ async function _createWdkSigner(cfg, provider, opts = {}) {
   try {
     const mnemonic = bip39.entropyToMnemonic(entropy);
     const index = opts.accountIndex ?? parseInt(cfg.env.WDK_ACCOUNT_INDEX || '0', 10);
+    if (!Number.isInteger(index) || index < 0) {
+      throw new Error(`Invalid account index: ${opts.accountIndex ?? cfg.env.WDK_ACCOUNT_INDEX}. Must be a non-negative integer.`);
+    }
     const path = `m/44'/60'/0'/0/${index}`;
     wallet = HDNodeWallet.fromPhrase(mnemonic, '', path);
   } finally {

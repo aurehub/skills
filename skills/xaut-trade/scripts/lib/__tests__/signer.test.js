@@ -3,7 +3,7 @@ import { mkdirSync, rmSync, writeFileSync } from 'fs';
 import { join } from 'path';
 import { tmpdir } from 'os';
 import { pbkdf2Sync } from 'crypto';
-import { BaseWallet, HDNodeWallet, Wallet } from 'ethers6';
+import { BaseWallet, Wallet } from 'ethers6';
 
 import { createSigner } from '../signer.js';
 
@@ -288,6 +288,38 @@ describe('createSigner', () => {
       // opts.accountIndex overrides env
       const walletOverride = await createSigner(cfg, null, { accountIndex: 0 });
       expect(walletOverride.address).not.toBe(walletFromEnv.address);
+    });
+
+    it('throws on invalid accountIndex', async () => {
+      const originalWallet = Wallet.createRandom();
+      const mnemonic = originalWallet.mnemonic.phrase;
+
+      const password = 'test-password-wdk-invalid';
+      const vaultJson = createWdkVault(password, mnemonic);
+
+      const vaultFile = join(testDir, '.wdk_vault_invalid');
+      const passwordFile = join(testDir, '.wdk_password_invalid');
+      writeFileSync(vaultFile, vaultJson);
+      writeFileSync(passwordFile, password);
+
+      const cfg = {
+        env: {
+          WALLET_MODE: 'wdk',
+          WDK_VAULT_FILE: vaultFile,
+          WDK_PASSWORD_FILE: passwordFile,
+        },
+        yaml: {},
+        configDir: testDir,
+      };
+
+      await expect(createSigner(cfg, null, { accountIndex: -1 })).rejects.toThrow(/Invalid account index/);
+      await expect(createSigner(cfg, null, { accountIndex: 1.5 })).rejects.toThrow(/Invalid account index/);
+
+      const cfgBadEnv = {
+        ...cfg,
+        env: { ...cfg.env, WDK_ACCOUNT_INDEX: 'abc' },
+      };
+      await expect(createSigner(cfgBadEnv, null)).rejects.toThrow(/Invalid account index/);
     });
 
     it('throws when decryption fails (wrong password)', async () => {
