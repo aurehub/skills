@@ -124,4 +124,10 @@ describe('parseCliArgs', () => {
     const result = parseCliArgs(['accounts', '--count', '5']);
     expect(result).toEqual({ command: 'accounts', count: 5 });
   });
+
+  it('throws on invalid --count value', () => {
+    expect(() => parseCliArgs(['accounts', '--count', 'abc'])).toThrow(/--count must be a positive integer/);
+    expect(() => parseCliArgs(['accounts', '--count', '0'])).toThrow(/--count must be a positive integer/);
+    expect(() => parseCliArgs(['accounts', '--count', '-1'])).toThrow(/--count must be a positive integer/);
+  });
 });

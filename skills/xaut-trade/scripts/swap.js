@@ -11,6 +11,7 @@
  *   quote      — get a Uniswap V3 quote   (requires --side, --amount)
  *   approve    — approve a token spender  (requires --token, --amount)
  *   swap       — execute a swap           (requires --side, --amount, --min-out)
+ *   accounts   — list HD-derived addresses  (optional: --count)
  */
 
 import { fileURLToPath } from 'node:url';
@@ -97,6 +98,9 @@ export function parseCliArgs(argv) {
         break;
       case '--count':
         parsed.count = parseInt(value, 10);
+        if (Number.isNaN(parsed.count) || parsed.count < 1) {
+          throw new Error('--count must be a positive integer');
+        }
         i++;
         break;
       default:
