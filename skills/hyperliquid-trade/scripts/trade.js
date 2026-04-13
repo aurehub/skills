@@ -8,7 +8,15 @@ import { createTransport, createInfoClient, createExchangeClient } from './lib/h
 import { parseArgs, ioPrice, closeDirection } from './lib/trade-helpers.js';
 import { SymbolConverter, formatPrice, formatSize } from '@nktkas/hyperliquid/utils';
 
-const rawArgs = process.argv.slice(2);
+function extractAccount(argv) {
+  const i = argv.indexOf('--account');
+  if (i === -1) return { account: undefined, cleanArgs: argv };
+  const v = parseInt(argv[i + 1], 10);
+  if (Number.isNaN(v) || v < 0) { process.stderr.write(JSON.stringify({ error: '--account must be a non-negative integer' }) + '\n'); process.exit(1); }
+  return { account: v, cleanArgs: [...argv.slice(0, i), ...argv.slice(i + 2)] };
+}
+
+const { account: accountIdx, cleanArgs: rawArgs } = extractAccount(process.argv.slice(2));
 
 let parsed;
 try {
@@ -36,7 +44,7 @@ async function checkRecentFill(info, address, isBuy, coin, startTime) {
 
 try {
   const cfg = loadConfig();
-  const wallet = await createSigner(cfg, null);
+  const wallet = await createSigner(cfg, null, { accountIndex: accountIdx });
   const address = await wallet.getAddress();
   const transport = createTransport(cfg);
   const info = createInfoClient(transport);

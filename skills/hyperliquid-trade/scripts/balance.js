@@ -12,6 +12,14 @@ import { createTransport, createInfoClient } from './lib/hl-client.js';
 
 const [,, subcommand] = process.argv;
 
+const accountIdx = (() => {
+  const i = process.argv.indexOf('--account');
+  if (i === -1) return undefined;
+  const v = parseInt(process.argv[i + 1], 10);
+  if (Number.isNaN(v) || v < 0) { process.stderr.write(JSON.stringify({ error: '--account must be a non-negative integer' }) + '\n'); process.exit(1); }
+  return v;
+})();
+
 if (!subcommand) {
   process.stderr.write(JSON.stringify({ error: 'No subcommand provided. Use: address|spot|perp' }) + '\n');
   process.exit(1);
@@ -23,7 +31,7 @@ if (!['address', 'spot', 'perp'].includes(subcommand)) {
 
 try {
   const cfg = loadConfig();
-  const wallet = await createSigner(cfg, null);
+  const wallet = await createSigner(cfg, null, { accountIndex: accountIdx });
   const address = await wallet.getAddress();
 
   if (subcommand === 'address') {
