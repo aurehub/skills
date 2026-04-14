@@ -12,7 +12,6 @@
  * Minimum withdrawal: 2 USDC (after the 1 USDC fee, at least 1 USDC arrives).
  */
 
-import { formatUnits } from 'ethers';
 import { loadConfig } from './lib/config.js';
 import { createSigner } from './lib/signer.js';
 import { createTransport, createInfoClient, createExchangeClient } from './lib/hl-client.js';
@@ -53,6 +52,12 @@ if (!amountArg) {
   process.exit(1);
 }
 
+// Reject scientific notation and extra-precision strings early -- the SDK's
+// UnsignedDecimal regex only accepts plain decimals like "5" or "5.5".
+if (!/^\d+(\.\d+)?$/.test(amountArg.trim())) {
+  stderr({ error: `Amount must be a plain decimal (e.g. "50" or "50.5"), got "${amountArg}"` });
+  process.exit(1);
+}
 const amount = parseFloat(amountArg);
 if (!isFinite(amount) || amount <= 0) {
   stderr({ error: `Invalid amount: "${amountArg}". Must be a positive number.` });
@@ -79,18 +84,14 @@ try {
   const transport = createTransport(cfg);
   const info = createInfoClient(transport);
 
-  // Fetch balances in parallel
-  const [clearinghouseState, spotState] = await Promise.all([
-    info.clearinghouseState({ user: address }),
-    info.spotClearinghouseState({ user: address }),
-  ]);
+  const spotState = await info.spotClearinghouseState({ user: address });
 
   // Spot USDC: total = perp margin + free balance; hold = perp margin locked
   const spotUsdc = spotState.balances.find(b => b.coin === 'USDC');
   const spotTotal = spotUsdc ? parseFloat(spotUsdc.total) : 0;
   const spotHold = spotUsdc ? parseFloat(spotUsdc.hold) : 0;
-  // True withdrawable = spot free balance (not locked as perp margin)
-  const withdrawable = spotTotal - spotHold;
+  // True withdrawable = spot free balance (not locked as perp margin); clamped to 0
+  const withdrawable = Math.max(0, spotTotal - spotHold);
   const marginLocked = spotHold;
 
   if (withdrawable < amount) {
