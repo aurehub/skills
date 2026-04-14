@@ -1,4 +1,4 @@
-import { readFileSync } from 'fs';
+import { readFileSync, statSync } from 'fs';
 import { join } from 'path';
 import { homedir } from 'os';
 
@@ -144,6 +144,17 @@ async function _createWdkSigner(cfg, provider, opts = {}) {
     cfg.env.WDK_PASSWORD_FILE ??
     join(homedir(), '.aurehub', '.wdk_password'),
   );
+
+  try {
+    const stat = statSync(passwordFile);
+    if ((stat.mode & 0o077) !== 0) {
+      throw new Error(
+        `WDK_PASSWORD_FILE "${passwordFile}" is readable by group/other. Run: chmod 600 "${passwordFile}"`,
+      );
+    }
+  } catch (err) {
+    if (err.code !== 'ENOENT') throw err;
+  }
 
   let password;
   try {
