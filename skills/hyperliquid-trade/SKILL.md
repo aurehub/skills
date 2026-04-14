@@ -1,11 +1,11 @@
 ---
 name: hyperliquid-trade
-description: "Trade on Hyperliquid — spot and perpetual futures. Supports market orders (IOC), limit orders (GTC), leverage setting, and WDK wallet. Triggers: buy ETH spot, sell BTC, long ETH, short BTC, open long, open short, close position, perp trade, check balance, Hyperliquid positions, limit order, limit buy, limit sell, open orders, cancel order, modify order, GTC."
+description: "Trade on Hyperliquid — spot and perpetual futures. Supports market orders (IOC), limit orders (GTC), leverage setting, WDK wallet, and USDC deposit from Arbitrum. Triggers: buy ETH spot, sell BTC, long ETH, short BTC, open long, open short, close position, perp trade, check balance, Hyperliquid positions, limit order, limit buy, limit sell, open orders, cancel order, modify order, GTC, deposit USDC, fund wallet, bridge USDC."
 license: MIT
 compatibility: "Requires Node.js >= 20.19.0"
 metadata:
   author: aurehub
-  version: "1.1.0"
+  version: "1.3.0"
 ---
 
 # hyperliquid-trade
@@ -17,6 +17,7 @@ Trade spot and perpetual futures on Hyperliquid L1 using IOC market orders.
 - **Spot**: buy or sell any token listed on Hyperliquid spot markets
 - **Perps**: open long/short or close perpetual futures positions
 - **Balance**: check spot token balances or perp positions and margin
+- **Deposit**: bridge USDC from Arbitrum One to Hyperliquid L1
 
 ## External Communications
 
@@ -37,6 +38,7 @@ This skill connects to the Hyperliquid API (`api_url` in `hyperliquid.yaml`, def
 | Variable | Purpose | Default |
 |----------|---------|---------|
 | `WDK_ACCOUNT_INDEX` | HD derivation index (0-based) for wallet address | `0` |
+| `ARBITRUM_RPC_URL` | Arbitrum One JSON-RPC endpoint — required for `deposit.js` | *(none; public: `https://arb1.arbitrum.io/rpc`)* |
 
 ### Security safeguards
 
@@ -123,6 +125,8 @@ Only prompt once per wallet. The `.rankings_prompted` and `.registered` markers 
 | open orders / my orders / list orders | Load [references/limit-order.md](references/limit-order.md); run `limit-order.js list` |
 | cancel order / cancel limit | Load [references/limit-order.md](references/limit-order.md); run `limit-order.js cancel` |
 | change order price / update order / modify order | Load [references/limit-order.md](references/limit-order.md); run `limit-order.js modify` |
+| deposit USDC / fund wallet / bridge USDC / 充值 / 存款 / 往 HL 存钱 | Run `deposit.js` flow (see **Deposit Flow** below) |
+| withdraw USDC / withdraw to Arbitrum / 提现 / 取款 / 把钱取出来 | Run `withdraw.js` flow (see **Withdraw Flow** below) |
 
 ## Resolving HL_SCRIPTS_DIR
 
@@ -214,6 +218,78 @@ Confirm? [y/N]
 | IOC order not filled | Relay the script's error verbatim — it includes the configured slippage % (e.g. "Order not filled — price moved beyond the 5% IOC limit. Check current price and retry.") |
 | Node.js < 20.19 | "Node.js >= 20.19.0 required. Please upgrade: https://nodejs.org" |
 | API unreachable | "Hyperliquid API unreachable. Check network or `api_url` in `~/.aurehub/hyperliquid.yaml`." |
+
+## Deposit Flow
+
+Bridges USDC from Arbitrum One to Hyperliquid L1 using the HL bridge contract.
+The same wallet address receives USDC on HL within ~1 minute.
+
+**Prerequisites:**
+- `ARBITRUM_RPC_URL` must be set in `~/.aurehub/.env` (e.g. `https://arb1.arbitrum.io/rpc`)
+- Wallet must have USDC on Arbitrum One (native USDC, not USDC.e)
+- Wallet must have a small amount of ETH on Arbitrum One for gas
+
+**Steps:**
+
+1. Confirm intent: amount in USDC (minimum 5 USDC — amounts below minimum are permanently lost)
+2. Check `ARBITRUM_RPC_URL` is set; if missing, instruct user to add it to `~/.aurehub/.env` and stop
+3. Run preview: `node "$HL_SCRIPTS_DIR/deposit.js" <amount>`
+4. Parse preview JSON; apply confirmation logic per `requiresConfirm`/`requiresDoubleConfirm` flags
+5. After user confirms, re-run with `--confirmed`
+6. Report the `txHash` and credit note from the result
+
+**Preview format (render before prompting):**
+```
+Action:       Deposit USDC → Hyperliquid L1
+Amount:       <100> USDC
+From/To:      <0x...> (same address on HL)
+USDC balance: <150.00> USDC (Arbitrum)
+ETH balance:  <0.005> ETH (Arbitrum, for gas)
+Credit time:  ~1 minute
+Confirm? [y/N]
+```
+
+**Hard stops:**
+
+| Condition | Message |
+|-----------|---------|
+| `ARBITRUM_RPC_URL` not set | "Add ARBITRUM_RPC_URL to ~/.aurehub/.env first. Public RPC: https://arb1.arbitrum.io/rpc" |
+| Amount < 5 USDC | "Minimum deposit is 5 USDC. Smaller amounts are permanently lost by the bridge." |
+| Insufficient USDC | "Insufficient USDC on Arbitrum. Have $X, need $Y." |
+| No ETH for gas | "No ETH on Arbitrum One for gas. Bridge a small amount of ETH to Arbitrum first." |
+| Wrong network | "ARBITRUM_RPC_URL points to wrong network. Must be Arbitrum One (chainId 42161)." |
+
+## Withdraw Flow
+
+Withdraws USDC from Hyperliquid L1 to Arbitrum One. Funds arrive at the same wallet address within ~5 minutes. A **1 USDC fee** is deducted by the bridge; no ETH is required.
+
+**Steps:**
+
+1. Confirm intent: amount in USDC (minimum 2 USDC — 1 USDC fee is deducted, so at least 1 USDC arrives)
+2. Run preview: `node "$HL_SCRIPTS_DIR/withdraw.js" <amount>`
+3. Parse preview JSON; apply confirmation logic per `requiresConfirm`/`requiresDoubleConfirm` flags
+4. After user confirms, re-run with `--confirmed`
+5. Report the net received amount and credit note
+
+**Preview format (render before prompting):**
+```
+Action:       Withdraw USDC → Arbitrum One
+Amount:       <10> USDC
+Fee:          1 USDC (bridge fee)
+Net received: <9> USDC
+USDC balance: <13.63> USDC (Hyperliquid L1)
+Withdrawable: <13.63> USDC
+Credit time:  ~5 minutes
+Confirm? [y/N]
+```
+
+**Hard stops:**
+
+| Condition | Message |
+|-----------|---------|
+| Amount < 2 USDC | "Minimum withdrawal is 2 USDC (1 USDC fee is deducted)." |
+| Insufficient withdrawable | "Insufficient withdrawable balance. Have $X, need $Y." |
+| Margin locked | Append: "X USDC is locked as perp margin. Close positions to free up more." |
 
 ## Limit Order Flow
 

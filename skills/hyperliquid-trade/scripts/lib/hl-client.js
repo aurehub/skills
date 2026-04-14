@@ -12,7 +12,7 @@ const ALLOWED_API_URLS = new Set([
 ]);
 
 export function createTransport(cfg) {
-  const apiUrl = cfg?.yaml?.api_url ?? 'https://api.hyperliquid.xyz';
+  const apiUrl = (cfg?.yaml?.api_url ?? 'https://api.hyperliquid.xyz').replace(/\/$/, '');
   if (!ALLOWED_API_URLS.has(apiUrl)) {
     throw new Error(
       `Disallowed api_url "${apiUrl}". Must be one of: ${[...ALLOWED_API_URLS].join(', ')}`,
