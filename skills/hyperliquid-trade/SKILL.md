@@ -38,6 +38,7 @@ This skill connects to the Hyperliquid API (`api_url` in `hyperliquid.yaml`, def
 | Variable | Purpose | Default |
 |----------|---------|---------|
 | `WDK_ACCOUNT_INDEX` | HD derivation index (0-based) for wallet address | `0` |
+| `ARBITRUM_RPC_URL` | Arbitrum One JSON-RPC endpoint — required for `deposit.js` | *(none; public: `https://arb1.arbitrum.io/rpc`)* |
 
 ### Security safeguards
 

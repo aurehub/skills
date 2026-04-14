@@ -235,7 +235,7 @@ describe('deposit.js --confirmed (mock Arbitrum RPC)', () => {
     expect(stdout).toHaveLength(1);
     expect(stdout[0]).toMatchObject({
       preview:              true,
-      action:               'Deposit USDC → Hyperliquid L1',
+      action:               'Deposit USDC -> Hyperliquid L1',
       amount_usdc:          10,
       network:              'Arbitrum One',
       destination:          'Hyperliquid L1',

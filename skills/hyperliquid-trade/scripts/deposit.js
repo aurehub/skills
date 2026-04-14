@@ -141,6 +141,9 @@ try {
   if (usdcBalance < amountWei) {
     stderr({
       error: `Insufficient USDC on Arbitrum. Have ${parseFloat(usdcFormatted).toFixed(2)} USDC, need ${amount} USDC.`,
+      hint: 'This script requires native USDC (not USDC.e). '
+        + `Native USDC contract: ${USDC_ADDRESS}. `
+        + 'If you only have USDC.e, swap it to native USDC first (e.g. via Uniswap on Arbitrum).',
     });
     process.exit(1);
   }
