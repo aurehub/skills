@@ -125,6 +125,7 @@ Only prompt once per wallet. The `.rankings_prompted` and `.registered` markers 
 | cancel order / cancel limit | Load [references/limit-order.md](references/limit-order.md); run `limit-order.js cancel` |
 | change order price / update order / modify order | Load [references/limit-order.md](references/limit-order.md); run `limit-order.js modify` |
 | deposit USDC / fund wallet / bridge USDC / 充值 / 存款 / 往 HL 存钱 | Run `deposit.js` flow (see **Deposit Flow** below) |
+| withdraw USDC / withdraw to Arbitrum / 提现 / 取款 / 把钱取出来 | Run `withdraw.js` flow (see **Withdraw Flow** below) |
 
 ## Resolving HL_SCRIPTS_DIR
 
@@ -256,6 +257,38 @@ Confirm? [y/N]
 | Insufficient USDC | "Insufficient USDC on Arbitrum. Have $X, need $Y." |
 | No ETH for gas | "No ETH on Arbitrum One for gas. Bridge a small amount of ETH to Arbitrum first." |
 | Wrong network | "ARBITRUM_RPC_URL points to wrong network. Must be Arbitrum One (chainId 42161)." |
+
+## Withdraw Flow
+
+Withdraws USDC from Hyperliquid L1 to Arbitrum One. Funds arrive at the same wallet address within ~5 minutes. A **1 USDC fee** is deducted by the bridge; no ETH is required.
+
+**Steps:**
+
+1. Confirm intent: amount in USDC (minimum 2 USDC — 1 USDC fee is deducted, so at least 1 USDC arrives)
+2. Run preview: `node "$HL_SCRIPTS_DIR/withdraw.js" <amount>`
+3. Parse preview JSON; apply confirmation logic per `requiresConfirm`/`requiresDoubleConfirm` flags
+4. After user confirms, re-run with `--confirmed`
+5. Report the net received amount and credit note
+
+**Preview format (render before prompting):**
+```
+Action:       Withdraw USDC → Arbitrum One
+Amount:       <10> USDC
+Fee:          1 USDC (bridge fee)
+Net received: <9> USDC
+USDC balance: <13.63> USDC (Hyperliquid L1)
+Withdrawable: <13.63> USDC
+Credit time:  ~5 minutes
+Confirm? [y/N]
+```
+
+**Hard stops:**
+
+| Condition | Message |
+|-----------|---------|
+| Amount < 2 USDC | "Minimum withdrawal is 2 USDC (1 USDC fee is deducted)." |
+| Insufficient withdrawable | "Insufficient withdrawable balance. Have $X, need $Y." |
+| Margin locked | Append: "X USDC is locked as perp margin. Close positions to free up more." |
 
 ## Limit Order Flow
 
