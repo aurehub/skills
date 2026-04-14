@@ -87,4 +87,47 @@ describe('parseCliArgs', () => {
     expect(result.command).toBe('balance');
     expect(result.configDir).toBe('/tmp/myconfig');
   });
+
+  it('parses --account flag', () => {
+    const result = parseCliArgs(['balance', '--account', '3']);
+    expect(result).toEqual({ command: 'balance', account: 3 });
+  });
+
+  it('parses --account with other flags', () => {
+    const result = parseCliArgs(['swap', '--side', 'buy', '--amount', '100', '--min-out', '0.03', '--account', '1']);
+    expect(result.account).toBe(1);
+    expect(result.side).toBe('buy');
+    expect(result.amount).toBe('100');
+  });
+
+  it('account is undefined when not provided', () => {
+    const result = parseCliArgs(['balance']);
+    expect(result.account).toBeUndefined();
+  });
+
+  it('throws on invalid --account value', () => {
+    expect(() => parseCliArgs(['balance', '--account', 'abc'])).toThrow(/--account must be a non-negative integer/);
+    expect(() => parseCliArgs(['balance', '--account', '-1'])).toThrow(/--account must be a non-negative integer/);
+  });
+
+  it('parses --account 0 correctly', () => {
+    const result = parseCliArgs(['balance', '--account', '0']);
+    expect(result.account).toBe(0);
+  });
+
+  it('parses accounts command', () => {
+    const result = parseCliArgs(['accounts']);
+    expect(result).toEqual({ command: 'accounts' });
+  });
+
+  it('parses accounts command with --count', () => {
+    const result = parseCliArgs(['accounts', '--count', '5']);
+    expect(result).toEqual({ command: 'accounts', count: 5 });
+  });
+
+  it('throws on invalid --count value', () => {
+    expect(() => parseCliArgs(['accounts', '--count', 'abc'])).toThrow(/--count must be a positive integer/);
+    expect(() => parseCliArgs(['accounts', '--count', '0'])).toThrow(/--count must be a positive integer/);
+    expect(() => parseCliArgs(['accounts', '--count', '-1'])).toThrow(/--count must be a positive integer/);
+  });
 });

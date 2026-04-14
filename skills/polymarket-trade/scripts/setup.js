@@ -108,9 +108,9 @@ export function runBrowseEnvCheck(aurehubDir = AUREHUB_DIR) {
 
 // ── CLOB credential derivation ────────────────────────────────────────────────
 
-export async function deriveClobCreds(aurehubDir = AUREHUB_DIR) {
+export async function deriveClobCreds(aurehubDir = AUREHUB_DIR, opts = {}) {
   const cfg = loadConfig(aurehubDir);
-  const wallet = await createSigner(cfg);
+  const wallet = await createSigner(cfg, { accountIndex: opts.accountIndex });
   const client = await createL1Client(cfg, wallet);
   const creds = await client.createApiKey(0);
   if (!creds.key || !creds.secret || !creds.passphrase) {
@@ -143,6 +143,16 @@ export async function deriveClobCreds(aurehubDir = AUREHUB_DIR) {
 
 // ── CLI entry point ───────────────────────────────────────────────────────────
 if (process.argv[1] && realpathSync(process.argv[1]) === fileURLToPath(import.meta.url)) {
+  const accountIdx = (() => {
+    const args = process.argv.slice(2);
+    const i = args.indexOf('--account');
+    if (i === -1) return undefined;
+    const raw = args[i + 1];
+    const v = parseInt(raw, 10);
+    if (Number.isNaN(v) || v < 0 || String(v) !== raw) { console.error('--account must be a non-negative integer'); process.exit(1); }
+    return v;
+  })();
+
   (async () => {
     try {
       runSetupEnvCheck();  // steps 1-5 including vault + password (needed for L1 signing)
@@ -150,7 +160,7 @@ if (process.argv[1] && realpathSync(process.argv[1]) === fileURLToPath(import.me
         console.log('✅ Already configured. Delete ~/.aurehub/.polymarket_clob to re-derive.');
         process.exit(0);
       }
-      await deriveClobCreds();
+      await deriveClobCreds(undefined, { accountIndex: accountIdx });
     } catch (e) {
       console.error('❌', e.message);
       process.exit(1);

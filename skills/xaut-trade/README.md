@@ -312,9 +312,11 @@ No. The Agent does not monitor prices or make autonomous decisions. It is an exe
 
 By default, confirmation is threshold-based: small trades show full preview and can execute without blocking confirmation, medium trades require one confirmation, and large/high-risk trades require double confirmation. Approval confirmations are controlled by `approve_confirmation_mode`, with a mandatory override for oversized approvals. `approve_confirmation_mode=never` is high-risk and intended for advanced users only. The Agent cannot sign without your local keystore/password setup.
 
-**Q: Can I use multiple wallets simultaneously?**
+**Q: Can I use multiple addresses?**
 
-The current Skill is designed for a single wallet per instance. For multi-wallet use, prepare a separate `.env` for each wallet (with distinct `FOUNDRY_ACCOUNT` and `KEYSTORE_PASSWORD_FILE`), and switch config files before each operation. There is no built-in multi-wallet concurrent management.
+**WDK mode** supports multiple addresses from a single vault via HD derivation. Set `WDK_ACCOUNT_INDEX=N` in `~/.aurehub/.env` to select which address to use (default: `0`). Use `node swap.js accounts` to list available addresses. The CLI also accepts `--account N` to override the `.env` value per command. There is no built-in concurrent multi-address management — each operation uses one address at a time.
+
+**Foundry mode** requires a separate keystore per address. Prepare a separate `.env` for each wallet (with distinct `FOUNDRY_ACCOUNT` and `KEYSTORE_PASSWORD_FILE`), and switch config files before each operation.
 
 **Q: Do I need to reinstall after a Skill update?**
 

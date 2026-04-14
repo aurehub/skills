@@ -390,6 +390,7 @@ if (process.argv[1] && realpathSync(process.argv[1]) === fileURLToPath(import.me
   const query   = getArg('--market');
   const side    = (getArg('--side') ?? 'YES').toUpperCase();
   const amount  = parseFloat(getArg('--amount') ?? '0');
+  const accountIdx = (() => { const v = getArg('--account'); if (v === null) return undefined; const n = parseInt(v, 10); if (Number.isNaN(n) || n < 0 || String(n) !== v) { console.error('--account must be a non-negative integer'); process.exit(1); } return n; })();
 
   if (!query || !amount || amount <= 0 || !Number.isFinite(amount) || amount > 1_000_000) {
     console.error('Usage: node scripts/trade.js --buy  --market <slug> --side YES|NO --amount <usd>     [--dry-run]  # buy');
@@ -403,7 +404,7 @@ if (process.argv[1] && realpathSync(process.argv[1]) === fileURLToPath(import.me
       const cfg = loadConfig();
       const rpcUrl = resolveRpcUrl(cfg);
       const provider = new ethers.providers.JsonRpcProvider(rpcUrl);
-      const wallet = (await createSigner(cfg)).connect(provider);
+      const wallet = (await createSigner(cfg, { accountIndex: accountIdx })).connect(provider);
 
       // Resolve market by exact slug or keyword fallback (see browse.js resolveMarket)
       const market = await resolveMarket(query, cfg);

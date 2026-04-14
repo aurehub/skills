@@ -10,7 +10,7 @@ function expandTilde(p) {
   return p;
 }
 import { pbkdf2Sync } from 'crypto';
-import { Wallet } from 'ethers6';
+import { Wallet, HDNodeWallet } from 'ethers6';
 
 // sodium-native is a CJS module; we import it via createRequire
 import { createRequire } from 'module';
@@ -96,8 +96,8 @@ function wdkDecrypt(payload, key) {
  *   Config object returned by loadConfig().
  * @param {import('ethers').Provider|null} provider
  *   ethers provider to connect the wallet to (may be null/undefined).
- * @param {{ keystoreDir?: string }} [opts]
- *   Optional overrides for testing (e.g. keystoreDir to override Foundry default).
+ * @param {{ keystoreDir?: string, accountIndex?: number }} [opts]
+ *   Optional overrides (keystoreDir for Foundry tests, accountIndex for WDK HD derivation).
  * @returns {Promise<import('ethers').Wallet>}
  */
 export async function createSigner(cfg, provider, opts = {}) {
@@ -114,7 +114,7 @@ export async function createSigner(cfg, provider, opts = {}) {
   }
 
   if (walletMode === 'wdk') {
-    return _createWdkSigner(cfg, provider);
+    return _createWdkSigner(cfg, provider, opts);
   }
 
   throw new Error(
@@ -167,7 +167,7 @@ async function _createFoundrySigner(cfg, provider, opts) {
 // WDK vault backend
 // ---------------------------------------------------------------------------
 
-async function _createWdkSigner(cfg, provider) {
+async function _createWdkSigner(cfg, provider, opts = {}) {
   const vaultPath = expandTilde(
     cfg.env.WDK_VAULT_FILE ??
     join(homedir(), '.aurehub', '.wdk_vault'),
@@ -210,7 +210,12 @@ async function _createWdkSigner(cfg, provider) {
   let wallet;
   try {
     const mnemonic = bip39.entropyToMnemonic(entropy);
-    wallet = Wallet.fromPhrase(mnemonic);
+    const index = opts.accountIndex ?? parseInt(cfg.env.WDK_ACCOUNT_INDEX || '0', 10);
+    if (!Number.isInteger(index) || index < 0) {
+      throw new Error(`Invalid account index: ${opts.accountIndex ?? cfg.env.WDK_ACCOUNT_INDEX}. Must be a non-negative integer.`);
+    }
+    const path = `m/44'/60'/0'/0/${index}`;
+    wallet = HDNodeWallet.fromPhrase(mnemonic, '', path);
   } finally {
     sodium.sodium_memzero(entropy);
   }

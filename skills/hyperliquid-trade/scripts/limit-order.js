@@ -144,8 +144,17 @@ export function parseLimitArgs(args) {
   throw new Error(`Unknown subcommand: ${subcommand}. Use place, list, cancel, or modify`);
 }
 
+function extractAccount(argv) {
+  const i = argv.indexOf('--account');
+  if (i === -1) return { account: undefined, cleanArgs: argv };
+  const raw = argv[i + 1];
+  const v = parseInt(raw, 10);
+  if (Number.isNaN(v) || v < 0 || String(v) !== raw) { process.stderr.write(JSON.stringify({ error: '--account must be a non-negative integer' }) + '\n'); process.exit(1); }
+  return { account: v, cleanArgs: [...argv.slice(0, i), ...argv.slice(i + 2)] };
+}
+
 if (process.argv[1] && new URL(import.meta.url).href === pathToFileURL(process.argv[1]).href) {
-  const rawArgs = process.argv.slice(2);
+  const { account: accountIdx, cleanArgs: rawArgs } = extractAccount(process.argv.slice(2));
   let parsed;
   try {
     parsed = parseLimitArgs(rawArgs);
@@ -156,7 +165,7 @@ if (process.argv[1] && new URL(import.meta.url).href === pathToFileURL(process.a
 
   try {
     const cfg = loadConfig();
-    const wallet = await createSigner(cfg, null);
+    const wallet = await createSigner(cfg, null, { accountIndex: accountIdx });
     const address = await wallet.getAddress();
     const transport = createTransport(cfg);
     const info = createInfoClient(transport);

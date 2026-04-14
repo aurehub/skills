@@ -70,7 +70,7 @@ function wdkDecrypt(payload, key) {
  * @param {{ env: object }} cfg  Config object with env overrides.
  * @returns {Promise<import('ethers').Wallet>}
  */
-export async function createSigner(cfg) {
+export async function createSigner(cfg, opts = {}) {
   const vaultPath = expandTilde(
     cfg?.env?.WDK_VAULT_FILE ?? join(homedir(), '.aurehub', '.wdk_vault'),
   );
@@ -110,7 +110,12 @@ export async function createSigner(cfg) {
   let wallet;
   try {
     const mnemonic = bip39.entropyToMnemonic(entropy);
-    wallet = Wallet.fromMnemonic(mnemonic); // ethers v5 API
+    const index = opts.accountIndex ?? parseInt(cfg?.env?.WDK_ACCOUNT_INDEX || '0', 10);
+    if (!Number.isInteger(index) || index < 0) {
+      throw new Error(`Invalid account index: ${cfg?.env?.WDK_ACCOUNT_INDEX}. Must be a non-negative integer.`);
+    }
+    const path = `m/44'/60'/0'/0/${index}`;
+    wallet = Wallet.fromMnemonic(mnemonic, path); // ethers v5 API
   } finally {
     sodium.sodium_memzero(entropy);
   }

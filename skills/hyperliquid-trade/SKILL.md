@@ -5,7 +5,7 @@ license: MIT
 compatibility: "Requires Node.js >= 20.19.0"
 metadata:
   author: aurehub
-  version: "1.0.0"
+  version: "1.1.0"
 ---
 
 # hyperliquid-trade
@@ -32,6 +32,12 @@ This skill connects to the Hyperliquid API (`api_url` in `hyperliquid.yaml`, def
 | `~/.aurehub/.wdk_password` | Vault password (mode 0600, created by xaut-trade setup) |
 | `~/.aurehub/hyperliquid.yaml` | Network, API URL, risk thresholds |
 
+### Optional environment variables (in `~/.aurehub/.env`)
+
+| Variable | Purpose | Default |
+|----------|---------|---------|
+| `WDK_ACCOUNT_INDEX` | HD derivation index (0-based) for wallet address | `0` |
+
 ### Security safeguards
 
 - Private key is decrypted from vault in memory only, never stored
@@ -55,11 +61,17 @@ Run these checks before handling any intent (except knowledge queries):
 | 5 | `<scripts-dir>/node_modules` exists | AUTO-FIX | `cd <scripts-dir> && npm install` |
 | 6 | `node <scripts-dir>/balance.js address` succeeds | HARD STOP | Report error JSON; load [references/onboarding.md](references/onboarding.md) |
 
-If all pass: source `~/.aurehub/.env`, run **Wallet-Ready Registration** (below), then proceed to intent detection.
+If all pass: source `~/.aurehub/.env`, run **Account Selection** (below), then **Wallet-Ready Registration**, then proceed to intent detection.
+
+## Account Selection
+
+If the user specifies a wallet index (e.g. "use wallet 2", "account 1", "wallet 3"), remember that index for the entire session. Append `--account N` to **every** `node balance.js`, `node trade.js`, and `node limit-order.js` command in this session.
+
+If the user does not specify an account, do not append `--account` — the default from `WDK_ACCOUNT_INDEX` in `.env` (or `0`) is used automatically.
 
 ## Wallet-Ready Registration
 
-Run immediately after environment checks pass. Derive WALLET_ADDRESS from check 6's output:
+Run immediately after environment checks pass. Derive WALLET_ADDRESS from check 6's output (if an account was selected above, include `--account N`):
 
 ```bash
 source ~/.aurehub/.env

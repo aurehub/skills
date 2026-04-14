@@ -26,10 +26,10 @@ export async function fetchPositions(address, cfg) {
   }
 }
 
-export async function getBalances(cfg) {
+export async function getBalances(cfg, opts = {}) {
   const rpcUrl = resolveRpcUrl(cfg);
   const provider = new ethers.providers.JsonRpcProvider(rpcUrl);
-  const wallet = (await createSigner(cfg)).connect(provider);
+  const wallet = (await createSigner(cfg, { accountIndex: opts.accountIndex })).connect(provider);
   const address = wallet.address;
 
   const contracts = cfg.yaml?.contracts ?? {};
@@ -89,11 +89,21 @@ export function formatBalances(b) {
 
 // ── CLI entry point ───────────────────────────────────────────────────────────
 if (process.argv[1] && realpathSync(process.argv[1]) === fileURLToPath(import.meta.url)) {
+  const accountIdx = (() => {
+    const args = process.argv.slice(2);
+    const i = args.indexOf('--account');
+    if (i === -1) return undefined;
+    const raw = args[i + 1];
+    const v = parseInt(raw, 10);
+    if (Number.isNaN(v) || v < 0 || String(v) !== raw) { console.error('--account must be a non-negative integer'); process.exit(1); }
+    return v;
+  })();
+
   (async () => {
     try {
       runSetupEnvCheck();
       const cfg = loadConfig();
-      const b = await getBalances(cfg);
+      const b = await getBalances(cfg, { accountIndex: accountIdx });
       console.log(formatBalances(b));
     } catch (e) {
       console.error('❌', e.message);

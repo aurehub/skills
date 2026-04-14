@@ -301,4 +301,64 @@ describe('wallet initialization & mode switching', () => {
       // Address will differ since new entropy is generated
     });
   });
+
+  // -----------------------------------------------------------------------
+  // 5. WDK multi-address: different indices produce different addresses
+  // -----------------------------------------------------------------------
+
+  it('WDK: different account indices produce different addresses', async () => {
+    const { createSigner } = await import('../lib/signer.js');
+
+    const cfg = {
+      env: {
+        WALLET_MODE: 'wdk',
+        WDK_VAULT_FILE: wdkVaultFile,
+        WDK_PASSWORD_FILE: wdkPasswordFile,
+      },
+    };
+
+    const wallet0 = await createSigner(cfg, null);
+    const wallet1 = await createSigner(cfg, null, { accountIndex: 1 });
+    const wallet2 = await createSigner(cfg, null, { accountIndex: 2 });
+
+    // All addresses are valid and distinct
+    expect(wallet0.address).toMatch(/^0x[0-9a-fA-F]{40}$/);
+    expect(wallet1.address).toMatch(/^0x[0-9a-fA-F]{40}$/);
+    expect(wallet2.address).toMatch(/^0x[0-9a-fA-F]{40}$/);
+    expect(wallet0.address).not.toBe(wallet1.address);
+    expect(wallet1.address).not.toBe(wallet2.address);
+
+    // Default (no opts) matches explicit index 0 (verify consistency, not against wdkAddress
+    // which may be stale if a prior test regenerated the vault with --force)
+    const wallet0Again = await createSigner(cfg, null, { accountIndex: 0 });
+    expect(wallet0.address).toBe(wallet0Again.address);
+  });
+
+  it('WDK: WDK_ACCOUNT_INDEX env var selects account', async () => {
+    const { createSigner } = await import('../lib/signer.js');
+
+    const cfg = {
+      env: {
+        WALLET_MODE: 'wdk',
+        WDK_VAULT_FILE: wdkVaultFile,
+        WDK_PASSWORD_FILE: wdkPasswordFile,
+        WDK_ACCOUNT_INDEX: '1',
+      },
+    };
+
+    const walletFromEnv = await createSigner(cfg, null);
+
+    const cfgNoIndex = {
+      env: {
+        WALLET_MODE: 'wdk',
+        WDK_VAULT_FILE: wdkVaultFile,
+        WDK_PASSWORD_FILE: wdkPasswordFile,
+      },
+    };
+    const wallet0 = await createSigner(cfgNoIndex, null);
+    const wallet1 = await createSigner(cfgNoIndex, null, { accountIndex: 1 });
+
+    expect(walletFromEnv.address).toBe(wallet1.address);
+    expect(walletFromEnv.address).not.toBe(wallet0.address); // not index 0
+  });
 });
