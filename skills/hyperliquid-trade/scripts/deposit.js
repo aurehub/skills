@@ -2,7 +2,7 @@
 /**
  * deposit.js <amount_usdc> [--account N] [--confirmed]
  *
- * Bridges USDC from Arbitrum One → Hyperliquid L1.
+ * Bridges USDC from Arbitrum One -> Hyperliquid L1.
  * The same wallet address receives USDC on HL within ~1 minute.
  *
  * Without --confirmed: preview only (shows balance, amount, fees).
@@ -104,7 +104,7 @@ try {
   if (network.chainId !== ARBITRUM_CHAIN_ID) {
     stderr({
       error: `Wrong network. Expected Arbitrum One (chainId 42161), got chainId ${network.chainId}.`,
-      fix: 'Check ARBITRUM_RPC_URL in ~/.aurehub/.env — it must point to Arbitrum One.',
+      fix: 'Check ARBITRUM_RPC_URL in ~/.aurehub/.env -- it must point to Arbitrum One.',
     });
     process.exit(1);
   }
@@ -162,7 +162,7 @@ try {
   // Output preview
   stdout({
     preview: true,
-    action: 'Deposit USDC → Hyperliquid L1',
+    action: 'Deposit USDC -> Hyperliquid L1',
     from_address: address,
     to_hl_address: address,
     amount_usdc: amount,
@@ -187,7 +187,7 @@ try {
     receipt = await tx.wait(1);
   } catch (waitErr) {
     // Transaction was broadcast but confirmation failed (RPC drop, timeout, etc.)
-    // The txHash is already on stdout — user can verify on Arbiscan.
+    // The txHash is already on stdout -- user can verify on Arbiscan.
     stderr({
       error: `Transaction broadcast but confirmation failed: ${waitErr.message}`,
       txHash: tx.hash,
@@ -196,7 +196,7 @@ try {
     process.exit(1);
   }
 
-  // Verify the Transfer event was emitted — guards against non-reverting ERC-20 failures
+  // Verify the Transfer event was emitted -- guards against non-reverting ERC-20 failures
   const transferLog = receipt.logs.find(log => {
     if (log.address.toLowerCase() !== USDC_ADDRESS.toLowerCase()) return false;
     try { return usdc.interface.parseLog(log)?.name === 'Transfer'; } catch { return false; }

@@ -2,7 +2,7 @@
 /**
  * withdraw.js <amount_usdc> [--account N] [--confirmed]
  *
- * Withdraws USDC from Hyperliquid L1 → Arbitrum One.
+ * Withdraws USDC from Hyperliquid L1 -> Arbitrum One.
  * Funds arrive at the same wallet address on Arbitrum within ~5 minutes.
  *
  * Without --confirmed: preview only (shows balance, amount, fee).
@@ -114,7 +114,7 @@ try {
 
   stdout({
     preview: true,
-    action: 'Withdraw USDC → Arbitrum One',
+    action: 'Withdraw USDC -> Arbitrum One',
     from_hl_address: address,
     to_arb_address: address,
     amount_usdc: amount,
