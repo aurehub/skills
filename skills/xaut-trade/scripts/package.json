@@ -1,6 +1,6 @@
 {
   "name": "xaut-trade-scripts",
-  "version": "2.2.0",
+  "version": "2.3.0",
   "description": "Helper scripts for xaut-trade skill",
   "type": "module",
   "main": "limit-order.js",
