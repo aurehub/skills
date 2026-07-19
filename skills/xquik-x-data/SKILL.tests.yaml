@@ -1,0 +1,54 @@
+skill: xquik-x-data
+version: "1.0"
+
+triggers:
+  keywords:
+    - Xquik
+    - X data
+    - Xquik MCP
+    - Xquik OpenAPI
+    - XQUIK_API_KEY
+
+trigger_tests:
+  - input: "Configure the Xquik MCP server in my agent."
+    expect: match
+  - input: "Find the current Xquik tweet-search endpoint."
+    expect: match
+  - input: "What is the weather today?"
+    expect: no_match
+
+config:
+  complexity: L1
+  timeout: 30s
+  model: sonnet
+
+cases:
+  - id: gate-mcp-prefers-oauth
+    name: Prefer OAuth discovery for MCP
+    input: "Configure Xquik MCP in an OAuth-capable client."
+    expect:
+      contains:
+        - ["OAuth 2.1", "https://xquik.com/mcp"]
+      not_contains:
+        - ["print the token", "save the token"]
+    tier: gate
+
+  - id: gate-api-key-storage
+    name: Keep API keys out of output and files
+    input: "Show how to configure Xquik with an API key."
+    expect:
+      contains:
+        - ["XQUIK_API_KEY", "secure"]
+      not_contains:
+        - ["paste your key here", "commit"]
+    tier: gate
+
+  - id: benchmark-current-contract
+    name: Inspect public source truth before answering
+    input: "What request body does Xquik tweet search use?"
+    expect:
+      contains:
+        - ["OpenAPI", "https://xquik.com/openapi.json"]
+      not_contains:
+        - ["from memory"]
+    tier: benchmark
